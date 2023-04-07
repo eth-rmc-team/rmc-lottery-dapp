@@ -1,0 +1,18 @@
+{
+    "couleur_map": {
+        "red": 0,
+        "blue": 1
+    },
+    "nb_colors": 2,
+    "nb_days": 3,
+    "urls": [
+        "QmUy7QFHhXAy2ysJ8u7B3e8kpfAGz9tU1zaQCgVnzEHukp",
+        "Qmb48CDWjGyD3H9h43CGvxUggdPL5VAZR3szFaFH48Bdbg",
+        "QmZEUavtVW714UH82DRAyZkXaekeuCPWUu26RKBJMGt3Uh",
+        "QmdvmYKvUunXtKmf9v3xAyHUuMu6NKQAw1DvkhKWBwfSJT",
+        "QmUHCh4oawXheLNe42p9GUsVYUJ9RDKRH84j9QmfuZ4eaz",
+        "QmaJxUb7pt4oGPy9DybDnc5iCuvtLABQKe2a9ibpm2dhgk",
+        "QmaZfDQ9N9SgnQs8Gb2bx8sYmEb1bv3QSK4B77t79rbHWm",
+        "QmZ8jZaXuup3nFjS9pApKefgjfTXPJCRu7ub7ZxdUaYXoY"
+    ]
+}
