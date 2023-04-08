@@ -45,23 +45,23 @@ $ docker-compose logs;
 $ docker exec -it rmc-lottery-dapp_app_1 sh;
 ```
 
-7. Compile local contract within Docker
+8. Compile local contract within Docker
 
 ```bash
 $ yarn compile:local;
 ```
 
-8. Deploy local contract within Docker with custom task
+9. Deploy local contract within Docker with custom task
 
 ```bash
 $ yarn deploy:local;
 ```
 
-9. Create `.env` file used for out `client/node.js` file
+10. Create `.env` file used for out `client/node.js` file
 
 ```bash
 # Ugly version
-$ echo "CONTRACT_ADDRESS=$(docker exec -it myhd cat .contract)\nWALLET_ADDRESS=$(docker exec -it myhd cat .wallet;)" > .env;
+$ echo "CONTRACT_ADDRESS=$(docker exec -it myhd cat .contract)\nWALLET_ADDRESS=$(docker exec -it myhd cat .wallet;)" > .env.test;
 
 # Prettier version
 # export CONTRACT_ADDRESS="$(docker exec -it myhd cat .contract)";
@@ -71,7 +71,7 @@ $ echo "CONTRACT_ADDRESS=$(docker exec -it myhd cat .contract)\nWALLET_ADDRESS=$
 # unset WALLET_ADDRESS;
 ```
 
-10. Run our client
+11. Run our client
 
 ```bash
 $ node client/node.js;
@@ -91,4 +91,14 @@ Main test files can be found in `/test`.
 
 ```bash
 $ npm run test:local;
+```
+
+## Usefull commands
+
+Show local accounts addresses & balances (from inside docker container)
+
+```bash
+
+```bash
+$ yarn accounts:local;
 ```

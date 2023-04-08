@@ -11,19 +11,19 @@ const contract = new ethers.ethers.Contract(process.env.CONTRACT_ADDRESS || 'UNK
 
 // Init
 const init = async () => {
-  try {
-    const result = await contract.greet();
-    console.log({ result });
+    try {
+        const result = await contract.greet();
+        console.log({ result });
 
-    const transaction = await contract.setGreeting('Hello from docker!');
-    console.log({ transaction });
+        const transaction = await contract.setGreeting('Hello from docker!');
+        console.log({ transaction });
 
-    transaction.wait();
+        transaction.wait();
 
-    console.log({ result: await contract.greet() });
-  } catch (error) {
-    console.log({ error });
-  }
+        console.log({ result: await contract.greet() });
+    } catch (error) {
+        console.log({ error });
+    }
 }
 
 init();
