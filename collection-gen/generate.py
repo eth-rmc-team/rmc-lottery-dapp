@@ -8,8 +8,24 @@ import requests
 from dotenv import load_dotenv
 
 
+
+load_dotenv()
+
+PINATA_API_KEY = os.environ.get("PINATA_API_KEY")
+PINATA_API_SECRET = os.environ.get("PINATA_API_SECRET")
+PINATA_JWT = os.environ.get("PINATA_JWT")
+
+
+output_dir = '../collection'
+if not os.path.exists(output_dir):
+    os.makedirs(output_dir)
+
+
 # Fonction pour envoyer les images à Pinata
-def send_to_pinata(nom_fichier, api_key, api_secret):
+def send_to_pinata(file_name, api_key, api_secret):
+
+    local_path = f'{output_dir}/{file_name}'
+
     url = "https://api.pinata.cloud/pinning/pinFileToIPFS"
     headers = {
         "pinata_api_key": api_key,
@@ -17,11 +33,11 @@ def send_to_pinata(nom_fichier, api_key, api_secret):
     }
 
     # Ouverture du fichier en mode binaire
-    with open(nom_fichier, "rb") as fichier:
+    with open(local_path, "rb") as fichier:
         fichier_bytes = fichier.read()
 
     # Préparation des données de la requête
-    fichiers = {"file": (nom_fichier, fichier_bytes)}
+    fichiers = {"file": (file_name, fichier_bytes)}
 
     # Envoi de la requête POST avec les fichiers et les en-têtes
     reponse = requests.post(url, headers=headers, files=fichiers)
@@ -36,17 +52,6 @@ def send_to_pinata(nom_fichier, api_key, api_secret):
 
 
 # MAIN
-
-load_dotenv()
-
-PINATA_API_KEY = os.environ.get("PINATA_API_KEY")
-PINATA_API_SECRET = os.environ.get("PINATA_API_SECRET")
-PINATA_JWT = os.environ.get("PINATA_JWT")
-
-
-output_dir = '../collection'
-if not os.path.exists(output_dir):
-    os.makedirs(output_dir)
 
 # Analyse des arguments de commande
 parser = argparse.ArgumentParser(description='Generate images with colored bands')
@@ -104,10 +109,10 @@ for i, combinaison in enumerate(itertools.product(couleurs, repeat=nb_bandeaux))
         draw.rectangle((x0, 0, x1, image.height), fill=couleur)
 
     # Enregistrer l'image
-    image_local_path = f'{output_dir}/image_{i}.png'
-    image.save(image_local_path)
+    image_file_name = f'image_{i}.png'
+    image.save(f'{output_dir}/{image_file_name}')
     
-    response = send_to_pinata(os.path.abspath(image_local_path), PINATA_API_KEY, PINATA_API_SECRET)
+    response = send_to_pinata(image_file_name, PINATA_API_KEY, PINATA_API_SECRET)
 
     # Enregistrer les couleurs de chaque bandeau dans un fichier JSON
     data = {
@@ -126,13 +131,13 @@ for i, combinaison in enumerate(itertools.product(couleurs, repeat=nb_bandeaux))
         ]
     }
 
-    json_local_path = f'{output_dir}/image_{i}.json'
+    json_file_name = f'image_{i}.json'
 
-    with open(json_local_path, 'w') as f:
+    with open(f'{output_dir}/{json_file_name}', 'w') as f:
         json.dump(data, f)
 
 
-    response = send_to_pinata(os.path.abspath(json_local_path), PINATA_API_KEY, PINATA_API_SECRET)
+    response = send_to_pinata(json_file_name, PINATA_API_KEY, PINATA_API_SECRET)
 
     urls.append(response["IpfsHash"])
 
