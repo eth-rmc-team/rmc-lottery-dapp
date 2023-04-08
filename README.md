@@ -26,35 +26,35 @@ $ npm install;
 $ npm run compile:local; # build client/node.js file
 ```
 
-4. Build Docker image
+4. Build and launch docker
 
 ```bash
-$ docker build . -t hhdocker;
-```
-
-5. Run Docker image
-
-```bash
-$ docker run -it -d -p 8545:8545 --name myhd hhdocker;
+$ docker-compose up -d
 ```
 
 6. Verify that container is running
 
 ```bash
-$ docker logs myhd;
+$ docker-compose logs;
 # Should see an output of wallet addresses and private keys
+```
+
+7. Enter inside docker container
+
+```bash
+$ docker exec -it rmc-lottery-dapp_app_1 sh;
 ```
 
 7. Compile local contract within Docker
 
 ```bash
-$ docker exec -it myhd yarn compile:local;
+$ yarn compile:local;
 ```
 
 8. Deploy local contract within Docker with custom task
 
 ```bash
-$ docker exec -it myhd yarn deploy:local;
+$ yarn deploy:local;
 ```
 
 9. Create `.env` file used for out `client/node.js` file
@@ -82,7 +82,7 @@ Voilà!
 Don't forget to delete your container when you're done.
 
 ```bash
-$ docker rm -f myhd;
+$ docker-compose stop;
 ```
 
 ## Running Tests

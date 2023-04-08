@@ -150,7 +150,7 @@ result = {
 
 
 # Enregistrer le dictionnaire dans un fichier JSON
-with open(f'{output_dir}/metadata.json', 'w') as f:
+with open(f'{output_dir}/collection_lottery_{lottery_id}.json', 'w') as f:
     json.dump(result, f)
 
 

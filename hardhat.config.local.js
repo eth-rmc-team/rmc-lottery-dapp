@@ -2,31 +2,32 @@ require("@nomiclabs/hardhat-waffle");
 const fs = require("fs");
 
 
-task("my-deploy", "Deploys contract, get wallets, and outputs files", async (taskArgs, hre) => {
-  const Greeter = await hre.ethers.getContractFactory("Greeter");
-  const greeter = await Greeter.deploy("Hello, Hardhat!");
+task("deploy-collection", "Load images and mint NTF for lottery tickets", async (taskArgs, hre) => {
+    console.log("test")
+    // const Greeter = await hre.ethers.getContractFactory("Greeter");
+    // const greeter = await Greeter.deploy("Hello, Hardhat!");
 
-  await greeter.deployed();
+    // await greeter.deployed();
 
-  const contractAddress = greeter.address;
+    // const contractAddress = greeter.address;
 
-  fs.writeFileSync('./.contract', contractAddress);
+    // fs.writeFileSync('./.contract', contractAddress);
 
-  const accounts = await hre.ethers.getSigners();
+    // const accounts = await hre.ethers.getSigners();
 
-  const walletAddress = accounts[0].address;
+    // const walletAddress = accounts[0].address;
 
-  fs.writeFileSync('./.wallet', walletAddress);
+    // fs.writeFileSync('./.wallet', walletAddress);
 });
 
 /**
  * @type import('hardhat/config').HardhatUserConfig
  */
 module.exports = {
-  solidity: "0.8.4",
-  networks: {
-    hardhat: {
-      chainId: 1337
-    },
-  }
+    solidity: "0.8.11",
+    networks: {
+        hardhat: {
+            chainId: 1337
+        },
+    }
 };

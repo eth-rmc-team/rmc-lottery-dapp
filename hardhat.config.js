@@ -13,7 +13,7 @@ task("accounts", "Prints the list of accounts", async (taskArgs, hre) => {
  * @type import('hardhat/config').HardhatUserConfig
  */
 module.exports = {
-    solidity: "0.8.18",
+    solidity: "0.8.11",
     networks: {
         url: "https://goerli.infura.io/v3/eaff47b8a5a1497eaa144d9678558028",
         accounts: [""]
