@@ -93,7 +93,7 @@ Main test files can be found in `/test`.
 $ npm run test:local;
 ```
 
-## Usefull commands
+## Useful commands
 
 Show local accounts addresses & balances (from inside docker container)
 

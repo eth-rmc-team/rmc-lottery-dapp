@@ -6,6 +6,7 @@
         "test:local": "./node_modules/.bin/hardhat --config hardhat.config.local.js test",
         "compile:local": "./node_modules/.bin/hardhat --config hardhat.config.local.js compile",
         "accounts:local": "./node_modules/.bin/hardhat --config hardhat.config.local.js --network localhost accounts",
+        "account_detail:local": "./node_modules/.bin/hardhat --config hardhat.config.local.js --network localhost account_detail",
 
         "start:deployment": "./node_modules/.bin/hardhat --config hardhat.config.js node",
         "deploy:rinkeby": "./node_modules/.bin/hardhat --config hardhat.config.js --network rinkeby deploy-collection",
