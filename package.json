@@ -1,18 +1,28 @@
 {
-  "name": "lotterie_versiontest_002",
-  "version": "1.0.0",
-  "description": "Projet Lotterie suite architecture décidée avec James",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "author": "Khaladrim",
-  "license": "ISC",
-  "devDependencies": {
-    "@nomicfoundation/hardhat-toolbox": "^2.0.0",
-    "hardhat": "^2.13.0"
-  },
-  "dependencies": {
-    "@openzeppelin/contracts": "^4.8.2"
-  }
+    "name": "hardhat-docker",
+    "scripts": {
+        "start:local": "./node_modules/.bin/hardhat --config hardhat.config.local.js node",
+        "deploy:local": "./node_modules/.bin/hardhat --config hardhat.config.local.js --network localhost deploy-collection",
+        "test:local": "./node_modules/.bin/hardhat --config hardhat.config.local.js test",
+        "compile:local": "./node_modules/.bin/hardhat --config hardhat.config.local.js compile",
+        "accounts:local": "./node_modules/.bin/hardhat --config hardhat.config.local.js --network localhost accounts",
+        "account_detail:local": "./node_modules/.bin/hardhat --config hardhat.config.local.js --network localhost account_detail",
+
+        "start:deployment": "./node_modules/.bin/hardhat --config hardhat.config.js node",
+        "deploy:rinkeby": "./node_modules/.bin/hardhat --config hardhat.config.js --network rinkeby deploy-collection",
+        "test:deployment": "./node_modules/.bin/hardhat --config hardhat.config.js test",
+        "compile:deployment": "./node_modules/.bin/hardhat --config hardhat.config.js compile"
+    },
+    "devDependencies": {
+        "@nomiclabs/hardhat-ethers": "^2.0.2",
+        "@nomiclabs/hardhat-waffle": "^2.0.1",
+        "chai": "^4.3.4",
+        "dotenv": "^10.0.0",
+        "ethereum-waffle": "^3.4.0",
+        "ethers": "^5.4.7",
+        "hardhat": "^2.6.4"
+    },
+    "dependencies": {
+        "@openzeppelin/contracts": "^4.8.2"
+    }
 }
