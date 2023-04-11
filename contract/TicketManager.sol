@@ -1,12 +1,15 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.17;
 
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
+ 
+contract TicketManager {
 
+    address private owner;
 
-contract TicketManager is Ownable {
-
-    address addrMarketPlace;
+    //ERC721 address for the minting contract
+    address public addrContractNft;
+    address public addrMarketPlace;
 
     uint feeByTrade;
 
@@ -24,12 +27,28 @@ contract TicketManager is Ownable {
     mapping(address => int) private nftPrices;
 
     constructor() {
+        owner = msg.sender;
         mintPrice = 25; //(todo: a mettre en float), actuellement il faudra multiplier par 10 ** 17
+
+    }
+    
+    //todo: mettre à terme une whiteList, plutot qu'une adresse unique
+    modifier onlyOwner {
+        require(msg.sender == owner, "WARNING :: only the owner can have access");
+        _;
     }
 
     //function updateCaracteristic(uint _carac) public
     // A faire 
 
+    function setAddrNftContract(address _addrContractNft) external onlyOwner {
+        addrContractNft = _addrContractNft;
+    }
+
+    function  getAddrNftContract() public view returns(address){
+        return addrContractNft;
+    }
+        
     //Function setting the price for a mint
     function setMintPrice(uint _price) public onlyOwner {
         mintPrice = _price; //todo: voir pour prend en compte les float (import math, mul etc)
@@ -50,12 +69,17 @@ contract TicketManager is Ownable {
         return _lotteryId;
     }
 
-    //Function getter returning the owner of NFT
-    function getOwnerOfNft(address _addressNft) public view returns(address) {
-        return nftOwners[_addressNft];
+    //Function getter returning the owner of NFT by IERC721
+    function getOwnerOfNft(address _addressNft, uint _tokenId) public view returns(address){
+        return IERC721(_addressNft).ownerOf(_tokenId);
     }
 
-    //todo: verifier que internal marche en faisant hériter à MarketPlace.sol
+    //Function setting the owner of NFT todo: pour l'instant que pour Marketplace.sol
+    function setOwnerOfNft(address _addressNft, address _addressOwner) public onlyOwner {
+        nftOwners[_addressNft] = _addressOwner;
+    }
+
+    //todo: update 20230411 20h41 => surement à supprimer
     //Function used by MarketPlace.sol to update the ownership and price (if on sale) of NFT
     function updateNftRecordings(address _addrNft, uint _priceToSell, uint mode) internal {
         //If freshly minted, we set nftOwners and nftPrices
@@ -77,4 +101,9 @@ contract TicketManager is Ownable {
             nftPrices[_addrNft] = -1;
         }
     }
+
+    function _transferFrom(address _from, address _to, uint256 _tokenId) external {
+        IERC721(addrContractNft).transferFrom(_from, _to, _tokenId);
+    }
+
 }

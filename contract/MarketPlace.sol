@@ -1,44 +1,143 @@
-contract MarketPlace {
-    // nft address => owner address
-    mapping (address => address) public NftOwners;
-    mapping (address => uint) public NftPrices;
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.17;
 
-    uint public fees;
+import './TicketManager.sol'; 
 
-    function setFees(uint newValue) onlyOwner {
-        // permet de modifier les frais du marketplace
-        // les frais doivent être supérieurs à 0
-        // les frais doivent être inférieurs à 10% pour la confiance
+//Contract managing deals between players
+contract Marketplace {
+
+    address payable private owner;
+    address public addrContractTicketManager;
+    address payable public addrContractLottery;
+
+    uint public value;
+    uint public nbTicketsToSell;
+    
+    address payable public seller;
+    address public buyer;
+
+    enum State { NoDeal, Dealing, Release }
+    State public state;
+
+    mapping (uint => uint) public dealingNftAddrToPrice; 
+    mapping (uint => State) public dealingNftToStateOfDeal; 
+
+    constructor () payable  {
+
+        owner = payable(msg.sender); 
+
     }
 
-    function buyNFT(address NFT) {
-        // permet d'acheter un NFT
-        // le NFT doit être en vente
-        // le prix doit être supérieur à 0
-        // le vendeur doit être différent de l'acheteur
-        // on vérifie que le msg.sender a assez de fonds
-        // on transfère le NFT au msg.sender
-        // on transfère les fonds au vendeur
-        // on actualise NftOwners
-        // on actualise NftPrices
+    //Custom error functions
 
-        // on transfère les frais de trade au contrat Lottery
+    ///La fonction ne peut être appelée en l'état actuel
+    error InvalidState();
+
+    ///Seul le propriétaire du contrat peut utiliser cette fonction
+    error OnlyOwner();
+
+    ///Seul le buyer peut utiliser cette fonction
+    error OnlyBuyer();
+
+    ///Seul le seller peut utiliser cette fonction
+    error OnlySeller();
+
+    modifier onlyOwner {
+        if(msg.sender != owner){
+            revert OnlyOwner();
+        }
+        _;
     }
 
-    function setDeal(address NFT, uint price) {
-        // permet de mettre en vente un NFT
-        // le NFT doit être détenue par le vendeur
-        // le prix doit être supérieur à 0
-        // on vérifie que le NFT n'est pas déjà en vente
-        // Le NFT change temporairement de propriétaire, le marketplace devient proprio 
-        // pour lock
-        // on actualise NftPrices avec le prix
+    modifier onlyBuyer(){
+        if(msg.sender != buyer){
+            revert OnlyBuyer();
+        }
+        _;
     }
 
-    function stopDeal(address NFT) {
-        // permet de retirer un NFT de la vente
-        // le NFT doit être en vente
-        // On vérifie avec NftOwners que le msg.sender était propriétaire
-        // Le NFT change de propriétaire, msg.sender redevient propriétaire
+    modifier onlySeller(){
+        if(msg.sender != seller){
+            revert OnlySeller();
+        }
+        _;
     }
+
+    modifier inState(State state_){
+        if(state != state_){
+            //Si l'état est différent de celui attendant en argument, on bascule dans la fonction d'érreur précédement écrite
+            revert InvalidState();
+        }
+        _;
+
+    }
+
+    function setAddrContract(address _addrContractTicketManager, address _addrContractLottery) external onlyOwner {
+        addrContractTicketManager = _addrContractTicketManager;
+        addrContractLottery = payable(_addrContractLottery);
+    }
+
+    //Fonction de mise en place de la vente quand le SC est dans l'état "Created"
+    function setSellernbTicketsAndPrice(uint _price, uint _tokenId) public {
+        address _adrrITM = addrContractTicketManager;
+        address contractNft = TicketManager(_adrrITM).getAddrNftContract();
+        address nftOwner = TicketManager(_adrrITM).getOwnerOfNft(contractNft, _tokenId);
+
+        require(dealingNftToStateOfDeal[_tokenId] == State.NoDeal, 'WARNING :: Deal already in progress');
+        require(msg.sender == nftOwner, 'WARNING :: Not owner of this token');
+        require(_price > 0, 'WARNING :: Price zero not accepted');
+        
+
+        dealingNftToStateOfDeal[_tokenId] = State.Dealing;
+        dealingNftAddrToPrice[_tokenId] = _price;
+        
+        TicketManager(_adrrITM).setOwnerOfNft(nftOwner, msg.sender);
+        TicketManager(_adrrITM)._transferFrom(msg.sender, address(this), _tokenId);
+
+        seller = payable(msg.sender);
+
+    }
+
+    function stopDeal(uint _tokenId) external onlySeller {
+        address _adrrITM = addrContractTicketManager;
+        address contractNft = TicketManager(_adrrITM).getAddrNftContract();
+        address nftOwner = TicketManager(_adrrITM).getOwnerOfNft(contractNft, _tokenId);
+        
+        require(dealingNftToStateOfDeal[_tokenId] == State.Dealing, 'WARNING :: Deal not in progress for this NFT');
+        require(msg.sender == nftOwner, 'WARNING :: Not owner of this token');
+
+        dealingNftToStateOfDeal[_tokenId] = State.NoDeal;
+        dealingNftAddrToPrice[_tokenId] = 0;
+        
+        TicketManager(_adrrITM)._transferFrom(address(this), nftOwner, _tokenId);
+
+    }
+
+    function confirmPurchase(uint _tokenId) external inState(State.Dealing) payable {
+        address _adrrITM = addrContractTicketManager;
+        address contractNft = TicketManager(_adrrITM).getAddrNftContract();
+
+        require(dealingNftToStateOfDeal[_tokenId] == State.Dealing, "WARNING :: Deal not in progress for this NFT");
+        require(msg.value == dealingNftAddrToPrice[_tokenId], "WARNING :: you don't pay the right price");
+        require(msg.sender != TicketManager(_adrrITM).getOwnerOfNft(contractNft, _tokenId), "WARNING :: you can't buy your own NFT");
+        
+        dealingNftToStateOfDeal[_tokenId] = State.Release;
+        dealingNftAddrToPrice[_tokenId] = 0;
+
+        TicketManager(_adrrITM)._transferFrom(address(this), msg.sender, _tokenId);
+
+        seller.transfer(95 * msg.value / 100);
+        addrContractLottery.transfer(5 * msg.value / 100);
+
+        reset();
+
+    }
+
+    //Function to reset the state of the deal for the Nft
+    function reset() internal inState(State.Release) {
+        state = State.NoDeal;
+        value = 0;
+        nbTicketsToSell = 0;
+    }
+
 }
