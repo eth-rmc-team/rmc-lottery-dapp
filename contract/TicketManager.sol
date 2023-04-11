@@ -1,9 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.17;
 
-contract TicketManager {
+import "@openzeppelin/contracts/access/Ownable.sol";
 
-    address private owner;
+
+contract TicketManager is Ownable {
+
     address addrMarketPlace;
 
     uint feeByTrade;
@@ -22,15 +24,7 @@ contract TicketManager {
     mapping(address => int) private nftPrices;
 
     constructor() {
-        owner = msg.sender;
         mintPrice = 25; //(todo: a mettre en float), actuellement il faudra multiplier par 10 ** 17
-
-    }
-    
-    //todo: mettre à terme une whiteList, plutot qu'une adresse unique
-    modifier onlyOwner {
-        require(msg.sender == owner, "WARNING :: only the owner can have access");
-        _;
     }
 
     //function updateCaracteristic(uint _carac) public
@@ -57,7 +51,7 @@ contract TicketManager {
     }
 
     //Function getter returning the owner of NFT
-    function getOwnerOfNft(address _addressNft) public view returns(address){
+    function getOwnerOfNft(address _addressNft) public view returns(address) {
         return nftOwners[_addressNft];
     }
 
@@ -83,5 +77,4 @@ contract TicketManager {
             nftPrices[_addrNft] = -1;
         }
     }
-
 }
