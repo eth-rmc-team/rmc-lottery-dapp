@@ -113,7 +113,7 @@ contract Marketplace {
 
     }
 
-    function confirmPurchase(uint _tokenId) external inState(State.Dealing) payable {
+    function confirmPurchase(uint _tokenId) external payable {
         address _adrrITM = addrContractTicketManager;
         address contractNft = TicketManager(_adrrITM).getAddrNftContract();
 
@@ -129,15 +129,8 @@ contract Marketplace {
         seller.transfer(95 * msg.value / 100);
         addrContractLottery.transfer(5 * msg.value / 100);
 
-        reset();
+        dealingNftToStateOfDeal[_tokenId] = State.NoDeal;
 
-    }
-
-    //Function to reset the state of the deal for the Nft
-    function reset() internal inState(State.Release) {
-        state = State.NoDeal;
-        value = 0;
-        nbTicketsToSell = 0;
     }
 
 }
