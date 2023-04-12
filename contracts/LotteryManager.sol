@@ -34,7 +34,7 @@ contract LotteryManager {
     uint feeByTrade;
 
     //Booleans parametring the game status
-    bool chasePeriod;
+    bool public chasePeriod;
     bool gamePeriod;
     bool winnerClaimed;
 

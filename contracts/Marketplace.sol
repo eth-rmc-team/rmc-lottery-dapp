@@ -3,7 +3,8 @@ pragma solidity ^0.8.17;
 
 import './TicketManager.sol'; 
 
-//Contract managing deals between players
+//Contract managing NFTs for deal on Marketplace.sol and mint on RmcNftMinter.sol 
+
 contract Marketplace is TicketManager {
 
     address payable private owner;
@@ -34,7 +35,7 @@ contract Marketplace is TicketManager {
 
     function getNftInfo(uint _tokenId) external returns (address, address, uint, State) {
         contractNft = super.getAddrNftContract();
-        nftOwner = super._ownerOft(contractNft, _tokenId);
+        nftOwner = super._ownerOf(contractNft, _tokenId);
         nftPrice = super.getDealPrice(_tokenId);
         nftState = super.getDealState(_tokenId);
         return (contractNft, nftOwner, nftPrice, nftState);
@@ -60,7 +61,7 @@ contract Marketplace is TicketManager {
 
     }
 
-    function stopDeal(uint _tokenId) external onlySeller {
+    function stopDeal(uint _tokenId) external {
         (, nftOwner,, nftState) = this.getNftInfo(_tokenId);
         
         require(nftState == State.Dealing, 'WARNING :: Deal not in progress for this NFT');
@@ -84,7 +85,7 @@ contract Marketplace is TicketManager {
         super.setDealState(_tokenId, State.Release);
         require(msg.value == nftPrice, "WARNING :: you don't pay the right price");
         super.setDealPrice(_tokenId, 0);
-        require(msg.sender != super._ownerOft(contractNft, _tokenId), "WARNING :: you can't buy your own NFT");
+        require(msg.sender != super._ownerOf(contractNft, _tokenId), "WARNING :: you can't buy your own NFT");
         
         super._transferFrom(address(this), msg.sender, _tokenId);
 
