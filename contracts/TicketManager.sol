@@ -21,7 +21,8 @@ contract TicketManager {
 
     //Mapping (nftAddress => ownerAdress)
     //Completed when a user uses the MarketPlace for a trade 
-    //in order to know whose the NFT belongs to
+    //in ordder to who is the seller of the NFT
+    //Don't confuse it with the owner returning by IERC721.ownerOf()
 
     mapping(address => address) private nftOwners;
     mapping(address => int) private nftPrices;
@@ -60,6 +61,11 @@ contract TicketManager {
     //Function setting the price for a mint
     function setMintPrice(uint _price) public onlyOwner {
         mintPrice = _price; //todo: voir pour prend en compte les float (import math, mul etc)
+    }
+    
+    //Function setting the owner of NFT used in Marketplace.sol for a trade
+    function setOwnerOfNft(address _addressNft, address _addressOwner) internal onlyOwner {
+        nftOwners[_addressNft] = _addressOwner;
     }
 
     //Function setting the state of a deal in Marketplace.sol
@@ -112,12 +118,6 @@ contract TicketManager {
     //Function getter returning the price of a deal for MarketPlace.sol
     function getDealPrice(uint _nftID) public view returns(uint){
         return dealingNftIDToPrice[_nftID];
-    }
-
-
-    //Function setting the owner of NFT used in Marketplace.sol for a trade
-    function setOwnerOfNft(address _addressNft, address _addressOwner) internal onlyOwner {
-        nftOwners[_addressNft] = _addressOwner;
     }
 
     function _transferFrom(address _from, address _to, uint256 _tokenId) internal {

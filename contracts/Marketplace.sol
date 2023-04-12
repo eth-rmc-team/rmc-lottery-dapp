@@ -27,34 +27,6 @@ contract Marketplace is TicketManager {
 
     }
 
-    //Custom error functions
-
-    ///La fonction ne peut être appelée en l'état actuel
-    error InvalidState();
-
-    ///Seul le propriétaire du contrat peut utiliser cette fonction
-    error OnlyOwner();
-
-    ///Seul le buyer peut utiliser cette fonction
-    error OnlyBuyer();
-
-    ///Seul le seller peut utiliser cette fonction
-    error OnlySeller();
-
-    modifier onlyBuyer(){
-        if(msg.sender != buyer){
-            revert OnlyBuyer();
-        }
-        _;
-    }
-
-    modifier onlySeller(){
-        if(msg.sender != seller){
-            revert OnlySeller();
-        }
-        _;
-    }
-
     function setAddrContract(address _addrContractTicketManager, address _addrContractLottery) external onlyOwner {
         addrContractTicketManager = _addrContractTicketManager;
         addrContractLottery = payable(_addrContractLottery);
