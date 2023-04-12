@@ -11,7 +11,7 @@ contract TicketManager {
     address public addrContractNft;
     address public addrMarketPlace;
 
-    uint feeByTrade;
+    uint private feeByTrade;
 
     uint[] caracteristics;
 
@@ -25,6 +25,12 @@ contract TicketManager {
 
     mapping(address => address) private nftOwners;
     mapping(address => int) private nftPrices;
+    
+    enum State { NoDeal, Dealing, Release }
+    State private state;
+
+    mapping (uint => uint) private dealingNftIDToPrice; 
+    mapping (uint => State) private dealingNftiDToStateOfDeal; 
 
     constructor() {
         owner = msg.sender;
@@ -41,19 +47,38 @@ contract TicketManager {
     //function updateCaracteristic(uint _carac) public
     // A faire 
 
+    //Function setting the address of the NFT contract
     function setAddrNftContract(address _addrContractNft) external onlyOwner {
         addrContractNft = _addrContractNft;
     }
 
-    function  getAddrNftContract() public view returns(address){
-        return addrContractNft;
+    //Function setting fee by trade
+    function setFeeByTrade(uint _feeByTrade) external onlyOwner {
+        feeByTrade = _feeByTrade;
     }
-        
+
     //Function setting the price for a mint
     function setMintPrice(uint _price) public onlyOwner {
         mintPrice = _price; //todo: voir pour prend en compte les float (import math, mul etc)
     }
 
+    //Function setting the state of a deal in Marketplace.sol
+    function setDealState(uint _nftID, State _state) internal {
+        dealingNftiDToStateOfDeal[_nftID] = _state;
+    }
+
+    //Function setting the price of a deal in Marketplace.sol
+    function setDealPrice(uint _nftID, uint _price) internal {
+        dealingNftIDToPrice[_nftID] = _price;
+    }
+
+    //Function getter returning the address of the NFT contract
+    function  getAddrNftContract() public view returns(address){
+        return addrContractNft;
+    }
+        
+
+    //Function getter returning the price for a mint
     function getMintPrice() public view returns(uint){
         return mintPrice;
     }
@@ -70,39 +95,32 @@ contract TicketManager {
     }
 
     //Function getter returning the owner of NFT by IERC721
-    function getOwnerOfNft(address _addressNft, uint _tokenId) public view returns(address){
+    function _ownerOft(address _addressNft, uint _tokenId) public view returns(address){
         return IERC721(_addressNft).ownerOf(_tokenId);
     }
 
-    //Function setting the owner of NFT todo: pour l'instant que pour Marketplace.sol
-    function setOwnerOfNft(address _addressNft, address _addressOwner) public onlyOwner {
+    //Function getter returning the fee by trade
+    function getFeeByTrade() internal view returns(uint){
+        return feeByTrade;
+    }
+
+    //Function getter returning the state of a deal for MarketPlace.sol
+    function getDealState(uint _nftID) public view returns(State){
+        return dealingNftiDToStateOfDeal[_nftID];
+    }
+
+    //Function getter returning the price of a deal for MarketPlace.sol
+    function getDealPrice(uint _nftID) public view returns(uint){
+        return dealingNftIDToPrice[_nftID];
+    }
+
+
+    //Function setting the owner of NFT used in Marketplace.sol for a trade
+    function setOwnerOfNft(address _addressNft, address _addressOwner) internal onlyOwner {
         nftOwners[_addressNft] = _addressOwner;
     }
 
-    //todo: update 20230411 20h41 => surement à supprimer
-    //Function used by MarketPlace.sol to update the ownership and price (if on sale) of NFT
-    function updateNftRecordings(address _addrNft, uint _priceToSell, uint mode) internal {
-        //If freshly minted, we set nftOwners and nftPrices
-        if( mode == 0 ){
-            nftOwners[_addrNft] = msg.sender;
-            nftPrices[_addrNft] = -1;
-        }
-        //Trade is live, seller gives protocol ownership on NFT
-        else if( mode == 1 ){
-            require(nftPrices[_addrNft] == -1, "WARNING :: NFT already on sale");
-            //Here, msg.sender = seller
-            nftOwners[_addrNft] = msg.sender;
-            nftPrices[_addrNft] = int(_priceToSell);
-        }
-        //Trade is finished, protocol gives buyer ownership of NFT
-        else {
-            //Here, msg.sender = buyer if the deal is succeeded, or seller if he stopped it
-            nftOwners[_addrNft] = msg.sender;
-            nftPrices[_addrNft] = -1;
-        }
-    }
-
-    function _transferFrom(address _from, address _to, uint256 _tokenId) external {
+    function _transferFrom(address _from, address _to, uint256 _tokenId) internal {
         IERC721(addrContractNft).transferFrom(_from, _to, _tokenId);
     }
 
