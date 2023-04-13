@@ -11,11 +11,11 @@ contract Marketplace is TicketManager {
     address public addrContractTicketManager;
     address payable public addrContractLottery;
     
-    address private contractNft;
-    address private nftOwner;
-    uint private nftPrice;
+    address private _nftContract;
+    address private _nftOwner;
+    uint private _nftPrice;
 
-    State private nftState;
+    State private _nftState;
 
     uint private _feeByTrade;
     
@@ -33,28 +33,19 @@ contract Marketplace is TicketManager {
         addrContractLottery = payable(_addrContractLottery);
     }
 
-    function getNftInfo(uint _tokenId) external returns (address, address, uint, State) {
-        contractNft = super.getAddrNftContract();
-        nftOwner = super._ownerOf(contractNft, _tokenId);
-        nftPrice = super.getDealPrice(_tokenId);
-        nftState = super.getDealState(_tokenId);
-        return (contractNft, nftOwner, nftPrice, nftState);
-    }
-
     //Fonction de mise en place de la vente quand le SC est dans l'état "Created"
     function setSellernbTicketsAndPrice(uint _price, uint _tokenId) external {
         
-        (, nftOwner, nftPrice, nftState) = this.getNftInfo(_tokenId);
+        (, , , _nftOwner, _nftState, ) = super.getNftInfo(_tokenId);
 
-        require(nftState == State.NoDeal, 'WARNING :: Deal already in progress');
-        super.setDealState(_tokenId, State.Dealing);
-        require(msg.sender == nftOwner, 'WARNING :: Not owner of this token');
+        require(_nftState == State.NoDeal, 'WARNING :: Deal already in progress');
+        super.setStateOfDeal(State.Dealing, _tokenId);
+        require(msg.sender == _nftOwner, 'WARNING :: Not owner of this token');
         require(_price > 0, 'WARNING :: Price zero not accepted');
         
-        nftPrice = _price;
-        super.setDealPrice(_tokenId, nftPrice);
+        super.setPriceOfSellingNft(_nftPrice, _tokenId);
         
-        super.setOwnerOfNft(nftOwner, msg.sender);
+        super.setOwnerOfSellingNft(_nftOwner, _tokenId);
         super._transferFrom(msg.sender, address(this), _tokenId);
 
         seller = payable(msg.sender);
@@ -62,15 +53,17 @@ contract Marketplace is TicketManager {
     }
 
     function stopDeal(uint _tokenId) external {
-        (, nftOwner,, nftState) = this.getNftInfo(_tokenId);
-        
-        require(nftState == State.Dealing, 'WARNING :: Deal not in progress for this NFT');
-        require(msg.sender == nftOwner, 'WARNING :: Not owner of this token');
 
-        super.setDealState(_tokenId, State.NoDeal);
-        super.setDealPrice(_tokenId, 0);
+        (, , , _nftOwner, _nftState, ) = super.getNftInfo(_tokenId);
+
+        require(_nftState == State.Dealing, 'WARNING :: Deal not in progress for this NFT');
+        super.setStateOfDeal(State.NoDeal, _tokenId);
+
+        require(msg.sender == _nftOwner, 'WARNING :: Not owner of this token');
+
+        super.setPriceOfSellingNft(0, _tokenId);
         
-        super._transferFrom(address(this), nftOwner, _tokenId);
+        super._transferFrom(address(this), _nftOwner, _tokenId);
 
     }
 
@@ -79,20 +72,20 @@ contract Marketplace is TicketManager {
         _feeByTrade = super.getFeeByTrade();
         uint _minusFeeByTrade = 100 - _feeByTrade;
 
-        (contractNft,, nftPrice, nftState) = this.getNftInfo(_tokenId);
+        ( , _nftContract, , , _nftState, _nftPrice) = super.getNftInfo(_tokenId);
 
-        require(nftState == State.Dealing, "WARNING :: Deal not in progress for this NFT");
-        super.setDealState(_tokenId, State.Release);
-        require(msg.value == nftPrice, "WARNING :: you don't pay the right price");
-        super.setDealPrice(_tokenId, 0);
-        require(msg.sender != super._ownerOf(contractNft, _tokenId), "WARNING :: you can't buy your own NFT");
+        require(_nftState == State.Dealing, "WARNING :: Deal not in progress for this NFT");
+        super.setStateOfDeal(State.Release, _tokenId);
+        require(msg.value == _nftPrice, "WARNING :: you don't pay the right price");
+        super.setPriceOfSellingNft(0, _tokenId);
+        require(msg.sender != super._ownerOf(_nftContract, _tokenId), "WARNING :: you can't buy your own NFT");
         
         super._transferFrom(address(this), msg.sender, _tokenId);
 
         seller.transfer(_minusFeeByTrade * msg.value / 100);
         addrContractLottery.transfer(_feeByTrade* msg.value / 100);
 
-        super.setDealState(_tokenId, State.NoDeal);
+        super.setStateOfDeal(State.NoDeal,_tokenId);
 
     }
 

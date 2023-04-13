@@ -10,10 +10,12 @@ contract TicketManager {
 
     address private owner;
 
+    address public addrMarketPlace;
+    address public addrTicketFusion;
+    address public addrNftMinter;
+    
     //ERC721 address for the minting contract
     address public addrNormalNftContract;
-    address public addrMarketPlace;
-
     address public addrGoldNftContract;
     address public addrSuperGoldNftContract;
     address public addrMythicNftContract;
@@ -28,26 +30,25 @@ contract TicketManager {
     uint private mintPrice; //in Avax
     //Array of caracteristics picked during a cycle
     uint[] combinationPicked;
-
-    //Mapping (nftAddress => ownerAdress)
-    //Completed when a user uses the MarketPlace for a trade 
-    //in ordder to who is the seller of the NFT
-    //Don't confuse it with the owner returning by IERC721.ownerOf()
-
-    mapping(address => address) private nftOwners;
-    mapping(address => int) private nftPrices;
     
     enum State { NoDeal, Dealing, Release }
     State private state;
 
-    mapping (uint => uint) private dealingNftIDToPrice; 
-    mapping (uint => State) private dealingNftiDToStateOfDeal; 
+    enum NftType { Normal, Gold, SuperGold, Mythic, Platin }
+    NftType private nftType;
 
-    //a voir: surement à supprimer
-    mapping (uint => address) private goldIdNftToOwner;
-    mapping (uint => address) private superGoldIdNftToOwner;
-    mapping (uint => address) private mythicIdNftToOwner;
-    mapping (uint => address) private platinIdNftToOwner;
+    //Struct containing all the information about a NFT
+    struct nftInfo {
+        NftType nftType;            //from enum nfType from RmcNftMinter.sol
+        address nftContractAddress; //from address___NftContract from RmcNftMinter.sol
+        uint nftID;                 //from tokenId from RmcNftMinter.sol
+        address nftOwner;           //from ownerOf(tokenId) from Marketplace.sol        
+        State stateOfDeal;          //from State in Marketplace.sol
+        uint price;                 //from price in Marketplace.sol
+    }
+    
+    //Creation of a mapping connecting each tokenId to its nftInfo struct
+    mapping(uint => nftInfo) private idNftToNftInfos;
 
     constructor() {
         owner = msg.sender;
@@ -61,11 +62,42 @@ contract TicketManager {
         _;
     }
 
+    modifier onlyMarketplaceContract {
+        require(msg.sender == addrMarketPlace, "WARNING :: only the MarketPlace contract can have access");
+        _;
+        
+    }
+
+    modifier onlyTicketFusionContract {
+        require(msg.sender == addrTicketFusion, "WARNING :: only the TicketFusion contract can have access");
+        _;
+    }
+
+    modifier onlyNftMinterContract {
+        require(msg.sender == addrNftMinter, "WARNING :: only the NftMinter contract can have access");
+        _;
+    }
+
     //function updateCaracteristic(uint _carac) public
     // A faire 
 
+    //Function setting the address of the TicketFusion contract
+    function setAddrTicketFusion(address _addrTicketFusion) external onlyOwner {
+        addrTicketFusion = _addrTicketFusion;
+    }
+
+    //Function setting the address of the MarketPlace contract
+    function setAddrMarketPlace(address _addrMarketPlace) external onlyOwner {
+        addrMarketPlace = _addrMarketPlace;
+    }
+
+    //function setting the address of the NftMinter contract
+    function setAddrNftMinter(address _addrNftMinter) external onlyOwner {
+        addrNftMinter = _addrNftMinter;
+    }
+
     //Function setting the address of the NFT contract
-    function setAddrNftContract(address _addrNormalNftContract) external onlyOwner {
+    function setAddrNormalNftContract(address _addrNormalNftContract) external onlyOwner {
         addrNormalNftContract = _addrNormalNftContract;
     }
 
@@ -88,6 +120,39 @@ contract TicketManager {
 
     //End of functions
 
+
+
+
+    function setNftType(NftType _nftType, uint _tokenId) internal onlyNftMinterContract {
+        idNftToNftInfos[_tokenId].nftType = _nftType;
+    }
+
+    function setNftContractAddress(address _nftContractAddress, uint _tokenId) internal onlyNftMinterContract {
+        idNftToNftInfos[_tokenId].nftContractAddress = _nftContractAddress;
+    }
+
+    function setNftID(uint _tokenId) internal onlyNftMinterContract {
+        idNftToNftInfos[_tokenId].nftID = _tokenId;
+    }
+
+    function setOwnerOfSellingNft(address _owner, uint _tokenId) internal onlyMarketplaceContract {
+        idNftToNftInfos[_tokenId].nftOwner = _owner;
+    }
+
+    function setStateOfDeal(State _state, uint _tokenId) internal onlyMarketplaceContract {
+        idNftToNftInfos[_tokenId].stateOfDeal = _state;
+    }
+
+    function setPriceOfSellingNft(uint _price, uint _tokenId) internal onlyMarketplaceContract {
+        idNftToNftInfos[_tokenId].price = _price;
+    }
+
+    function getNftInfo(uint _tokenId) public view returns (NftType, address, uint, address, State, uint) {
+        return (idNftToNftInfos[_tokenId].nftType, idNftToNftInfos[_tokenId].nftContractAddress, idNftToNftInfos[_tokenId].nftID, idNftToNftInfos[_tokenId].nftOwner, idNftToNftInfos[_tokenId].stateOfDeal, idNftToNftInfos[_tokenId].price);
+    }
+
+
+
     //Function setting fee by trade
     function setFeeByTrade(uint _feeByTrade) external onlyOwner {
         feeByTrade = _feeByTrade;
@@ -107,24 +172,19 @@ contract TicketManager {
         mintPrice = _price; //todo: voir pour prend en compte les float (import math, mul etc)
     }
     
-    //Function setting the owner of NFT used in Marketplace.sol for a trade
-    function setOwnerOfNft(address _addressNft, address _addressOwner) internal onlyOwner {
-        nftOwners[_addressNft] = _addressOwner;
+    //Function getter returning the address of the TicketFusion contract
+    function getAddrTicketFusionContract() public view returns(address) {
+        return addrTicketFusion;
     }
 
-    //Function setting the state of a deal in Marketplace.sol
-    function setDealState(uint _nftID, State _state) internal {
-        dealingNftiDToStateOfDeal[_nftID] = _state;
+    //Function getter returning the address of the MarketPlace contract
+    function getAddrMarketplaceContract() public view returns(address) {
+        return addrMarketPlace;
     }
 
-    //Function setting the price of a deal in Marketplace.sol
-    function setDealPrice(uint _nftID, uint _price) internal {
-        dealingNftIDToPrice[_nftID] = _price;
-    }
-
-    //Function getter returning the address of the NFT contract
-    function  getAddrNftContract() public view returns(address){
-        return addrNormalNftContract;
+    //Function getter returning the address of the NftMinter contract
+    function getAddrNftMinter() public view returns(address) {
+        return addrNftMinter;
     }
 
     //Multiple functions getter returning the address of all king of NFTs contracts
@@ -179,16 +239,6 @@ contract TicketManager {
     //Function getter returning the requirement for a fusion of Gold tickets for a SuperGold ticket
     function getGoldTicketFusionRequirement() public view returns(uint){
         return goldTicketFusionRequirement;
-    }
-
-    //Function getter returning the state of a deal for MarketPlace.sol
-    function getDealState(uint _nftID) public view returns(State){
-        return dealingNftiDToStateOfDeal[_nftID];
-    }
-
-    //Function getter returning the price of a deal for MarketPlace.sol
-    function getDealPrice(uint _nftID) public view returns(uint){
-        return dealingNftIDToPrice[_nftID];
     }
 
     //IERS721 functions
