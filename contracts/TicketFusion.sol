@@ -64,7 +64,7 @@ contract TicketFusion is TicketManager {
         for (uint i = 0; i < _normalTicketFusionRequirement; i++) {
             require(super._ownerOf(_addrNormalTicketContract,tokenIds[i]) == msg.sender, "WARNING :: Token does not belong to user.");
             super._approuve(_addrNormalTicketContract, tokenIds[i], address(this));
-            super._transferFrom(msg.sender, address(0), tokenIds[i]);
+            super._transferFrom(msg.sender, address(0), _addrNormalTicketContract, tokenIds[i]);
 
             //Pas de fonction burn avec IERC721, que dans ERC721. Mais ça revient à envoyer à l'adresse 0 ?
             //ERC721(_addrNormalTicketCOntract).burn(tokenIds[i]);  ne fonctionne pas
@@ -103,7 +103,7 @@ contract TicketFusion is TicketManager {
         for (uint i = 0; i < _goldTicketFusionRequirement; i++) {
             require(super._ownerOf(_addrGoldTicketContract,tokenIds[i]) == msg.sender, "WARNING :: Token does not belong to user.");
             super._approuve(_addrGoldTicketContract, tokenIds[i], address(this));
-            super._transferFrom(msg.sender, address(this), tokenIds[i]);
+            super._transferFrom(msg.sender, address(this), _addrSuperGoldTicketContract, tokenIds[i]);
         }
 
         // mint des tokens RMC (peut etre x2 pour gold ?)
