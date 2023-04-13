@@ -48,7 +48,7 @@ contract Marketplace is TicketManager {
         
         super.setPriceOfSellingNft(_nftPrice, _tokenId);
         super._approuve(_nftContract, _tokenId, address(this));
-        super._transferFrom(msg.sender, address(this), _tokenId);
+        super._transferFrom(msg.sender, address(this), _nftContract, _tokenId);
 
         seller = payable(msg.sender);
 
@@ -56,7 +56,7 @@ contract Marketplace is TicketManager {
 
     function stopDeal(uint _tokenId) external {
 
-        (, , , _nftOwner, _nftState, ) = super.getNftInfo(_tokenId);
+        (, _nftContract, , _nftOwner, _nftState, ) = super.getNftInfo(_tokenId);
 
         require(_nftState == State.Dealing, 'WARNING :: Deal not in progress for this NFT');
         super.setStateOfDeal(State.NoDeal, _tokenId);
@@ -64,7 +64,7 @@ contract Marketplace is TicketManager {
         _nftOwner = address(0);
 
         super.setPriceOfSellingNft(0, _tokenId);
-        super._transferFrom(address(this), _nftOwner, _tokenId);
+        super._transferFrom(address(this), _nftOwner, _nftContract, _tokenId);
 
     }
 
@@ -81,8 +81,8 @@ contract Marketplace is TicketManager {
         super.setPriceOfSellingNft(0, _tokenId);
         require(msg.sender != _nftOwner, "WARNING :: you can't buy your own NFT");
         _nftOwner = msg.sender;
-        
-        super._transferFrom(address(this), msg.sender, _tokenId);
+
+        super._transferFrom(address(this), msg.sender, _nftContract, _tokenId);
 
         seller.transfer(_minusFeeByTrade * msg.value / 100);
         addrContractLottery.transfer(_feeByTrade* msg.value / 100);

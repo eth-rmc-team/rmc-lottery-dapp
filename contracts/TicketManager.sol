@@ -241,20 +241,20 @@ contract TicketManager {
     }
 
     //IERS721 functions
-    function _transferFrom(address _from, address _to, uint256 _tokenId) internal {
-        IERC721(addrNormalNftContract).transferFrom(_from, _to, _tokenId);
+    function _transferFrom(address _from, address _to, address _addrNftContract, uint256 _tokenId) internal {
+        IERC721(_addrNftContract).transferFrom(_from, _to, _tokenId);
     }
     //Function getter returning the owner of NFT by IERC721
-    function _ownerOf(address _addressNft, uint _tokenId) internal view returns(address){
-        return IERC721(_addressNft).ownerOf(_tokenId);
+    function _ownerOf(address _addrNftContract, uint _tokenId) internal view returns(address){
+        return IERC721(_addrNftContract).ownerOf(_tokenId);
     }
 
-    function _balanceOf(address _addressNft, address _addressOwner) internal view returns(uint){
-        return IERC721(_addressNft).balanceOf(_addressOwner);
+    function _balanceOf(address _addrNftContract, address _addressOwner) internal view returns(uint){
+        return IERC721(_addrNftContract).balanceOf(_addressOwner);
     }
 
-    function _approuve(address _addressNft, uint _tokenId, address _addressTo) internal {
-        IERC721(_addressNft).approve(_addressTo, _tokenId);
+    function _approuve(address _addrNftContract, uint _tokenId, address _addressTo) internal {
+        IERC721(_addrNftContract).approve(_addressTo, _tokenId);
     }
 
     //End of IERS721 functions
