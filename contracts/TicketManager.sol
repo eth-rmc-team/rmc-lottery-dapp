@@ -120,9 +120,7 @@ contract TicketManager {
 
     //End of functions
 
-
-
-
+    //Multiple functions setting information about a NFT
     function setNftType(NftType _nftType, uint _tokenId) internal onlyNftMinterContract {
         idNftToNftInfos[_tokenId].nftType = _nftType;
     }
@@ -147,11 +145,7 @@ contract TicketManager {
         idNftToNftInfos[_tokenId].price = _price;
     }
 
-    function getNftInfo(uint _tokenId) public view returns (NftType, address, uint, address, State, uint) {
-        return (idNftToNftInfos[_tokenId].nftType, idNftToNftInfos[_tokenId].nftContractAddress, idNftToNftInfos[_tokenId].nftID, idNftToNftInfos[_tokenId].nftOwner, idNftToNftInfos[_tokenId].stateOfDeal, idNftToNftInfos[_tokenId].price);
-    }
-
-
+    //End of functions
 
     //Function setting fee by trade
     function setFeeByTrade(uint _feeByTrade) external onlyOwner {
@@ -229,6 +223,11 @@ contract TicketManager {
     //Function getter returning the fee by trade
     function getFeeByTrade() internal view returns(uint){
         return feeByTrade;
+    }
+
+    //Function getter returning all the information about a NFT
+    function getNftInfo(uint _tokenId) public view returns (NftType, address, uint, address, State, uint) {
+        return (idNftToNftInfos[_tokenId].nftType, idNftToNftInfos[_tokenId].nftContractAddress, idNftToNftInfos[_tokenId].nftID, idNftToNftInfos[_tokenId].nftOwner, idNftToNftInfos[_tokenId].stateOfDeal, idNftToNftInfos[_tokenId].price);
     }
 
     //Fucntion getter returning the requirement for a fusion of normal tickets for a Gold ticket
