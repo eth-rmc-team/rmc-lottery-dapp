@@ -36,16 +36,18 @@ contract Marketplace is TicketManager {
     //Fonction de mise en place de la vente quand le SC est dans l'état "Created"
     function setSellernbTicketsAndPrice(uint _price, uint _tokenId) external {
         
-        (, , , _nftOwner, _nftState, ) = super.getNftInfo(_tokenId);
+        (, _nftContract, , , _nftState, ) = super.getNftInfo(_tokenId);
+        _nftOwner = msg.sender;
 
         require(_nftState == State.NoDeal, 'WARNING :: Deal already in progress');
         super.setStateOfDeal(State.Dealing, _tokenId);
-        require(msg.sender == _nftOwner, 'WARNING :: Not owner of this token');
+        require(_nftOwner == super._ownerOf(_nftContract, _tokenId), 'WARNING :: Not owner of this token');
+        super.setOwnerOfSellingNft(_nftOwner, _tokenId);
+        _nftOwner = address(0);
         require(_price > 0, 'WARNING :: Price zero not accepted');
         
         super.setPriceOfSellingNft(_nftPrice, _tokenId);
-        
-        super.setOwnerOfSellingNft(_nftOwner, _tokenId);
+        super._approuve(_nftContract, _tokenId, address(this));
         super._transferFrom(msg.sender, address(this), _tokenId);
 
         seller = payable(msg.sender);
@@ -58,11 +60,10 @@ contract Marketplace is TicketManager {
 
         require(_nftState == State.Dealing, 'WARNING :: Deal not in progress for this NFT');
         super.setStateOfDeal(State.NoDeal, _tokenId);
-
         require(msg.sender == _nftOwner, 'WARNING :: Not owner of this token');
+        _nftOwner = address(0);
 
         super.setPriceOfSellingNft(0, _tokenId);
-        
         super._transferFrom(address(this), _nftOwner, _tokenId);
 
     }
@@ -78,7 +79,8 @@ contract Marketplace is TicketManager {
         super.setStateOfDeal(State.Release, _tokenId);
         require(msg.value == _nftPrice, "WARNING :: you don't pay the right price");
         super.setPriceOfSellingNft(0, _tokenId);
-        require(msg.sender != super._ownerOf(_nftContract, _tokenId), "WARNING :: you can't buy your own NFT");
+        require(msg.sender != _nftOwner, "WARNING :: you can't buy your own NFT");
+        _nftOwner = msg.sender;
         
         super._transferFrom(address(this), msg.sender, _tokenId);
 
