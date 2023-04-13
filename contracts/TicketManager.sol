@@ -3,6 +3,7 @@ pragma solidity ^0.8.17;
 
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+import './Marketplace.sol';
 
 //Contract managing deals between players
 
@@ -36,6 +37,7 @@ contract TicketManager {
 
     enum NftType { Normal, Gold, SuperGold, Mythic, Platin }
     NftType private nftType;
+    
 
     //Struct containing all the information about a NFT
     struct nftInfo {
@@ -43,9 +45,11 @@ contract TicketManager {
         address nftContractAddress; //from address___NftContract from RmcNftMinter.sol
         uint nftID;                 //from tokenId from RmcNftMinter.sol
         address nftOwner;           //from ownerOf(tokenId) from Marketplace.sol        
-        State stateOfDeal;          //from State in Marketplace.sol
-        uint price;                 //from price in Marketplace.sol
+        State nftStateOfDeal;          //from State in Marketplace.sol
+        uint nftPrice;                 //from price in Marketplace.sol
     }
+
+    Marketplace marketplace;
     
     //Creation of a mapping connecting each tokenId to its nftInfo struct
     mapping(uint => nftInfo) private idNftToNftInfos;
@@ -133,18 +137,14 @@ contract TicketManager {
         idNftToNftInfos[_tokenId].nftID = _tokenId;
     }
 
-    function setOwnerOfSellingNft(address _owner, uint _tokenId) internal onlyMarketplaceContract {
-        idNftToNftInfos[_tokenId].nftOwner = _owner;
-    }
+    //Function setting informations about a NFT from the Marketplace contract (owner, state of deal, price)
+    //todo: faire de meme avec tokenId, addresseCOntract et Type NFT depuis le Minter et Fusion
+    function setNftInfoFromMarketplace(uint _tokenId) internal {
+        (idNftToNftInfos[_tokenId].nftOwner,
+        idNftToNftInfos[_tokenId].nftStateOfDeal,
+        idNftToNftInfos[_tokenId].nftPrice) = marketplace.idNftToNftInfosFromMarketplace(_tokenId);
 
-    function setStateOfDeal(State _state, uint _tokenId) internal onlyMarketplaceContract {
-        idNftToNftInfos[_tokenId].stateOfDeal = _state;
     }
-
-    function setPriceOfSellingNft(uint _price, uint _tokenId) internal onlyMarketplaceContract {
-        idNftToNftInfos[_tokenId].price = _price;
-    }
-
     //End of functions
 
     //Function setting fee by trade
@@ -227,7 +227,7 @@ contract TicketManager {
 
     //Function getter returning all the information about a NFT
     function getNftInfo(uint _tokenId) public view returns (NftType, address, uint, address, State, uint) {
-        return (idNftToNftInfos[_tokenId].nftType, idNftToNftInfos[_tokenId].nftContractAddress, idNftToNftInfos[_tokenId].nftID, idNftToNftInfos[_tokenId].nftOwner, idNftToNftInfos[_tokenId].stateOfDeal, idNftToNftInfos[_tokenId].price);
+        return (idNftToNftInfos[_tokenId].nftType, idNftToNftInfos[_tokenId].nftContractAddress, idNftToNftInfos[_tokenId].nftID, idNftToNftInfos[_tokenId].nftOwner, idNftToNftInfos[_tokenId].nftStateOfDeal, idNftToNftInfos[_tokenId].nftPrice);
     }
 
     //Fucntion getter returning the requirement for a fusion of normal tickets for a Gold ticket
