@@ -71,7 +71,7 @@ contract TicketFusion is TicketManager {
     //
     function fusionNormalTickets(uint[] memory tokenIds) public {
         _chasePeriod = lotteryManager.chasePeriod();
-        address _addrNormalTicketContract = super.getAddrNormalNftContract();
+        address _addrNormalTicketContract = this.getAddrNormalNftContract();
         address _addrGoldTicketContract = super.getAddrGoldNftContract();
         uint256 balance = super._balanceOf(_addrNormalTicketContract,msg.sender);
 

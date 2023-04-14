@@ -9,4 +9,8 @@ contract RmcNftMinter {
     constructor() {
         //a faire
     }
+        //Function getter returning the address of the NftMinter contract
+    function getAddrNftMinter() public view returns(address) {
+        return address(this);
+    }
 }

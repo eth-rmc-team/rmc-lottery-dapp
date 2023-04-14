@@ -5,7 +5,7 @@ import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import './Marketplace.sol';
 
-//Contract managing deals between players
+//Contract managing NFTs for deal on Marketplace.sol and mint on RmcNftMinter.sol 
 
 contract TicketManager {
 
@@ -32,7 +32,7 @@ contract TicketManager {
     //Array of caracteristics picked during a cycle
     uint[] combinationPicked;
     
-    enum State { NoDeal, Dealing, Release }
+    enum State { NoDeal, Dealing }
     State private state;
 
     enum NftType { Normal, Gold, SuperGold, Mythic, Platin }
@@ -44,9 +44,9 @@ contract TicketManager {
         NftType nftType;            //from enum nfType from RmcNftMinter.sol
         address nftContractAddress; //from address___NftContract from RmcNftMinter.sol
         uint nftID;                 //from tokenId from RmcNftMinter.sol
-        address nftOwner;           //from ownerOf(tokenId) from Marketplace.sol        
-        State nftStateOfDeal;          //from State in Marketplace.sol
-        uint nftPrice;                 //from price in Marketplace.sol
+        address payable nftOwner;   //from ownerOf(tokenId) from Marketplace.sol        
+        State nftStateOfDeal;       //from State in Marketplace.sol
+        uint nftPrice;              //from price in Marketplace.sol
     }
 
     Marketplace marketplace;
@@ -62,23 +62,11 @@ contract TicketManager {
     
     //todo: mettre à terme une whiteList, plutot qu'une adresse unique
     modifier onlyOwner {
-        require(msg.sender == owner, "WARNING :: only the owner can have access");
-        _;
+         _;
     }
 
-    modifier onlyMarketplaceContract {
-        require(msg.sender == addrMarketPlace, "WARNING :: only the MarketPlace contract can have access");
-        _;
-        
-    }
-
-    modifier onlyTicketFusionContract {
-        require(msg.sender == addrTicketFusion, "WARNING :: only the TicketFusion contract can have access");
-        _;
-    }
-
-    modifier onlyNftMinterContract {
-        require(msg.sender == addrNftMinter, "WARNING :: only the NftMinter contract can have access");
+    modifier onlyContractMarketplace {
+        require(msg.sender == addrMarketPlace, "ERROR :: Only the Marketplace contract can call this function");
         _;
     }
 
@@ -93,6 +81,7 @@ contract TicketManager {
     //Function setting the address of the MarketPlace contract
     function setAddrMarketPlace(address _addrMarketPlace) external onlyOwner {
         addrMarketPlace = _addrMarketPlace;
+        marketplace = Marketplace(_addrMarketPlace);
     }
 
     //function setting the address of the NftMinter contract
@@ -125,24 +114,25 @@ contract TicketManager {
     //End of functions
 
     //Multiple functions setting information about a NFT
-    function setNftType(NftType _nftType, uint _tokenId) internal onlyNftMinterContract {
+    function setNftType(NftType _nftType, uint _tokenId) internal {
         idNftToNftInfos[_tokenId].nftType = _nftType;
     }
 
-    function setNftContractAddress(address _nftContractAddress, uint _tokenId) internal onlyNftMinterContract {
+    function setNftContractAddress(address _nftContractAddress, uint _tokenId) internal {
         idNftToNftInfos[_tokenId].nftContractAddress = _nftContractAddress;
     }
 
-    function setNftID(uint _tokenId) internal onlyNftMinterContract {
+    function setNftID(uint _tokenId) internal {
         idNftToNftInfos[_tokenId].nftID = _tokenId;
     }
 
     //Function setting informations about a NFT from the Marketplace contract (owner, state of deal, price)
     //todo: faire de meme avec tokenId, addresseCOntract et Type NFT depuis le Minter et Fusion
-    function setNftInfoFromMarketplace(uint _tokenId) internal {
-        (idNftToNftInfos[_tokenId].nftOwner,
-        idNftToNftInfos[_tokenId].nftStateOfDeal,
-        idNftToNftInfos[_tokenId].nftPrice) = marketplace.idNftToNftInfosFromMarketplace(_tokenId);
+    function setNftInfoFromMarketplace(uint _tokenId, address payable _nftOwner, State _nftState, uint _nftPrice ) external onlyContractMarketplace {
+        require(idNftToNftInfos[_tokenId].nftID == _tokenId, "ERROR :: NFT not found");
+        idNftToNftInfos[_tokenId].nftOwner = _nftOwner;
+        idNftToNftInfos[_tokenId].nftStateOfDeal = _nftState;
+        idNftToNftInfos[_tokenId].nftPrice = _nftPrice;
 
     }
     //End of functions
@@ -157,18 +147,8 @@ contract TicketManager {
         return addrTicketFusion;
     }
 
-    //Function getter returning the address of the MarketPlace contract
-    function getAddrMarketplaceContract() public view returns(address) {
-        return addrMarketPlace;
-    }
-
-    //Function getter returning the address of the NftMinter contract
-    function getAddrNftMinter() public view returns(address) {
-        return addrNftMinter;
-    }
-
     //Multiple functions getter returning the address of all king of NFTs contracts
-    function getAddrNormalNftContract() internal view returns(address){
+    function getAddrNormalNftContract() external view returns(address){
         return addrNormalNftContract;
     }
 
@@ -207,7 +187,7 @@ contract TicketManager {
     }
 
     //Function getter returning all the information about a NFT
-    function getNftInfo(uint _tokenId) public view returns (NftType, address, uint, address, State, uint) {
+    function getNftInfo(uint _tokenId) public view returns (NftType, address, uint, address payable, State, uint) {
         return (idNftToNftInfos[_tokenId].nftType, idNftToNftInfos[_tokenId].nftContractAddress, idNftToNftInfos[_tokenId].nftID, idNftToNftInfos[_tokenId].nftOwner, idNftToNftInfos[_tokenId].nftStateOfDeal, idNftToNftInfos[_tokenId].nftPrice);
     }
 
