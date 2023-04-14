@@ -3,7 +3,6 @@ pragma solidity ^0.8.17;
 
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
-import './Marketplace.sol';
 
 //Contract managing NFTs for deal on Marketplace.sol and mint on RmcNftMinter.sol 
 
@@ -33,11 +32,7 @@ contract TicketManager {
     uint[] combinationPicked;
     
     enum State { NoDeal, Dealing }
-    State private state;
-
-    enum NftType { Normal, Gold, SuperGold, Mythic, Platin }
-    NftType private nftType;
-    
+    enum NftType { Normal, Gold, SuperGold, Mythic, Platin }    
 
     //Struct containing all the information about a NFT
     struct nftInfo {
@@ -48,8 +43,6 @@ contract TicketManager {
         State nftStateOfDeal;       //from State in Marketplace.sol
         uint nftPrice;              //from price in Marketplace.sol
     }
-
-    Marketplace marketplace;
     
     //Creation of a mapping connecting each tokenId to its nftInfo struct
     mapping(uint => nftInfo) private idNftToNftInfos;
@@ -81,7 +74,6 @@ contract TicketManager {
     //Function setting the address of the MarketPlace contract
     function setAddrMarketPlace(address _addrMarketPlace) external onlyOwner {
         addrMarketPlace = _addrMarketPlace;
-        marketplace = Marketplace(_addrMarketPlace);
     }
 
     //function setting the address of the NftMinter contract
@@ -187,7 +179,7 @@ contract TicketManager {
     }
 
     //Function getter returning all the information about a NFT
-    function getNftInfo(uint _tokenId) public view returns (NftType, address, uint, address payable, State, uint) {
+    function getNftInfo(uint _tokenId) external view returns (NftType, address, uint, address payable, State, uint) {
         return (idNftToNftInfos[_tokenId].nftType, idNftToNftInfos[_tokenId].nftContractAddress, idNftToNftInfos[_tokenId].nftID, idNftToNftInfos[_tokenId].nftOwner, idNftToNftInfos[_tokenId].nftStateOfDeal, idNftToNftInfos[_tokenId].nftPrice);
     }
 
