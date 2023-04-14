@@ -147,20 +147,6 @@ contract TicketManager {
     }
     //End of functions
 
-    //Function setting fee by trade
-    function setFeeByTrade(uint _feeByTrade) external onlyOwner {
-        feeByTrade = _feeByTrade;
-    }
-
-    //Function setting the requirement for a fusion of normal tickets for a Gold ticket
-    function setNormalTicketFusionRequirement(uint _normalTicketFusionRequirement) external onlyOwner {
-        normalTicketFusionRequirement = _normalTicketFusionRequirement;
-    }
-
-    function setGoldTicketFusionRequirement(uint _goldTicketFusionRequirement) external onlyOwner {
-        goldTicketFusionRequirement = _goldTicketFusionRequirement;
-    }
-
     //Function setting the price for a mint
     function setMintPrice(uint _price) public onlyOwner {
         mintPrice = _price; //todo: voir pour prend en compte les float (import math, mul etc)
@@ -220,24 +206,9 @@ contract TicketManager {
         return _lotteryId;
     }
 
-    //Function getter returning the fee by trade
-    function getFeeByTrade() internal view returns(uint){
-        return feeByTrade;
-    }
-
     //Function getter returning all the information about a NFT
     function getNftInfo(uint _tokenId) public view returns (NftType, address, uint, address, State, uint) {
         return (idNftToNftInfos[_tokenId].nftType, idNftToNftInfos[_tokenId].nftContractAddress, idNftToNftInfos[_tokenId].nftID, idNftToNftInfos[_tokenId].nftOwner, idNftToNftInfos[_tokenId].nftStateOfDeal, idNftToNftInfos[_tokenId].nftPrice);
-    }
-
-    //Fucntion getter returning the requirement for a fusion of normal tickets for a Gold ticket
-    function getNormalTicketFusionRequirement() public view returns(uint){
-        return normalTicketFusionRequirement;
-    }
-
-    //Function getter returning the requirement for a fusion of Gold tickets for a SuperGold ticket
-    function getGoldTicketFusionRequirement() public view returns(uint){
-        return goldTicketFusionRequirement;
     }
 
     //IERS721 functions

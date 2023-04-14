@@ -18,8 +18,8 @@ contract TicketFusion is TicketManager {
     
     LotteryManager lotteryManager;
     
-    uint _normalTicketFusionRequirement;
-    uint _goldTicketFusionRequirement;
+    uint normalTicketFusionRequirement;
+    uint goldTicketFusionRequirement;
 
     bool _chasePeriod;
 
@@ -35,6 +35,26 @@ contract TicketFusion is TicketManager {
     function triggerClaim() external {
         //a faire
      }
+
+    //Function setting the requirement for a fusion of normal tickets for a Gold ticket
+    function setNormalTicketFusionRequirement(uint _normalTicketFusionRequirement) external onlyOwner {
+        normalTicketFusionRequirement = _normalTicketFusionRequirement;
+    }
+
+    function setGoldTicketFusionRequirement(uint _goldTicketFusionRequirement) external onlyOwner {
+        goldTicketFusionRequirement = _goldTicketFusionRequirement;
+    }
+
+
+    //Fucntion getter returning the requirement for a fusion of normal tickets for a Gold ticket
+    function getNormalTicketFusionRequirement() public view returns(uint){
+        return normalTicketFusionRequirement;
+    }
+
+    //Function getter returning the requirement for a fusion of Gold tickets for a SuperGold ticket
+    function getGoldTicketFusionRequirement() public view returns(uint){
+        return goldTicketFusionRequirement;
+    }
     
      
     // 
@@ -51,17 +71,16 @@ contract TicketFusion is TicketManager {
     //
     function fusionNormalTickets(uint[] memory tokenIds) public {
         _chasePeriod = lotteryManager.chasePeriod();
-        _normalTicketFusionRequirement = super.getNormalTicketFusionRequirement();
         address _addrNormalTicketContract = super.getAddrNormalNftContract();
         address _addrGoldTicketContract = super.getAddrGoldNftContract();
         uint256 balance = super._balanceOf(_addrNormalTicketContract,msg.sender);
 
         require(_chasePeriod == true, "WARNING :: Fusion is not allowed while a lottery is live");
-        require(balance >= _normalTicketFusionRequirement, "WARNING :: Not enough Normal Tickets.");
+        require(balance >= normalTicketFusionRequirement, "WARNING :: Not enough Normal Tickets.");
         balance = 0;
 
-        require(tokenIds.length == _normalTicketFusionRequirement, "WARNING :: Incorrect number of presented tickets (must be 7 normal tickets).");
-        for (uint i = 0; i < _normalTicketFusionRequirement; i++) {
+        require(tokenIds.length == normalTicketFusionRequirement, "WARNING :: Incorrect number of presented tickets (must be 7 normal tickets).");
+        for (uint i = 0; i < normalTicketFusionRequirement; i++) {
             require(super._ownerOf(_addrNormalTicketContract,tokenIds[i]) == msg.sender, "WARNING :: Token does not belong to user.");
             super._approuve(_addrNormalTicketContract, tokenIds[i], address(this));
             super._transferFrom(msg.sender, address(0), _addrNormalTicketContract, tokenIds[i]);
@@ -91,16 +110,15 @@ contract TicketFusion is TicketManager {
     //
     function fusionGoldTickets(uint[] memory tokenIds) public {
         _chasePeriod = lotteryManager.chasePeriod();
-        _goldTicketFusionRequirement = super.getGoldTicketFusionRequirement();
         address _addrGoldTicketContract = super.getAddrGoldNftContract();
         address _addrSuperGoldTicketContract = super.getAddrSuperGoldNftContract();
         uint256 balance = super._balanceOf(_addrGoldTicketContract,msg.sender);
 
         require(_chasePeriod == true, "WARNING :: Fusion is not allowed while a lottery is live");
-        require(balance >= _goldTicketFusionRequirement, "Not enough Gold Tickets.");
+        require(balance >= goldTicketFusionRequirement, "Not enough Gold Tickets.");
         balance = 0;
-        require(tokenIds.length == _goldTicketFusionRequirement, "Incorrect number of tokens.");
-        for (uint i = 0; i < _goldTicketFusionRequirement; i++) {
+        require(tokenIds.length == goldTicketFusionRequirement, "Incorrect number of tokens.");
+        for (uint i = 0; i < goldTicketFusionRequirement; i++) {
             require(super._ownerOf(_addrGoldTicketContract,tokenIds[i]) == msg.sender, "WARNING :: Token does not belong to user.");
             super._approuve(_addrGoldTicketContract, tokenIds[i], address(this));
             super._transferFrom(msg.sender, address(this), _addrSuperGoldTicketContract, tokenIds[i]);

@@ -16,7 +16,7 @@ contract Marketplace is TicketManager {
     uint public _nftPrice;
     State public _nftState;
 
-    uint private _feeByTrade;
+    uint public feeByTrade;
     
     address payable public seller;
     address public buyer;
@@ -39,6 +39,16 @@ contract Marketplace is TicketManager {
     function setAddrContract(address _addrContractTicketManager, address _addrContractLottery) external onlyOwner {
         addrContractTicketManager = _addrContractTicketManager;
         addrContractLottery = payable(_addrContractLottery);
+    }
+    
+    //Function setting fee by trade
+    function setFeeByTrade(uint _feeByTrade) external onlyOwner {
+        feeByTrade = _feeByTrade;
+    }
+
+    //Function getter returning the fee by trade
+    function getFeeByTrade() public view returns(uint){
+        return feeByTrade;
     }
 
     //Fonction de mise en place de la vente quand le SC est dans l'état "Created"
@@ -82,8 +92,7 @@ contract Marketplace is TicketManager {
 
     function confirmPurchase(uint _tokenId) external payable {
         
-        _feeByTrade = super.getFeeByTrade();
-        uint _minusFeeByTrade = 100 - _feeByTrade;
+        uint _minusFeeByTrade = 100 - feeByTrade;
 
         ( , _nftContract, , , _nftState, _nftPrice) = super.getNftInfo(_tokenId);
 
@@ -103,7 +112,7 @@ contract Marketplace is TicketManager {
         super._transferFrom(address(this), msg.sender, _nftContract, _tokenId);
 
         seller.transfer(_minusFeeByTrade * msg.value / 100);
-        addrContractLottery.transfer(_feeByTrade* msg.value / 100);
+        addrContractLottery.transfer(feeByTrade* msg.value / 100);
 
     }
 
