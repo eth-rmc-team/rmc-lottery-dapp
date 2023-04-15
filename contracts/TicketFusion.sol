@@ -1,23 +1,21 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.17;
 
-import './TicketManager.sol';
-import './LotteryManager.sol';
-
-import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
+import './IRMC.sol';
 
 
-contract TicketFusion is TicketManager {
+contract TicketFusion {
 
     address private owner;
     address public _addrContractLottery;
+    address public _addrContractTicketManager;
+
     address public _addrNormalNftContract;
     address public _addrGoldNftContract;
     address public _addrSuperGoldNftContract;
-    
-    LotteryManager lotteryManager;
-    
+        
     uint normalTicketFusionRequirement;
     uint goldTicketFusionRequirement;
 
@@ -25,16 +23,27 @@ contract TicketFusion is TicketManager {
 
     //a voir comment on goupile avec le contrat rmcToken
     uint _rmcFusionReward;
+
+    IRMC irmc;
     
     constructor() {
         owner = msg.sender;
         
+    }
+    
+    modifier onlyOwner {
+        _;
     }
 
     //Function for the contract to claim reward from his gold NFTs
     function triggerClaim() external {
         //a faire
      }
+
+    function setAddrTicketManager(address _addrTicketManager) external onlyOwner {
+        _addrContractTicketManager = _addrTicketManager;
+        irmc = IRMC(_addrContractTicketManager);
+    }
 
     //Function setting the requirement for a fusion of normal tickets for a Gold ticket
     function setNormalTicketFusionRequirement(uint _normalTicketFusionRequirement) external onlyOwner {
@@ -71,9 +80,10 @@ contract TicketFusion is TicketManager {
     //
     function fusionNormalTickets(uint[] memory tokenIds) public {
         //_chasePeriod = lotteryManager.chasePeriod();
-        address _addrNormalTicketContract = this.getAddrNormalNftContract();
-        address _addrGoldTicketContract = super.getAddrGoldNftContract();
-        uint256 balance = super._balanceOf(_addrNormalTicketContract,msg.sender);
+        address _addrNormalTicketContract;
+        address _addrGoldTicketContract;
+        (_addrNormalNftContract,_addrGoldTicketContract,,,) = irmc.getAddrTicketContracts();
+        uint256 balance = IERC721(_addrNormalNftContract).balanceOf(msg.sender);
 
         //require(_chasePeriod == true, "WARNING :: Fusion is not allowed while a lottery is live");
         require(balance >= normalTicketFusionRequirement, "WARNING :: Not enough Normal Tickets.");
@@ -81,9 +91,9 @@ contract TicketFusion is TicketManager {
 
         require(tokenIds.length == normalTicketFusionRequirement, "WARNING :: Incorrect number of presented tickets (must be 7 normal tickets).");
         for (uint i = 0; i < normalTicketFusionRequirement; i++) {
-            require(super._ownerOf(_addrNormalTicketContract,tokenIds[i]) == msg.sender, "WARNING :: Token does not belong to user.");
-            super._approuve(_addrNormalTicketContract, tokenIds[i], address(this));
-            super._transferFrom(msg.sender, address(0), _addrNormalTicketContract, tokenIds[i]);
+            require(IERC721(_addrNormalNftContract).ownerOf(tokenIds[i]) == msg.sender, "WARNING :: Token does not belong to user.");
+            IERC721(_addrNormalNftContract).approve(address(this), tokenIds[i]);
+            IERC721(_addrNormalNftContract).safeTransferFrom(msg.sender, address(0), tokenIds[i]);
 
             //Pas de fonction burn avec IERC721, que dans ERC721. Mais ça revient à envoyer à l'adresse 0 ?
             //ERC721(_addrNormalTicketCOntract).burn(tokenIds[i]);  ne fonctionne pas
@@ -110,18 +120,21 @@ contract TicketFusion is TicketManager {
     //
     function fusionGoldTickets(uint[] memory tokenIds) public {
         //_chasePeriod = lotteryManager.chasePeriod();
-        address _addrGoldTicketContract = super.getAddrGoldNftContract();
-        address _addrSuperGoldTicketContract = super.getAddrSuperGoldNftContract();
-        uint256 balance = super._balanceOf(_addrGoldTicketContract,msg.sender);
+
+        address _addrGoldTicketContract;
+        address _addrSuperGoldTicketContract;
+        (,_addrGoldTicketContract,_addrSuperGoldTicketContract,,) = irmc.getAddrTicketContracts();
+
+        uint256 balance = IERC721(_addrNormalNftContract).balanceOf(msg.sender);
 
         //require(_chasePeriod == true, "WARNING :: Fusion is not allowed while a lottery is live");
         require(balance >= goldTicketFusionRequirement, "Not enough Gold Tickets.");
         balance = 0;
         require(tokenIds.length == goldTicketFusionRequirement, "Incorrect number of tokens.");
         for (uint i = 0; i < goldTicketFusionRequirement; i++) {
-            require(super._ownerOf(_addrGoldTicketContract,tokenIds[i]) == msg.sender, "WARNING :: Token does not belong to user.");
-            super._approuve(_addrGoldTicketContract, tokenIds[i], address(this));
-            super._transferFrom(msg.sender, address(this), _addrSuperGoldTicketContract, tokenIds[i]);
+            require(IERC721(_addrGoldTicketContract).ownerOf(tokenIds[i]) == msg.sender, "WARNING :: Token does not belong to user.");
+            IERC721(_addrGoldTicketContract).approve(address(this), tokenIds[i]);
+            IERC721(_addrGoldTicketContract).transferFrom(msg.sender, address(this), tokenIds[i]);
         }
 
         // mint des tokens RMC (peut etre x2 pour gold ?)

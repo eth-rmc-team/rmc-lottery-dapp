@@ -63,7 +63,7 @@ contract Marketplace {
     //Fonction de mise en place de la vente quand le SC est dans l'état "Created"
     function setSellernbTicketsAndPrice(uint _price, uint _tokenId) external {
 
-        (, nftContract, , , nftState, ) = irmc.getNftInfo(_tokenId);
+        (, nftContract, , , nftState, ,) = irmc.getNftInfo(_tokenId);
         nftOwner = payable(msg.sender);
 
         nftPrice = _price;
@@ -84,7 +84,7 @@ contract Marketplace {
 
     function stopDeal(uint _tokenId) external {
 
-        (, nftContract, , nftOwner, nftState, ) = irmc.getNftInfo(_tokenId);
+        (, nftContract, , nftOwner, nftState, ,) = irmc.getNftInfo(_tokenId);
 
         require(nftState == IRMC.State.Dealing, 'WARNING :: Deal not in progress for this NFT');
         require(msg.sender == nftOwner, 'WARNING :: Not owner of this token');
@@ -102,7 +102,7 @@ contract Marketplace {
         
         uint _minusFeeByTrade = 100 - feeByTrade;
 
-        ( , nftContract, , , nftState, nftPrice) = irmc.getNftInfo(_tokenId);
+        ( , nftContract, , , nftState, nftPrice,) = irmc.getNftInfo(_tokenId);
 
         require(nftState == IRMC.State.Dealing, "WARNING :: Deal not in progress for this NFT");
         nftState = IRMC.State.NoDeal;

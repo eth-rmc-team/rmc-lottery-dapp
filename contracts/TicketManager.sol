@@ -14,6 +14,7 @@ contract TicketManager {
     address public addrMarketPlace;
     address public addrTicketFusion;
     address public addrNftMinter;
+    address public addrLotteryGame;
     
     //ERC721 address for the minting contract
     address public addrNormalNftContract;
@@ -43,6 +44,7 @@ contract TicketManager {
         address payable nftOwner;   //from ownerOf(tokenId) from Marketplace.sol        
         State nftStateOfDeal;       //from State in Marketplace.sol
         uint nftPrice;              //from price in Marketplace.sol
+        bool nftRewardClaimed;      //from bool in LotteryGame.sol
     }
     
     //Creation of a mapping connecting each tokenId to its nftInfo struct
@@ -86,6 +88,11 @@ contract TicketManager {
     function setAddrNftMinter(address _addrNftMinter) external onlyOwner {
         addrNftMinter = _addrNftMinter;
         whiteListedAddresses[_addrNftMinter] = true;
+    }
+
+    function setAddrLotteryGameContract(address _addrLotteryGameContract) external onlyOwner {
+        addrLotteryGame = _addrLotteryGameContract;
+        whiteListedAddresses[_addrLotteryGameContract] = true;
     }
 
     //Function setting the address of the NFT contract
@@ -134,6 +141,10 @@ contract TicketManager {
         idNftToNftInfos[_tokenId].nftPrice = _nftPrice;
 
     }
+
+    function setClaimRewardStatus(bool _status, uint _tokenId) external onlyWhiteListedAddress {
+        idNftToNftInfos[_tokenId].nftRewardClaimed = _status;
+    }
     //End of functions
 
     //Function setting the price for a mint
@@ -146,28 +157,10 @@ contract TicketManager {
         return addrTicketFusion;
     }
 
-    //Multiple functions getter returning the address of all king of NFTs contracts
-    function getAddrNormalNftContract() external view returns(address){
-        return addrNormalNftContract;
+    //Function getter returning all the address of the NFT contracts
+    function getAddrTicketContracts() external view returns(address _addrN, address _addrG, address _addrSG, address _addrM, address _addrP){
+        return (addrNormalNftContract, addrGoldNftContract, addrSuperGoldNftContract, addrMythicNftContract, addrPlatinNftContract);
     }
-
-    function getAddrGoldNftContract() internal view returns(address){
-        return addrGoldNftContract;
-    }
-
-    function getAddrSuperGoldNftContract() internal view returns(address){
-        return addrSuperGoldNftContract;
-    }
-
-    function getAddrMythicNftContract() internal view returns(address){
-        return addrMythicNftContract;
-    }
-
-    function getAddrPlatinNftContract() internal view returns(address){
-        return addrPlatinNftContract;
-    }
-
-    //End of functions
         
     //Function getter returning the price for a mint
     function getMintPrice() external view returns(uint){
@@ -186,27 +179,12 @@ contract TicketManager {
     }
 
     //Function getter returning all the information about a NFT
-    function getNftInfo(uint _tokenId) external view returns (NftType, address, uint, address payable, State, uint) {
-        return (idNftToNftInfos[_tokenId].nftType, idNftToNftInfos[_tokenId].nftContractAddress, idNftToNftInfos[_tokenId].nftID, idNftToNftInfos[_tokenId].nftOwner, idNftToNftInfos[_tokenId].nftStateOfDeal, idNftToNftInfos[_tokenId].nftPrice);
+    function getNftInfo(uint _tokenId) external view returns (NftType, address _addrContr, uint _id, address payable _owner, State _dealStatus, uint _price, bool _rewardClaimed) {
+        return (idNftToNftInfos[_tokenId].nftType, idNftToNftInfos[_tokenId].nftContractAddress, idNftToNftInfos[_tokenId].nftID, idNftToNftInfos[_tokenId].nftOwner, idNftToNftInfos[_tokenId].nftStateOfDeal, idNftToNftInfos[_tokenId].nftPrice, idNftToNftInfos[_tokenId].nftRewardClaimed);
     }
 
-    //IERS721 functions
-    function _transferFrom(address _from, address _to, address _addrNftContract, uint256 _tokenId) internal {
-        IERC721(_addrNftContract).transferFrom(_from, _to, _tokenId);
+    function getClaimedRewardStatus(uint _tokenId) external view returns(bool) {
+        return idNftToNftInfos[_tokenId].nftRewardClaimed;
     }
-    //Function getter returning the owner of NFT by IERC721
-    function _ownerOf(address _addrNftContract, uint _tokenId) internal view returns(address){
-        return IERC721(_addrNftContract).ownerOf(_tokenId);
-    }
-
-    function _balanceOf(address _addrNftContract, address _addressOwner) internal view returns(uint){
-        return IERC721(_addrNftContract).balanceOf(_addressOwner);
-    }
-
-    function _approuve(address _addrNftContract, uint _tokenId, address _addressTo) internal {
-        IERC721(_addrNftContract).approve(_addressTo, _tokenId);
-    }
-
-    //End of IERS721 functions
 
 }
