@@ -53,4 +53,7 @@ interface IRMC {
     
     function getLotteryId() external view returns(uint _lotteryId);
 
+    //Function from Marketplace.sol
+    function claimFees () external;
+
 }

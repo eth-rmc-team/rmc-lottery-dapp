@@ -12,7 +12,7 @@ contract Marketplace {
 
     address payable private owner;
     address public addrContractTicketManager;
-    address payable public addrContractLottery;
+    address payable public addrContractLotteryGame;
     
     address public nftContract;
     address payable public nftOwner;
@@ -37,9 +37,9 @@ contract Marketplace {
         _;
     }
 
-    function setAddrContract(address _addrContractTicketManager, address _addrContractLottery) external onlyOwner {
+    function setAddrContract(address _addrContractTicketManager, address _addrContractLotteryGame) external onlyOwner {
         addrContractTicketManager = _addrContractTicketManager;
-        addrContractLottery = payable(_addrContractLottery);
+        addrContractLotteryGame = payable(_addrContractLotteryGame);
 
         irmc = IRMC(addrContractTicketManager);
 
@@ -101,22 +101,29 @@ contract Marketplace {
     function confirmPurchase(uint _tokenId) external payable {
         
         uint _minusFeeByTrade = 100 - feeByTrade;
+        address payable newOwner = payable(msg.sender);
 
-        ( , nftContract, , , nftState, nftPrice,) = irmc.getNftInfo(_tokenId);
+        (, nftContract, , nftOwner, nftState, nftPrice,) = irmc.getNftInfo(_tokenId);
+        seller = nftOwner;
 
         require(nftState == IRMC.State.Dealing, "WARNING :: Deal not in progress for this NFT");
         nftState = IRMC.State.NoDeal;
         require(msg.value == nftPrice, "WARNING :: you don't pay the right price");
         require(msg.sender != nftOwner, "WARNING :: you can't buy your own NFT");
-        nftOwner = payable(msg.sender);
 
-        irmc.setNftInfo(_tokenId, nftOwner, nftState, nftPrice);
+        irmc.setNftInfo(_tokenId, newOwner, nftState, nftPrice);
 
         payable(address(this)).transfer(msg.value);
         IERC721(nftContract).safeTransferFrom(address(this), msg.sender, _tokenId);
 
         seller.transfer(_minusFeeByTrade * msg.value / 100);
-        addrContractLottery.transfer(feeByTrade* msg.value / 100);
+
+    }
+
+    function claimFees () external {
+        require(payable(msg.sender) == addrContractLotteryGame, "ERROR :: Only the LotteryGame contract can call this function");
+        require(address(this).balance > 0, "ERROR :: No fees to claim");
+        addrContractLotteryGame.transfer(address(this).balance);
 
     }
 

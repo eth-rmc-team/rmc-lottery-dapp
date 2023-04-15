@@ -169,6 +169,9 @@ contract LotteryGame {
         require(currentDay == totalDay, "ERROR :: You can't claim the winner if the game is not over");
         require(winnerClaimed == false, "ERROR :: You can't claim twice the price pool");
 
+        //Claim all the fees from Marketplace
+        irmc.claimFees();
+
         winnerClaimed = true;
         address addrContr;
         (, addrContr,,,,,) = irmc.getNftInfo(caracNftGagnant);
