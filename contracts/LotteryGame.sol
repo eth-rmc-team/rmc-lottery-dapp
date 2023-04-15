@@ -128,10 +128,9 @@ contract LotteryGame {
     }
 
     function buyTicket(uint amount) payable external{
-        uint _price = amount * irmc.getMintPrice() * (10 ** 17);
+        uint _price = amount * irmc.getMintPrice() * (10 ** 18);
 
         require(msg.value == _price, "ERROR :: You must pay the right amount of RMC");
-        amount = 0;
         require(amount <= _nbOfTicketsSalable - nbTicketsSold, "WARNING :: Not enough tickets left for your order");
         nbTicketsSold += amount;
         require(_period == IRMC.Period.Game , "ERROR :: You can't buy tickets during this period");
@@ -195,10 +194,15 @@ contract LotteryGame {
         
         cycleStarted = false;
         currentDay = totalDay;
+        
+        (_addrN, _addrG, _addrSG, _addrM, _addrP) = irmc.getAddrTicketContracts();
+
+        //Claim all the fees from Marketplace
+        irmc_fee = IRMC(addrMarketplace);
+        irmc_fee.claimFees();
+        irmc_fee = IRMC(addrFeeManager);
 
         balanceFeesDeals = address(this).balance - pricepool;
-
-        (_addrN, _addrG, _addrSG, _addrM, _addrP) = irmc.getAddrTicketContracts();
     }
 
     function claimRewardForWinner() external {
@@ -219,10 +223,6 @@ contract LotteryGame {
         IERC721Enumerable(addrContr).safeTransferFrom(msg.sender, address(0), caracNftGagnant);
         winner.transfer(_shareWinner * pricepool / 100);
 
-        //Claim all the fees from Marketplace
-        irmc_fee = IRMC(addrMarketplace);
-        irmc_fee.claimFees();
-        irmc_fee = IRMC(addrFeeManager);
     }
 
     function claimRewardsForAll(address _addrClaimer) external {
