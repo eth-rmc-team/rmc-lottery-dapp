@@ -1,9 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.17;
 
-import "@openzeppelin/contracts/token/ERC721/extensions/IERC721Enumerable.sol";
-import "./IRMC.sol";
-
 //Contract managing lottery games
 //Set the period (in chase or in a cycle)
 //Set the rewards et permit their claims
@@ -12,7 +9,7 @@ contract LotteryManager {
     
     address private owner;
     address public addrLotteryGame;
-    address public addrFusionManager;
+    address public addrFeeManager;
     address public addrMarketPlace;
     address public addrTicketManager;
     
@@ -31,13 +28,6 @@ contract LotteryManager {
 
     //Time settings for a game period
     uint totalDay;
-
-    //Each NFT address is writen into claimedNftAddress and bool = true by default
-    //When claimdReward() is triggered, bool = false and the Nft can't claim rewards again
-    //When a new cycle is done, and claim period is open, all bool = true
-    mapping (address => bool) public claimedNftAddress;
-
-    IRMC irmc;
     
     constructor() {
         owner = msg.sender;
@@ -73,7 +63,10 @@ contract LotteryManager {
 
     function setAddrTicketManager(address _addrTicketManager) public onlyOwner {
         addrTicketManager = _addrTicketManager;
-        irmc = IRMC(_addrTicketManager);
+    }
+
+    function setAddrFeeManager(address _addrFeeManager) public onlyOwner {
+        addrFeeManager = _addrFeeManager;
     }
 
     //Prévoir fonction récupérant les nft encore en jeu durant le cycle courrant (dans TicketsManager)

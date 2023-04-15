@@ -24,9 +24,8 @@ contract TicketManager {
     address public addrMythicNftContract;
     address public addrPlatinNftContract;
 
-    uint private feeByTrade;
-    uint private normalTicketFusionRequirement; 
-    uint private goldTicketFusionRequirement;
+    uint public normalTicketFusionRequirement; 
+    uint public goldTicketFusionRequirement;
 
     uint[] caracteristics;
 
