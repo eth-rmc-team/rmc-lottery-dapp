@@ -70,12 +70,12 @@ contract TicketFusion is TicketManager {
     //   The calling user is awarded a new gold ticket.
     //
     function fusionNormalTickets(uint[] memory tokenIds) public {
-        _chasePeriod = lotteryManager.chasePeriod();
+        //_chasePeriod = lotteryManager.chasePeriod();
         address _addrNormalTicketContract = this.getAddrNormalNftContract();
         address _addrGoldTicketContract = super.getAddrGoldNftContract();
         uint256 balance = super._balanceOf(_addrNormalTicketContract,msg.sender);
 
-        require(_chasePeriod == true, "WARNING :: Fusion is not allowed while a lottery is live");
+        //require(_chasePeriod == true, "WARNING :: Fusion is not allowed while a lottery is live");
         require(balance >= normalTicketFusionRequirement, "WARNING :: Not enough Normal Tickets.");
         balance = 0;
 
@@ -109,12 +109,12 @@ contract TicketFusion is TicketManager {
     //   The calling user is awarded a new super gold ticket.
     //
     function fusionGoldTickets(uint[] memory tokenIds) public {
-        _chasePeriod = lotteryManager.chasePeriod();
+        //_chasePeriod = lotteryManager.chasePeriod();
         address _addrGoldTicketContract = super.getAddrGoldNftContract();
         address _addrSuperGoldTicketContract = super.getAddrSuperGoldNftContract();
         uint256 balance = super._balanceOf(_addrGoldTicketContract,msg.sender);
 
-        require(_chasePeriod == true, "WARNING :: Fusion is not allowed while a lottery is live");
+        //require(_chasePeriod == true, "WARNING :: Fusion is not allowed while a lottery is live");
         require(balance >= goldTicketFusionRequirement, "Not enough Gold Tickets.");
         balance = 0;
         require(tokenIds.length == goldTicketFusionRequirement, "Incorrect number of tokens.");

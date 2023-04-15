@@ -9,6 +9,7 @@ import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 contract TicketManager {
 
     address private owner;
+    address public whiteListedAddr;
 
     address public addrMarketPlace;
     address public addrTicketFusion;
@@ -47,6 +48,8 @@ contract TicketManager {
     //Creation of a mapping connecting each tokenId to its nftInfo struct
     mapping(uint => nftInfo) private idNftToNftInfos;
 
+    mapping(address => bool) private whiteListedAddresses;
+
     constructor() {
         owner = msg.sender;
         mintPrice = 25; //(todo: a mettre en float), actuellement il faudra multiplier par 10 ** 17
@@ -58,8 +61,9 @@ contract TicketManager {
          _;
     }
 
-    modifier onlyContractMarketplace {
-        require(msg.sender == addrMarketPlace, "ERROR :: Only the Marketplace contract can call this function");
+    modifier onlyWhiteListedAddress {
+        bool status = whiteListedAddresses[msg.sender];
+        require(status == true, "ERROR :: Only the Marketplace contract can call this function");
         _;
     }
 
@@ -69,16 +73,19 @@ contract TicketManager {
     //Function setting the address of the TicketFusion contract
     function setAddrTicketFusion(address _addrTicketFusion) external onlyOwner {
         addrTicketFusion = _addrTicketFusion;
+        whiteListedAddresses[_addrTicketFusion] = true;
     }
 
     //Function setting the address of the MarketPlace contract
     function setAddrMarketPlace(address _addrMarketPlace) external onlyOwner {
         addrMarketPlace = _addrMarketPlace;
+        whiteListedAddresses[_addrMarketPlace] = true;
     }
 
     //function setting the address of the NftMinter contract
     function setAddrNftMinter(address _addrNftMinter) external onlyOwner {
         addrNftMinter = _addrNftMinter;
+        whiteListedAddresses[_addrNftMinter] = true;
     }
 
     //Function setting the address of the NFT contract
@@ -120,7 +127,7 @@ contract TicketManager {
 
     //Function setting informations about a NFT from the Marketplace contract (owner, state of deal, price)
     //todo: faire de meme avec tokenId, addresseCOntract et Type NFT depuis le Minter et Fusion
-    function setNftInfoFromMarketplace(uint _tokenId, address payable _nftOwner, State _nftState, uint _nftPrice ) external onlyContractMarketplace {
+    function setNftInfoFromMarketplace(uint _tokenId, address payable _nftOwner, State _nftState, uint _nftPrice ) external onlyWhiteListedAddress {
         require(idNftToNftInfos[_tokenId].nftID == _tokenId, "ERROR :: NFT not found");
         idNftToNftInfos[_tokenId].nftOwner = _nftOwner;
         idNftToNftInfos[_tokenId].nftStateOfDeal = _nftState;

@@ -34,9 +34,8 @@ contract LotteryManager {
     uint feeByTrade;
 
     //Booleans parametring the game status
-    bool public chasePeriod;
-    bool gamePeriod;
-    bool winnerClaimed;
+    enum Period { Chase, Game, Claim }
+    Period public period;
 
     uint ticketsFusionClaimedGains;
 
@@ -66,8 +65,8 @@ contract LotteryManager {
 
         feeByTrade = 5;
 
-        chasePeriod = false;
-        gamePeriod = true;
+        period = Period.Game;
+
         ticketsFusionClaimedGains = 0;
     }
 
@@ -83,8 +82,8 @@ contract LotteryManager {
 
     //Function getter returnning the status of chasePeriod and gamePeriod
     //To use in FusionManager.sol
-    function getPeriod () public view returns(bool _chasePeriod, bool _gamePeriod, bool _winnerClaimed){
-        return (chasePeriod, gamePeriod, winnerClaimed);
+    function getPeriod () external view returns(Period _period){
+        return (_period);
     } 
 
     //Prévoir fonction récupérant les nft encore en jeu durant le cycle courrant (dans TicketsManager)
