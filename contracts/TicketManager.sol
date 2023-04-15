@@ -117,7 +117,7 @@ contract TicketManager {
         idNftToNftInfos[_tokenId].nftType = _nftType;
     }
 
-    function setNftContractAddress(address _nftContractAddress, uint _tokenId) internal {
+    function setNftContractAddress(address _nftContractAddress, uint _tokenId) external onlyWhiteListedAddress {
         idNftToNftInfos[_tokenId].nftContractAddress = _nftContractAddress;
     }
 
@@ -127,7 +127,7 @@ contract TicketManager {
 
     //Function setting informations about a NFT from the Marketplace contract (owner, state of deal, price)
     //todo: faire de meme avec tokenId, addresseCOntract et Type NFT depuis le Minter et Fusion
-    function setNftInfoFromMarketplace(uint _tokenId, address payable _nftOwner, State _nftState, uint _nftPrice ) external onlyWhiteListedAddress {
+    function setNftInfo(uint _tokenId, address payable _nftOwner, State _nftState, uint _nftPrice ) external onlyWhiteListedAddress {
         require(idNftToNftInfos[_tokenId].nftID == _tokenId, "ERROR :: NFT not found");
         idNftToNftInfos[_tokenId].nftOwner = _nftOwner;
         idNftToNftInfos[_tokenId].nftStateOfDeal = _nftState;
@@ -170,7 +170,7 @@ contract TicketManager {
     //End of functions
         
     //Function getter returning the price for a mint
-    function getMintPrice() public view returns(uint){
+    function getMintPrice() external view returns(uint){
         return mintPrice;
     }
 

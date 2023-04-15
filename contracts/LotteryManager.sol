@@ -8,13 +8,12 @@ pragma solidity ^0.8.17;
 contract LotteryManager {
     
     address private owner;
-    address public addrLottery;
+    address public addrLotteryGame;
     address public addrFusionManager;
     address public addrMarketPlace;
     
     uint nbOfTicketsSalable;
-    uint nbTicketsSold;
-
+    
     uint lotteryId;
 
     //To be divided by 100 in the appropriated compute function
@@ -34,13 +33,12 @@ contract LotteryManager {
     uint feeByTrade;
 
     //Booleans parametring the game status
-    enum Period { Chase, Game, Claim }
+    enum Period { Game, Claim, Chase, End }
     Period public period;
 
     uint ticketsFusionClaimedGains;
 
     //Time settings for a game period
-    uint currentDay;
     uint totalDay;
 
     //Each NFT address is writen into claimedNftAddress and bool = true by default
@@ -51,10 +49,8 @@ contract LotteryManager {
     constructor() {
         owner = msg.sender;
 
-        nbTicketsSold = 0;
         lotteryId = 0;
         totalDay = 5;
-        currentDay = 0;
 
         shareOfPricePoolForWinner = 33;
         //todo: les deux reçoivent bien 7% ? Pas de distinguo
@@ -76,8 +72,110 @@ contract LotteryManager {
         _;
     }
 
-    function setAddrLotteryContract(address _addrLottery) public onlyOwner {
-        addrLottery = _addrLottery;
+    modifier onlyLotteryGameContract {
+        require(msg.sender == addrLotteryGame, "WARNING :: only the LotteryGame contract can have access");
+        _;
+    }
+
+    //Function setting  the address of the lottery game contract
+    function setAddrLotteryGameContract(address _addrLotteryGame) public onlyOwner {
+        addrLotteryGame = _addrLotteryGame;
+    }
+
+    //Function to set the addres of Marketplace contract
+    function setAddrMarketPlace(address _addrMarketPlace) public onlyOwner {
+        addrMarketPlace = _addrMarketPlace;
+    }
+
+    //Prévoir fonction récupérant les nft encore en jeu durant le cycle courrant (dans TicketsManager)
+
+    //Function setting the number of tickets salable for a game
+    function setNbOfTicketsSalable(uint _nbOfTicketsSalable) public onlyOwner {
+        nbOfTicketsSalable = _nbOfTicketsSalable;
+    }
+
+    //Function setting the total day number for a game
+    function setTotalDay(uint _totalDay) public onlyOwner {
+        totalDay = _totalDay;
+    }
+
+    //Function setting the lottery id
+    function setLotteryId (uint _id) external onlyLotteryGameContract {
+        lotteryId = _id;
+    }
+
+    //Function setting the period
+    function setPeriod(Period _period) external onlyLotteryGameContract {
+        period = _period;
+    }
+
+    //Function setting the share of the winner
+    function setShareOfPricePoolForWinner (uint _share) public onlyOwner {
+        require(_share + shareOfPricePoolForProtocol + 
+                shareOfPricePoolForPlatin + 
+                shareOfPricePoolForMythic +
+                shareOfPricePoolForGoldAndSuperGold < 100, "WARNING :: the total share must be less than 100");
+
+        require(_share > 15 && _share < 51, "WARNING :: the share must be between 15 and 51");
+            shareOfPricePoolForWinner = _share;
+    }
+
+    //Same function but for the protocol
+    function setShareOfPricePoolForProtocol(uint _share) public onlyOwner {
+        require(_share + shareOfPricePoolForWinner + 
+                shareOfPricePoolForPlatin + 
+                shareOfPricePoolForMythic +
+                shareOfPricePoolForGoldAndSuperGold < 100, "WARNING :: the total share must be less than 100");
+        
+        require(_share > 15 && _share < 40, "WARNING :: the share must be between 15 and 40");
+                shareOfPricePoolForProtocol = _share;
+    }
+
+    //Same function but for the Gold and SuperGold
+    function setShareOfPricePoolForGoldAndSuperGold(uint _share) public onlyOwner {
+        require(_share + shareOfPricePoolForWinner + 
+                shareOfPricePoolForPlatin + 
+                shareOfPricePoolForMythic +
+                shareOfPricePoolForProtocol < 100, "WARNING :: the total share must be less than 100");
+            
+        require(_share > 5 && _share < 10, "WARNING :: the share must be between 5 and 10");
+            shareOfPricePoolForGoldAndSuperGold = _share;
+    }
+
+    //Same function but for the Mythic
+    function setShareOfPricePoolForMythic(uint _share) public onlyOwner {
+        require(_share + shareOfPricePoolForWinner + 
+                shareOfPricePoolForPlatin + 
+                shareOfPricePoolForGoldAndSuperGold +
+                shareOfPricePoolForProtocol < 100, "WARNING :: the total share must be less than 100");
+            
+        require(_share > 1 && _share < 5, "WARNING :: the share must be between 2 and 5");
+            shareOfPricePoolForGoldAndSuperGold = _share;
+    }
+
+    //Same function but for the Platin
+    function setShareOfPricePoolForPlatin(uint _share) public onlyOwner {            
+        require(_share + shareOfPricePoolForWinner + 
+                shareOfPricePoolForMythic + 
+                shareOfPricePoolForGoldAndSuperGold +
+                shareOfPricePoolForProtocol < 100, "WARNING :: the total share must be less than 100");
+            
+        require(_share > 1 && _share < 7, "WARNING :: the share must be between 1 and 5");
+            shareOfPricePoolForGoldAndSuperGold = _share;
+    }
+
+    //Function get for the different shares
+    function getShareOfPricePoolFor() external view returns(uint _shareProt, uint _shareWinner, uint shareSGG, uint _shareMyth, uint _sharePlat) {
+            
+        return (shareOfPricePoolForProtocol, 
+        shareOfPricePoolForWinner, 
+        shareOfPricePoolForGoldAndSuperGold, 
+        shareOfPricePoolForMythic, 
+        shareOfPricePoolForPlatin);
+    }
+
+    function getTotalDay() external view returns(uint _totalDay) {
+        return (totalDay);
     }
 
     //Function getter returnning the status of chasePeriod and gamePeriod
@@ -86,87 +184,13 @@ contract LotteryManager {
         return (_period);
     } 
 
-    //Prévoir fonction récupérant les nft encore en jeu durant le cycle courrant (dans TicketsManager)
-
-    //Function setting the share of the winner
-    function setShareOfPricePoolForWinner (uint _share) public onlyOwner {
-        require(_share + shareOfPricePoolForProtocol + 
-        shareOfPricePoolForPlatin + 
-        shareOfPricePoolForMythic +
-        shareOfPricePoolForGoldAndSuperGold < 100, "WARNING :: the total share must be less than 100");
-
-        require(_share > 15 && _share < 51, "WARNING :: the share must be between 15 and 51");
-        shareOfPricePoolForWinner = _share;
+    function getTicketsSalable() external view returns(uint _nbOfTicketsSalable) {
+        return (nbOfTicketsSalable);
     }
 
-    //Same function but for the protocol
-    function setShareOfPricePoolForProtocol(uint _share) public onlyOwner {
-        require(_share + shareOfPricePoolForWinner + 
-        shareOfPricePoolForPlatin + 
-        shareOfPricePoolForMythic +
-        shareOfPricePoolForGoldAndSuperGold < 100, "WARNING :: the total share must be less than 100");
-        
-        require(_share > 15 && _share < 40, "WARNING :: the share must be between 15 and 40");
-        shareOfPricePoolForProtocol = _share;
+    function getLotteryId() external view returns(uint _lotteryId) {
+        return (lotteryId);
     }
-
-        //Same function but for the Gold and SuperGold
-        function setShareOfPricePoolForGoldAndSuperGold(uint _share) public onlyOwner {
-            require(_share + shareOfPricePoolForWinner + 
-            shareOfPricePoolForPlatin + 
-            shareOfPricePoolForMythic +
-            shareOfPricePoolForProtocol < 100, "WARNING :: the total share must be less than 100");
-            
-            require(_share > 5 && _share < 10, "WARNING :: the share must be between 5 and 10");
-            shareOfPricePoolForGoldAndSuperGold = _share;
-        }
-
-        //Same function but for the Mythic
-        function setShareOfPricePoolForMythic(uint _share) public onlyOwner {
-            require(_share + shareOfPricePoolForWinner + 
-            shareOfPricePoolForPlatin + 
-            shareOfPricePoolForGoldAndSuperGold +
-            shareOfPricePoolForProtocol < 100, "WARNING :: the total share must be less than 100");
-            
-            require(_share > 1 && _share < 5, "WARNING :: the share must be between 2 and 5");
-            shareOfPricePoolForGoldAndSuperGold = _share;
-        }
-
-        //Same function but for the Platin
-        function setShareOfPricePoolForPlatin(uint _share) public onlyOwner {
-            require(_share + shareOfPricePoolForWinner + 
-            shareOfPricePoolForMythic + 
-            shareOfPricePoolForGoldAndSuperGold +
-            shareOfPricePoolForProtocol < 100, "WARNING :: the total share must be less than 100");
-            
-            require(_share > 1 && _share < 7, "WARNING :: the share must be between 1 and 5");
-            shareOfPricePoolForGoldAndSuperGold = _share;
-        }
-
-        //Function to set the addres of Marketplace contract
-        function setAddrMarketPlace(address _addrMarketPlace) public onlyOwner {
-            addrMarketPlace = _addrMarketPlace;
-        }
-
-        //Function to set fee paying on every trade
-        function setFeeByTrades(uint _fee) public onlyOwner {
-            require(_fee > 1 && _fee < 10, "WARNING :: Fee must be between 1 and 10");
-            feeByTrade = _fee;
-        }
-
-        //Fucntion getter returning the fee to apply on each trade
-        function getFeeByTrades() public view returns(uint) {
-            return feeByTrade;
-        }
-
-        //Function get for the different shares
-        function getShareOfPricePoolFor() public view returns(uint _shareProt, uint _shareWinner, uint shareSGG, uint _shareMyth, uint _sharePlat) {
-            return (shareOfPricePoolForProtocol, 
-                    shareOfPricePoolForWinner, 
-                    shareOfPricePoolForGoldAndSuperGold, 
-                    shareOfPricePoolForMythic, 
-                    shareOfPricePoolForPlatin);
-        }
                 
 
 }
