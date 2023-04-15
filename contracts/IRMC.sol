@@ -13,9 +13,10 @@ interface IRMC {
                         address _nftOwner, 
                         State _nftState, 
                         uint _nftPrice) external;
-   
-    function setClaimRewardStatus(bool _status, uint _tokenId) external;
+       
+    function setPPClaimStatus(bool _statusPP, uint _tokenId) external;
 
+    function setFeeClaimStatus(bool _statusFee, uint _tokenId) external;
 
     function getNftInfo(uint _tokenId) external view returns (NftType, 
                         address _addrContr, 
@@ -25,7 +26,7 @@ interface IRMC {
                         uint _price, 
                         bool _rewardClaimed);
     
-    function getClaimedRewardStatus(uint _tokenId) external view returns(bool);
+    function getClaimedRewardStatus(uint _tokenId) external view returns(bool _pricePoolStatus, bool _feeStatus);
 
     function getMintPrice() external view returns(uint);
     
@@ -55,5 +56,14 @@ interface IRMC {
 
     //Function from Marketplace.sol
     function claimFees () external;
+
+    //Function from LotteryGame.sol
+    function getPricepoolAndDealFees() external view returns(uint pp, uint d);
+
+    //Function from FeeManager.sol
+    //gain_PP = gain for price pool; gain_D = gain for deal fees
+    function computeGainForAdvantages(address _addrClaimer) external returns (uint _totalGain);
+
+
 
 }

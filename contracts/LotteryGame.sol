@@ -11,6 +11,8 @@ contract LotteryGame {
 
     address private owner;
     address public addrLotteryManager;
+    address public addrMarketplace;
+    address public addrFeeManager;
 
     address _addrN;
     address _addrG;
@@ -21,6 +23,7 @@ contract LotteryGame {
     address payable winner;
 
     IRMC irmc;
+    IRMC irmc_fee;
 
     uint public nbTicketsSold;
     uint public _nbOfTicketsSalable;
@@ -72,9 +75,15 @@ contract LotteryGame {
         emit Received(msg.sender, msg.value);
     }
 
-    function setAddrLotteryManager(address _addrLotMan) external onlyOwner {
+    function setAddrLotteryManager(address _addrLotMan, address _addrMarketplace, address _addrFeeManager) external onlyOwner {
         addrLotteryManager = _addrLotMan;
+        addrMarketplace = _addrMarketplace;
+        addrFeeManager = _addrFeeManager;
         irmc = IRMC(addrLotteryManager);
+    }
+
+    function getPricepoolAndDealFees() external view returns(uint pp, uint d){
+        return (pricepool, balanceFeesDeals);
     }
 
     function NewCycle() external onlyOwner {
@@ -86,6 +95,36 @@ contract LotteryGame {
         irmc.setLotteryId(lotteryId);
         winnerClaimed = false;
         balanceFeesDeals = 0;
+
+        //Reset of the claim status of all NFTs
+        ( _addrN, _addrG, _addrSG, _addrM, _addrP) = irmc.getAddrTicketContracts();
+        for(uint i= 0; i < IERC721Enumerable(_addrG).totalSupply(); i++){
+            uint id;
+            id = IERC721Enumerable(_addrG).tokenByIndex(i);
+            irmc.setPPClaimStatus(false, id);
+            irmc.setFeeClaimStatus(false, id);
+        }
+
+        for(uint i= 0; i < IERC721Enumerable(_addrSG).totalSupply(); i++){
+            uint id;
+            id = IERC721Enumerable(_addrSG).tokenByIndex(i);
+            irmc.setPPClaimStatus(false, id);
+            irmc.setFeeClaimStatus(false, id);
+        }
+
+        for(uint i= 0; i < IERC721Enumerable(_addrM).totalSupply(); i++){
+            uint id;
+            id = IERC721Enumerable(_addrM).tokenByIndex(i);
+            irmc.setPPClaimStatus(false, id);
+            irmc.setFeeClaimStatus(false, id);        
+        }
+
+        for(uint i= 0; i < IERC721Enumerable(_addrP).totalSupply(); i++){
+            uint id;
+            id = IERC721Enumerable(_addrP).tokenByIndex(i);
+            irmc.setPPClaimStatus(false, id);
+            irmc.setFeeClaimStatus(false, id);
+        }
     }
 
     function buyTicket(uint amount) payable external{
@@ -159,11 +198,10 @@ contract LotteryGame {
 
         balanceFeesDeals = address(this).balance - pricepool;
 
-        (_shareProt, _shareWinner, _shareSGG, _shareMyth, _sharePlat) = irmc.getShareOfPricePoolFor();
         (_addrN, _addrG, _addrSG, _addrM, _addrP) = irmc.getAddrTicketContracts();
     }
 
-    function claimReward() external {
+    function claimRewardForWinner() external {
         require(_period == IRMC.Period.Claim, "ERROR :: You can't claim the winner if the game is not over");
         require(cycleStarted == false, "ERROR :: You can't claim the winner if the game is not over");
         require(currentDay == totalDay, "ERROR :: You can't claim the winner if the game is not over");
@@ -181,83 +219,20 @@ contract LotteryGame {
         IERC721Enumerable(addrContr).safeTransferFrom(msg.sender, address(0), caracNftGagnant);
         winner.transfer(_shareWinner * pricepool / 100);
 
+        //Claim all the fees from Marketplace
+        irmc_fee = IRMC(addrMarketplace);
+        irmc_fee.claimFees();
+        irmc_fee = IRMC(addrFeeManager);
     }
 
-    function computeGainForAdvantages_PP() private returns (uint _totalReward) {
-        require(_period == IRMC.Period.Claim, "ERROR :: You can't claim the winner if the game is not over");
+    function claimRewardsForAll(address _addrClaimer) external {
+        require(_period == IRMC.Period.Claim, "ERROR :: You can't claim the rewards if the game is not over");
+        uint _totalGain;
+        _addrClaimer = msg.sender;
+        (_totalGain) = irmc_fee.computeGainForAdvantages(_addrClaimer);
 
-        uint cptG = 0;
-        uint cptSG = 0;
-        uint cptM = 0;
-        uint cptP = 0;
-        
-        uint gain = 0;
-        uint gain_PP = 0;
-        uint gain_D = 0;
-        uint id = 0;
-
-        if (IERC721Enumerable(_addrG).balanceOf(msg.sender) > 0 ){
-            for (uint i = 0; i < IERC721Enumerable(_addrG).balanceOf(msg.sender); i++){
-                
-                id = IERC721Enumerable(_addrG).tokenOfOwnerByIndex(msg.sender, i);
-                if(irmc.getClaimedRewardStatus(id) == false) {
-                    irmc.setClaimRewardStatus(true, id);
-                    cptG ++;
-
-                }
-
-            }
-            cptG = cptG / IERC721Enumerable(_addrG).totalSupply();
-        }
-
-        if (IERC721Enumerable(_addrSG).balanceOf(msg.sender) > 0 ){
-            for (uint i = 0; i < IERC721Enumerable(_addrSG).balanceOf(msg.sender); i++){
-                
-                id = IERC721Enumerable(_addrSG).tokenOfOwnerByIndex(msg.sender, i);
-                if(irmc.getClaimedRewardStatus(id) == false){
-                    irmc.setClaimRewardStatus(true, id);
-                    cptSG ++;
-                }
-            }
-            cptSG = cptSG / IERC721Enumerable(_addrSG).totalSupply();
-        }
-
-        if (IERC721Enumerable(_addrM).balanceOf(msg.sender) > 0 ){
-            for (uint i = 0; i < IERC721Enumerable(_addrM).balanceOf(msg.sender); i++){
-                
-                id = IERC721Enumerable(_addrM).tokenOfOwnerByIndex(msg.sender, i);
-                if(irmc.getClaimedRewardStatus(id) == false){
-                    irmc.setClaimRewardStatus(true, id);
-                    cptM ++;
-                }
-            }
-            cptM = cptM / IERC721Enumerable(_addrM).totalSupply();
-        }
-
-        if (IERC721Enumerable(_addrP).balanceOf(msg.sender) > 0 ){
-            for (uint i = 0; i < IERC721Enumerable(_addrP).balanceOf(msg.sender); i++){
-                
-                id = IERC721Enumerable(_addrP).tokenOfOwnerByIndex(msg.sender, i);
-                if(irmc.getClaimedRewardStatus(id) == false){
-                    irmc.setClaimRewardStatus(true, id);
-                    cptP ++;
-                }
-            }
-            cptP = cptP / IERC721Enumerable(_addrP).totalSupply();
-        }
-
-
-        gain_PP = (cptG * _shareSGG + cptSG * _shareSGG + cptM * _shareMyth + cptP * _sharePlat) * pricepool / 100;
-        //Todo: Partade des fees mis en brute, à mettre plus tard dans LotteryManager.
-        gain_D = (cptG * 20 + cptSG * 20 + cptM * 0 + cptP * 20);
-        gain = gain_PP + gain_D;
-        
-        return (gain);
-
-    }
-
-    function computeGainForAdvantages_D() private returns(uint _gain_D){
-        
+        require(_totalGain > 0, "ERROR :: You don't have any rewards to claim");
+        payable(_addrClaimer).transfer(_totalGain * 1 ether);
 
     }
 
