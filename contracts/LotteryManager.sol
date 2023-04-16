@@ -16,6 +16,9 @@ contract LotteryManager {
     uint nbOfTicketsSalable;
     
     uint lotteryId;
+    bool public cycleStarted;
+    bool public winnerClaimed;
+    uint public pricepool;
 
     //Amount of RMC reward for minting NFTs
     uint tokenBuyReward; 
@@ -87,6 +90,16 @@ contract LotteryManager {
 
     function getTicketsSalable() external view returns(uint _nbOfTicketsSalable) {
         return (nbOfTicketsSalable);
+    }
+
+    //Function getter returnning the status of chasePeriod and gamePeriod
+    //To use in FusionManager.sol
+    function getPeriod () external view returns(Period){
+        return (period);
+    } 
+
+    function getLotteryId() external view returns(uint _lotteryId) {
+        return (lotteryId);
     }
                 
 }

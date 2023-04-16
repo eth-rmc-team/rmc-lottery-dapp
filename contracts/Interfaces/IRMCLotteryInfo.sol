@@ -3,16 +3,13 @@ pragma solidity ^0.8.17;
 
 interface IRMCLotteryInfo {
     
-    // Enum from LotteryManager.sol
+    //From LotteryGame.sol
     enum Period { Game, Claim, Chase, End }
-
-    //Functions from LotteryManager.sol
     
     function getTotalDay() external view returns(uint _totalDay);
     
     function getTicketsSalable() external view returns(uint _nbOfTicketsSalable);
     
-    //Function from LotteryGame.sol
     function getPeriod () external view returns(Period _period);
 
     function getLotteryId() external view returns(uint _lotteryId);

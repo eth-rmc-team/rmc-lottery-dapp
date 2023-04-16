@@ -9,7 +9,7 @@ import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 contract Marketplace {
 
     address payable private owner;
-    address public addrContractTicketManager;
+    address public addrContractTicketInformationController;
     address payable public addrContractLotteryGame;
     address public addrContractFeeManager;
 
@@ -39,12 +39,11 @@ contract Marketplace {
         _;
     }
 
-    function setAddrContract(address _addrContractTicketManager, address _addrContractLotteryGame, address _addrContractFeeManager) external onlyOwner {
-        addrContractTicketManager = _addrContractTicketManager;
+    function setAddrContract(address _addrContractTicketInformationController, address _addrContractLotteryGame) external onlyOwner {
+        addrContractTicketInformationController = _addrContractTicketInformationController;
         addrContractLotteryGame = payable(_addrContractLotteryGame);
-        addrContractFeeManager = _addrContractFeeManager;
 
-        irmcTI = IRMCTicketInfo(addrContractTicketManager);
+        irmcTI = IRMCTicketInfo(addrContractTicketInformationController);
 
     }
     
