@@ -6,6 +6,7 @@ import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 
 //Contract managing deals between players
 
+//TODO: faire hériter TicketInformationController au lieu de l'interface ?
 contract Marketplace {
 
     address payable private owner;
@@ -43,8 +44,6 @@ contract Marketplace {
         addrContractTicketInformationController = _addrContractTicketInformationController;
         addrContractLotteryGame = payable(_addrContractLotteryGame);
 
-        irmcTI = IRMCTicketInfo(addrContractTicketInformationController);
-
     }
     
     //Function setting fee by trade
@@ -63,11 +62,11 @@ contract Marketplace {
     }
 
     //Fonction de mise en place de la vente quand le SC est dans l'état "Created"
-    function setSellernbTicketsAndPrice(uint _price, uint _tokenId) external {
+    function setSellernbTicketsAndPrice(uint _price, uint _tokenId, address _addrNftContract) external {
 
-        (, nftContract, , , nftState, , ) = irmcTI.getNftInfo(_tokenId);
+        (, nftContract, , , nftState, , ) = IRMCTicketInfo(_addrNftContract).getNftInfo(_tokenId);
+        
         nftOwner = payable(msg.sender);
-
         nftPrice = _price;
 
         require(nftState == IRMCTicketInfo.State.NoDeal, 'WARNING :: Deal already in progress');
@@ -75,7 +74,7 @@ contract Marketplace {
         require(nftPrice > 0, 'WARNING :: Price zero not accepted');
 
         nftState = IRMCTicketInfo.State.Dealing;
-        irmcTI.setNftInfo(_tokenId, nftOwner, nftState, nftPrice);
+        IRMCTicketInfo(_addrNftContract).setNftInfo(_tokenId, nftOwner, nftState, nftPrice);
         nftOwner = payable(address(this));       
         nftPrice = 0;
 
@@ -84,28 +83,28 @@ contract Marketplace {
 
     }
 
-    function stopDeal(uint _tokenId) external {
+    function stopDeal(uint _tokenId, address _addrNftContract) external {
 
-        (, nftContract, , nftOwner, nftState, ,) = irmcTI.getNftInfo(_tokenId);
+        (, nftContract, , nftOwner, nftState, ,) = IRMCTicketInfo(_addrNftContract).getNftInfo(_tokenId);
 
         require(nftState == IRMCTicketInfo.State.Dealing, 'WARNING :: Deal not in progress for this NFT');
         require(msg.sender == nftOwner, 'WARNING :: Not owner of this token');
         
         nftState = IRMCTicketInfo.State.NoDeal;
         nftPrice = 0;
-        irmcTI.setNftInfo(_tokenId, nftOwner, nftState, nftPrice);
+        IRMCTicketInfo(_addrNftContract).setNftInfo(_tokenId, nftOwner, nftState, nftPrice);
         nftOwner = payable(address(this));
 
         IERC721(nftContract).safeTransferFrom(address(this), nftOwner, _tokenId);
 
     }
 
-    function confirmPurchase(uint _tokenId) external payable {
+    function confirmPurchase(uint _tokenId, address _addrNftContract) external payable {
         
         uint _minusFeeByTrade = 100 - feeByTrade;
         address payable newOwner = payable(msg.sender);
 
-        (, nftContract, , nftOwner, nftState, nftPrice, ) = irmcTI.getNftInfo(_tokenId);
+        (, nftContract, , nftOwner, nftState, nftPrice, ) = IRMCTicketInfo(_addrNftContract).getNftInfo(_tokenId);
         seller = nftOwner;
 
         require(nftState == IRMCTicketInfo.State.Dealing, "WARNING :: Deal not in progress for this NFT");
@@ -113,7 +112,7 @@ contract Marketplace {
         require(msg.value == nftPrice, "WARNING :: you don't pay the right price");
         require(msg.sender != nftOwner, "WARNING :: you can't buy your own NFT");
 
-        irmcTI.setNftInfo(_tokenId, newOwner, nftState, nftPrice);
+        IRMCTicketInfo(_addrNftContract).setNftInfo(_tokenId, newOwner, nftState, nftPrice);
 
         payable(address(this)).transfer(msg.value);
         IERC721(nftContract).safeTransferFrom(address(this), msg.sender, _tokenId);

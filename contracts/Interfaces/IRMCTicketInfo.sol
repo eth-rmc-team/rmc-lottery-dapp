@@ -8,6 +8,20 @@ interface IRMCTicketInfo is IERC721Enumerable {
     enum State { NoDeal, Dealing }
     enum NftType { Normal, Gold, SuperGold, Mythic, Platin }
 
+    //Struct containing all the information about a NFT
+    struct nftInfo {
+
+        NftType nftType;            //from enum nfType from RmcNftMinter.sol
+        address nftContractAddress; //from address___NftContract from RmcNftMinter.sol
+        uint nftID;                 //from tokenId from RmcNftMinter.sol
+        address payable nftOwner;   //from ownerOf(tokenId) from Marketplace.sol        
+        State nftStateOfDeal;       //from State in Marketplace.sol
+        uint nftPrice;              //from price in Marketplace.sol
+        bool nftPricePoolClaimed;   //from bool in FeeManager.sol
+        bool nftFeeClaimed;         //from bool in FeeManager.sol
+
+    }
+
     //Functions from TicketManager.sol
     function setNftInfo(uint _tokenId, 
                         address _nftOwner, 

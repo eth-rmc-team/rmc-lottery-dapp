@@ -59,7 +59,7 @@ contract LotteryGame is LotteryManager {
     }
 
     function buyTicket(uint amount) payable external{
-        uint _price = amount * IRMCTicketInfo(addrTicketManager).getMintPrice() * (10 ** 18);
+        uint _price = amount * IRMCTicketInfo(addrTicketInformationController).getMintPrice() * (10 ** 18);
 
         require(msg.value == _price, "ERROR :: You must pay the right amount of RMC");
         require(amount <= nbOfTicketsSalable - nbTicketsSold, "WARNING :: Not enough tickets left for your order");
@@ -84,7 +84,7 @@ contract LotteryGame is LotteryManager {
         require(cycleStarted == true, "ERROR :: A game can't start if all tickets haven't been sold");
         require(period == Period.Game, "ERROR :: You can't start a game during this period");
         
-        pricepool = nbTicketsSold * IRMCTicketInfo(addrTicketManager).getMintPrice() * (10 ** 17);
+        pricepool = nbTicketsSold * IRMCTicketInfo(addrTicketInformationController).getMintPrice() * (10 ** 17);
 
         totalDay = totalDay;
 

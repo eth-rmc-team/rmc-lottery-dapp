@@ -28,29 +28,9 @@ contract TicketManager {
 
     uint[] caracteristics;
 
-    uint private mintPrice; //in Avax
+    uint public mintPrice; //in Avax
     //Array of caracteristics picked during a cycle
     uint[] combinationPicked;
-    
-    enum State { NoDeal, Dealing }
-    enum NftType { Normal, Gold, SuperGold, Mythic, Platin }    
-
-    //Struct containing all the information about a NFT
-    struct nftInfo {
-
-        NftType nftType;            //from enum nfType from RmcNftMinter.sol
-        address nftContractAddress; //from address___NftContract from RmcNftMinter.sol
-        uint nftID;                 //from tokenId from RmcNftMinter.sol
-        address payable nftOwner;   //from ownerOf(tokenId) from Marketplace.sol        
-        State nftStateOfDeal;       //from State in Marketplace.sol
-        uint nftPrice;              //from price in Marketplace.sol
-        bool nftPricePoolClaimed;   //from bool in FeeManager.sol
-        bool nftFeeClaimed;         //from bool in FeeManager.sol
-
-    }
-    
-    //Creation of a mapping connecting each tokenId to its nftInfo struct
-    mapping(uint => nftInfo) public idNftToNftInfos;
 
     mapping(address => bool) public whiteListedAddresses;
 
@@ -138,11 +118,6 @@ contract TicketManager {
     //Function getter returning the address of the TicketFusion contract
     function getAddrTicketFusionContract() public view returns(address) {
         return addrTicketFusion;
-    }
-        
-    //Function getter returning the price for a mint
-    function getMintPrice() external view returns(uint){
-        return mintPrice;
     }
 
     //Function getter returning de caracteristic of the day

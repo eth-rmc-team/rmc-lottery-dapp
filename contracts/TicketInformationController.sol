@@ -5,17 +5,28 @@ import './TicketManager.sol';
 
 contract TicketInformationController is TicketManager {
 
-    //Multiple functions setting information about a NFT
-    function setNftType(NftType _nftType, uint _tokenId) internal {
-        idNftToNftInfos[_tokenId].nftType = _nftType;
-    }
+    enum State { NoDeal, Dealing }
+    enum NftType { Normal, Gold, SuperGold, Mythic, Platin }    
 
-    function setNftContractAddress(address _nftContractAddress, uint _tokenId) external onlyWhiteListedAddress {
-        idNftToNftInfos[_tokenId].nftContractAddress = _nftContractAddress;
-    }
+    //Struct containing all the information about a NFT
+    struct nftInfo {
 
-    function setNftID(uint _tokenId) internal {
-        idNftToNftInfos[_tokenId].nftID = _tokenId;
+        NftType nftType;            //from enum nfType from RmcNftMinter.sol
+        address nftContractAddress; //from address___NftContract from RmcNftMinter.sol
+        uint nftID;                 //from tokenId from RmcNftMinter.sol
+        address payable nftOwner;   //from ownerOf(tokenId) from Marketplace.sol        
+        State nftStateOfDeal;       //from State in Marketplace.sol
+        uint nftPrice;              //from price in Marketplace.sol
+        bool nftPricePoolClaimed;   //from bool in FeeManager.sol
+        bool nftFeeClaimed;         //from bool in FeeManager.sol
+
+    }
+    
+    //Creation of a mapping connecting each tokenId to its nftInfo struct
+    mapping(uint => nftInfo) public idNftToNftInfos;
+
+    constructor() {
+
     }
 
     //Function setting informations about a NFT from the Marketplace contract (owner, state of deal, price)
@@ -73,5 +84,10 @@ contract TicketInformationController is TicketManager {
                 addrSuperGoldNftContract, 
                 addrMythicNftContract, 
                 addrPlatinNftContract);
+    }
+
+    //Function getter returning the price for a mint
+    function getMintPrice() external view returns(uint){
+        return mintPrice;
     }
 }

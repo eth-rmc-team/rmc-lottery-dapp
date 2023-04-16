@@ -7,15 +7,14 @@ import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 contract FeeManager {
 
     address private owner;
-    address private addrContractTicketManager;
     address private addrContractLotteryGame;
     address private addrContractMarketplace;
 
-    address private _addrN;
-    address private _addrG;
-    address private _addrSG;
-    address private _addrM;
-    address private _addrP;
+    address private addrN;
+    address private addrG;
+    address private addrSG;
+    address private addrM;
+    address private addrP;
 
     bool private _claimed;
     
@@ -53,11 +52,22 @@ contract FeeManager {
         _;
     }
 
-    function setAddr(address _addrTM, address _addrLG, address _addrMP)  external onlyOwner {
-        addrContractTicketManager = _addrTM;
+    function setAddrGame(address _addrLG, address _addrMP)  external onlyOwner {
         addrContractLotteryGame = _addrLG;
         addrContractMarketplace = _addrMP;
 
+    }
+
+    function setAddrTicketContract(address _addrN, 
+                                   address _addrG, 
+                                   address _addrSG, 
+                                   address _addrM, 
+                                   address _addrP) external onlyOwner {
+        addrN = _addrN;
+        addrG = _addrG;
+        addrSG = _addrSG;
+        addrM = _addrM;
+        addrP = _addrP;
     }
 
     //Function setting the share of the winner
@@ -140,53 +150,46 @@ contract FeeManager {
 
     }
 
-    function disableClaim(uint _id) private {
-        IRMCTicketInfo(addrContractTicketManager).setPPClaimStatus(true, _id);
-        IRMCTicketInfo(addrContractTicketManager).setFeeClaimStatus(true, _id);
-    }
-
-    function enableClaim(uint _id) private {
-        IRMCTicketInfo(addrContractTicketManager).setPPClaimStatus(false, _id);
-        IRMCTicketInfo(addrContractTicketManager).setFeeClaimStatus(false, _id);
+    function disableClaim(uint _id, address addrNftContract) private {
+        //True = reward claimed by the NFT
+        IRMCTicketInfo(addrNftContract).setPPClaimStatus(true, _id);
+        IRMCTicketInfo(addrNftContract).setFeeClaimStatus(true, _id);
     }
 
     function resetClaimStatus() external onlyLotteryGame {
 
         //Reset of the claim status of all NFTs
-        ( _addrN, _addrG, _addrSG, _addrM, _addrP) = IRMCTicketInfo(addrContractTicketManager).getAddrTicketContracts();
-        for(uint i= 0; i < IRMCTicketInfo(_addrG).totalSupply(); i++){
+        for(uint i= 0; i < IRMCTicketInfo(addrG).totalSupply(); i++){
             uint id;
-            id = IRMCTicketInfo(_addrG).tokenByIndex(i);
-            IRMCTicketInfo(addrContractTicketManager).setPPClaimStatus(false, id);
-            IRMCTicketInfo(addrContractTicketManager).setFeeClaimStatus(false, id);
+            id = IRMCTicketInfo(addrG).tokenByIndex(i);
+            IRMCTicketInfo(addrG).setPPClaimStatus(false, id);
+            IRMCTicketInfo(addrG).setFeeClaimStatus(false, id);
         }
 
-        for(uint i= 0; i < IRMCTicketInfo(_addrSG).totalSupply(); i++){
+        for(uint i= 0; i < IRMCTicketInfo(addrSG).totalSupply(); i++){
             uint id;
-            id = IRMCTicketInfo(_addrSG).tokenByIndex(i);
-            IRMCTicketInfo(addrContractTicketManager).setPPClaimStatus(false, id);
-            IRMCTicketInfo(addrContractTicketManager).setFeeClaimStatus(false, id);
+            id = IRMCTicketInfo(addrSG).tokenByIndex(i);
+            IRMCTicketInfo(addrSG).setPPClaimStatus(false, id);
+            IRMCTicketInfo(addrSG).setFeeClaimStatus(false, id);
         }
 
-        for(uint i= 0; i < IRMCTicketInfo(_addrM).totalSupply(); i++){
+        for(uint i= 0; i < IRMCTicketInfo(addrM).totalSupply(); i++){
             uint id;
-            id = IRMCTicketInfo(_addrM).tokenByIndex(i);
-            IRMCTicketInfo(addrContractTicketManager).setPPClaimStatus(false, id);
-            IRMCTicketInfo(addrContractTicketManager).setFeeClaimStatus(false, id);        
+            id = IRMCTicketInfo(addrM).tokenByIndex(i);
+            IRMCTicketInfo(addrM).setPPClaimStatus(false, id);
+            IRMCTicketInfo(addrM).setFeeClaimStatus(false, id);        
         }
 
-        for(uint i= 0; i < IRMCTicketInfo(_addrP).totalSupply(); i++){
+        for(uint i= 0; i < IRMCTicketInfo(addrP).totalSupply(); i++){
             uint id;
-            id = IRMCTicketInfo(_addrP).tokenByIndex(i);
-            IRMCTicketInfo(addrContractTicketManager).setPPClaimStatus(false, id);
-            IRMCTicketInfo(addrContractTicketManager).setFeeClaimStatus(false, id);
+            id = IRMCTicketInfo(addrP).tokenByIndex(i);
+            IRMCTicketInfo(addrP).setPPClaimStatus(false, id);
+            IRMCTicketInfo(addrP).setFeeClaimStatus(false, id);
         }
     }
 
     //Function to compute the gain for the owner of special NFT and disabling the claim afterward
-    function computeGainForAdvantages(address _addrClaimer) external onlyLotteryGame returns (uint _totalGain) {
-
-        (,_addrG, _addrSG, _addrM, _addrP) = IRMCTicketInfo(addrContractTicketManager).getAddrTicketContracts();
+    function computeGainForAdvantages(address addrClaimer) external onlyLotteryGame returns (uint _totalGain) {
 
         uint cptG = 0;
         uint cptSG = 0;
@@ -202,66 +205,66 @@ contract FeeManager {
         uint _pricepool = addrContractLotteryGame.balance;
         uint _balanceDealsFees = addrContractMarketplace.balance;
         
-        uint supplySGG = IRMCTicketInfo(_addrSG).totalSupply() + IRMCTicketInfo(_addrG).totalSupply();
+        uint supplySGG = IRMCTicketInfo(addrSG).totalSupply() + IRMCTicketInfo(addrG).totalSupply();
 
-        if (IRMCTicketInfo(_addrG).balanceOf(_addrClaimer) > 0 ){
-            for (uint i = 0; i < IRMCTicketInfo(_addrG).balanceOf(_addrClaimer); i++){
+        if (IRMCTicketInfo(addrG).balanceOf(addrClaimer) > 0 ){
+            for (uint i = 0; i < IRMCTicketInfo(addrG).balanceOf(addrClaimer); i++){
                 
-                id = IRMCTicketInfo(_addrG).tokenOfOwnerByIndex(_addrClaimer, i);
-                (_claimed, ) = IRMCTicketInfo(addrContractTicketManager).getClaimedRewardStatus(id);
+                id = IRMCTicketInfo(addrG).tokenOfOwnerByIndex(addrClaimer, i);
+                (_claimed, ) = IRMCTicketInfo(addrG).getClaimedRewardStatus(id);
                 if(_claimed == false) {
-                    disableClaim(id);
+                    disableClaim(id, addrG);
                     cptG ++;
                 }
 
             }
             gain_PP += (cptG / supplySGG) * shareOfPricePoolForGoldAndSuperGold;
-            gain_D += (cptG / IRMCTicketInfo(_addrG).totalSupply()) * 20;
+            gain_D += (cptG / IRMCTicketInfo(addrG).totalSupply()) * 20;
         }
 
-        if (IRMCTicketInfo(_addrSG).balanceOf(_addrClaimer) > 0 ){
-            for (uint i = 0; i < IRMCTicketInfo(_addrSG).balanceOf(_addrClaimer); i++){
+        if (IRMCTicketInfo(addrSG).balanceOf(addrClaimer) > 0 ){
+            for (uint i = 0; i < IRMCTicketInfo(addrSG).balanceOf(addrClaimer); i++){
                 
-                id = IRMCTicketInfo(_addrSG).tokenOfOwnerByIndex(_addrClaimer, i);
-                (_claimed, ) = IRMCTicketInfo(addrContractTicketManager).getClaimedRewardStatus(id);
+                id = IRMCTicketInfo(addrSG).tokenOfOwnerByIndex(addrClaimer, i);
+                (_claimed, ) = IRMCTicketInfo(addrSG).getClaimedRewardStatus(id);
 
                 if(_claimed == false){
-                    disableClaim(id);
+                    disableClaim(id, addrSG);
                     cptSG ++;
                 }
             }
             gain_PP += (cptSG / supplySGG) * shareOfPricePoolForGoldAndSuperGold;
-            gain_D += (cptSG / IRMCTicketInfo(_addrSG).totalSupply()) * 20;
+            gain_D += (cptSG / IRMCTicketInfo(addrSG).totalSupply()) * 20;
         }
 
-        if (IRMCTicketInfo(_addrM).balanceOf(_addrClaimer) > 0 ){
-            for (uint i = 0; i < IRMCTicketInfo(_addrM).balanceOf(_addrClaimer); i++){
+        if (IRMCTicketInfo(addrM).balanceOf(addrClaimer) > 0 ){
+            for (uint i = 0; i < IRMCTicketInfo(addrM).balanceOf(addrClaimer); i++){
                 
-                id = IRMCTicketInfo(_addrM).tokenOfOwnerByIndex(_addrClaimer, i);
-                (_claimed, ) = IRMCTicketInfo(addrContractTicketManager).getClaimedRewardStatus(id);
+                id = IRMCTicketInfo(addrM).tokenOfOwnerByIndex(addrClaimer, i);
+                (_claimed, ) = IRMCTicketInfo(addrM).getClaimedRewardStatus(id);
 
                 if(_claimed == false){
-                    disableClaim(id);
+                    disableClaim(id, addrM);
                     cptM ++;
                 }
             }
-            gain_PP += (cptM / IRMCTicketInfo(_addrM).totalSupply()) * shareOfPricePoolForMythic;
-            gain_D += (cptM / IRMCTicketInfo(_addrM).totalSupply()) * 0;
+            gain_PP += (cptM / IRMCTicketInfo(addrM).totalSupply()) * shareOfPricePoolForMythic;
+            gain_D += (cptM / IRMCTicketInfo(addrM).totalSupply()) * 0;
         }
 
-        if (IRMCTicketInfo(_addrP).balanceOf(_addrClaimer) > 0 ){
-            for (uint i = 0; i < IRMCTicketInfo(_addrP).balanceOf(_addrClaimer); i++){
+        if (IRMCTicketInfo(addrP).balanceOf(addrClaimer) > 0 ){
+            for (uint i = 0; i < IRMCTicketInfo(addrP).balanceOf(addrClaimer); i++){
                 
-                id = IRMCTicketInfo(_addrP).tokenOfOwnerByIndex(_addrClaimer, i);
-                (_claimed, ) = IRMCTicketInfo(addrContractTicketManager).getClaimedRewardStatus(id);
+                id = IRMCTicketInfo(addrP).tokenOfOwnerByIndex(addrClaimer, i);
+                (_claimed, ) = IRMCTicketInfo(addrP).getClaimedRewardStatus(id);
 
                 if(_claimed == false){
-                    disableClaim(id);
+                    disableClaim(id, addrP);
                     cptP ++;
                 }
             }
-            gain_PP += (cptP / IRMCTicketInfo(_addrP).totalSupply()) * shareOfPricePoolForPlatin;
-            gain_D += (cptP / IRMCTicketInfo(_addrP).totalSupply()) * 20;
+            gain_PP += (cptP / IRMCTicketInfo(addrP).totalSupply()) * shareOfPricePoolForPlatin;
+            gain_D += (cptP / IRMCTicketInfo(addrP).totalSupply()) * 20;
         }
 
 
@@ -277,11 +280,11 @@ contract FeeManager {
     function computeGainForWinner(uint _idWinner, 
                                   address _claimer) external onlyLotteryGame returns(uint _gain) {
 
-        address payable _winner = payable(IRMCTicketInfo(addrContractTicketManager).ownerOf(_idWinner));
+        address payable _winner = payable(IRMCTicketInfo(addrN).ownerOf(_idWinner));
         require(payable(_claimer) == _winner, "ERROR :: you don't have the winning ticket"); 
         
-        IRMCTicketInfo(_addrN).approve(address(0), _idWinner);
-        IRMCTicketInfo(_addrN).safeTransferFrom(_claimer, address(0), _idWinner);
+        IRMCTicketInfo(addrN).approve(address(0), _idWinner);
+        IRMCTicketInfo(addrN).safeTransferFrom(_claimer, address(0), _idWinner);
 
         _gain = shareOfPricePoolForWinner * addrContractLotteryGame.balance / 100;
 

@@ -11,7 +11,7 @@ contract LotteryManager {
     address public addrLotteryGame;
     address public addrFeeManager;
     address public addrMarketPlace;
-    address public addrTicketManager;
+    address public addrTicketInformationController;
     
     uint nbOfTicketsSalable;
     
@@ -64,8 +64,8 @@ contract LotteryManager {
         addrMarketPlace = _addrMarketPlace;
     }
 
-    function setAddrTicketManager(address _addrTicketManager) public onlyOwner {
-        addrTicketManager = _addrTicketManager;
+    function setAddrTicketInformationController(address _addrTicketInformationController) public onlyOwner {
+        addrTicketInformationController = _addrTicketInformationController;
     }
 
     function setAddrFeeManager(address _addrFeeManager) public onlyOwner {
