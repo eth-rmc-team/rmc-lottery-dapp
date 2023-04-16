@@ -22,8 +22,6 @@ contract LotteryGame is LotteryManager {
     
     address payable winner;
 
-    IRMCTicketInfo irmc;
-
     uint public nbTicketsSold;
     uint public _nbOfTicketsSalable;
 
@@ -77,45 +75,17 @@ contract LotteryGame is LotteryManager {
     function NewCycle() external onlyOwner {
         require(_period == Period.End, "ERROR :: You can't init a new cycle during this period");
         _period = Period.Game;
+        cycleStarted == true;
         currentDay = 0;
         lotteryId += 1;
         caracNftGagnant = lotteryId * 100000;
         winnerClaimed = false;
-        irmc = IRMCTicketInfo(_addrTicketManager);
-
-        //Reset of the claim status of all NFTs
-        ( _addrN, _addrG, _addrSG, _addrM, _addrP) = irmc.getAddrTicketContracts();
-        for(uint i= 0; i < IRMCTicketInfo(_addrG).totalSupply(); i++){
-            uint id;
-            id = IRMCTicketInfo(_addrG).tokenByIndex(i);
-            irmc.setPPClaimStatus(false, id);
-            irmc.setFeeClaimStatus(false, id);
-        }
-
-        for(uint i= 0; i < IRMCTicketInfo(_addrSG).totalSupply(); i++){
-            uint id;
-            id = IRMCTicketInfo(_addrSG).tokenByIndex(i);
-            irmc.setPPClaimStatus(false, id);
-            irmc.setFeeClaimStatus(false, id);
-        }
-
-        for(uint i= 0; i < IRMCTicketInfo(_addrM).totalSupply(); i++){
-            uint id;
-            id = IRMCTicketInfo(_addrM).tokenByIndex(i);
-            irmc.setPPClaimStatus(false, id);
-            irmc.setFeeClaimStatus(false, id);        
-        }
-
-        for(uint i= 0; i < IRMCTicketInfo(_addrP).totalSupply(); i++){
-            uint id;
-            id = IRMCTicketInfo(_addrP).tokenByIndex(i);
-            irmc.setPPClaimStatus(false, id);
-            irmc.setFeeClaimStatus(false, id);
-        }
+        
+        IRMCFeeInfo(_addrFeeManager).resetClaimStatus();
     }
 
     function buyTicket(uint amount) payable external{
-        uint _price = amount * irmc.getMintPrice() * (10 ** 18);
+        uint _price = amount * IRMCTicketInfo(_addrTicketManager).getMintPrice() * (10 ** 18);
 
         require(msg.value == _price, "ERROR :: You must pay the right amount of RMC");
         require(amount <= _nbOfTicketsSalable - nbTicketsSold, "WARNING :: Not enough tickets left for your order");
@@ -140,7 +110,7 @@ contract LotteryGame is LotteryManager {
         require(cycleStarted == true, "ERROR :: A game can't start if all tickets haven't been sold");
         require(_period == Period.Game, "ERROR :: You can't start a game during this period");
         
-        pricepool = nbTicketsSold * irmc.getMintPrice() * (10 ** 17);
+        pricepool = nbTicketsSold * IRMCTicketInfo(_addrTicketManager).getMintPrice() * (10 ** 17);
 
         _totalDay = totalDay;
 
@@ -166,7 +136,6 @@ contract LotteryGame is LotteryManager {
             lsb *= 10;
         }
         else {
-            _period = Period.Claim;
             endLottery();
         }
         
@@ -177,11 +146,10 @@ contract LotteryGame is LotteryManager {
         require(currentDay >= totalDay + start, "ERROR :: You can't end the game if it's not over");
         require(cycleStarted == true, "ERROR :: You can't end the game if it's not started");
         
+        _period = Period.Claim;
         cycleStarted = false;
         currentDay = _totalDay;
         
-        (_addrN, _addrG, _addrSG, _addrM, _addrP) = irmc.getAddrTicketContracts();
-
         //Claim all the fees from Marketplace
         IRMCFeeInfo(_addrMarketPlace).claimFees();
 
@@ -192,31 +160,22 @@ contract LotteryGame is LotteryManager {
         require(cycleStarted == false, "ERROR :: You can't claim the winner if the game is not over");
         require(currentDay == _totalDay, "ERROR :: You can't claim the winner if the game is not over");
         require(winnerClaimed == false, "ERROR :: You can't claim twice the price pool");
-
-        uint _shareWinner;
-        (, _shareWinner, , ,) = IRMCFeeInfo(_addrFeeManager).getShareOfPricePoolFor();
        
+        uint gainWinner = IRMCFeeInfo(addrFeeManager).computeGainForWinner(caracNftGagnant, msg.sender); 
+        
         winnerClaimed = true;
-        address addrContr;
-        
-        (, addrContr,,,,,) = irmc.getNftInfo(caracNftGagnant);
-        winner = payable(IRMCTicketInfo(addrContr).ownerOf(caracNftGagnant));
-        
-        require(winner == payable(msg.sender), "ERROR :: You are not the winner of this game");
-        IRMCTicketInfo(addrContr).safeTransferFrom(msg.sender, address(0), caracNftGagnant);
-        winner.transfer(_shareWinner * pricepool / 100);
+        winner.transfer(gainWinner * 1 ether);
 
     }
 
-    function claimRewardsForAll(address _addrClaimer) external {
+    function claimRewardForAll() external {
         require(_period == Period.Claim, "ERROR :: You can't claim the rewards if the game is not over");
         uint _totalGain;
 
-        _addrClaimer = msg.sender;
-        (_totalGain) = IRMCFeeInfo(addrFeeManager).computeGainForAdvantages(_addrClaimer);
+        _totalGain = IRMCFeeInfo(addrFeeManager).computeGainForAdvantages(msg.sender);
 
         require(_totalGain > 0, "ERROR :: You don't have any rewards to claim");
-        payable(_addrClaimer).transfer(_totalGain * 1 ether);
+        payable(msg.sender).transfer(_totalGain * 1 ether);
 
     }
 

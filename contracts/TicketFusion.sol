@@ -65,7 +65,7 @@ contract TicketFusion {
         require(tokenIds.length == tickMan.normalTicketFusionRequirement(), "WARNING :: Incorrect number of presented tickets (must be 7 normal tickets).");
         for (uint i = 0; i < tickMan.normalTicketFusionRequirement(); i++) {
             require(IERC721(_addrNormalNftContract).ownerOf(tokenIds[i]) == msg.sender, "WARNING :: Token does not belong to user.");
-            IERC721(_addrNormalNftContract).approve(address(this), tokenIds[i]);
+            IERC721(_addrNormalNftContract).approve(address(0), tokenIds[i]);
             IERC721(_addrNormalNftContract).safeTransferFrom(msg.sender, address(0), tokenIds[i]);
 
             //Pas de fonction burn avec IERC721, que dans ERC721. Mais ça revient à envoyer à l'adresse 0 ?
