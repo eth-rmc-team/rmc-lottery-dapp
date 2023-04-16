@@ -81,26 +81,12 @@ contract LotteryManager {
         totalDay = _totalDay;
     }
 
-    //Function setting the lottery id
-    function setLotteryId (uint _id) external onlyLotteryGameContract {
-        lotteryId = _id;
-    }
-
-    //Function setting the period
-    function setPeriod(Period _period) external onlyLotteryGameContract {
-        period = _period;
-    }
-
     function getTotalDay() external view returns(uint _totalDay) {
         return (totalDay);
     }
 
     function getTicketsSalable() external view returns(uint _nbOfTicketsSalable) {
         return (nbOfTicketsSalable);
-    }
-
-    function getLotteryId() external view returns(uint _lotteryId) {
-        return (lotteryId);
     }
                 
 }

@@ -12,10 +12,11 @@ interface IRMCLotteryInfo {
     
     function getTicketsSalable() external view returns(uint _nbOfTicketsSalable);
     
-    function getLotteryId() external view returns(uint _lotteryId);
-
     //Function from LotteryGame.sol
     function getPeriod () external view returns(Period _period);
+
+    function getLotteryId() external view returns(uint _lotteryId);
+
 
 
 }

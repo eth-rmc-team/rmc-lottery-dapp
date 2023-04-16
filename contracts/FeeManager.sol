@@ -2,6 +2,7 @@
 pragma solidity ^0.8.17;
 
 import './Interfaces/IRMCTicketInfo.sol';
+import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 
 contract FeeManager {
 
@@ -126,6 +127,17 @@ contract FeeManager {
         shareOfPricePoolForGoldAndSuperGold, 
         shareOfPricePoolForMythic, 
         shareOfPricePoolForPlatin);
+    }
+
+    function claimFees () external {
+        require(payable(msg.sender) == addrContractLotteryGame, "ERROR :: Only the LotteryGame contract can call this function");
+        //If there is money in the contract, we send it to the LotteryGame contract
+        if(addrContractMarketplace.balance > 0){
+            IERC20(0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7).transferFrom(addrContractMarketplace, 
+                                                                            addrContractLotteryGame, 
+                                                                            (addrContractMarketplace.balance * (10 ** 18)));
+        }
+
     }
 
     function disableClaim(uint _id) private {

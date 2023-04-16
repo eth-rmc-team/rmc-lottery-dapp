@@ -1,10 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.17;
 
-import '@openzeppelin/contracts/token/ERC721/IERC721.sol';
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-
 import './Interfaces/IRMCTicketInfo.sol';
+import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 
 //Contract managing deals between players
 
@@ -125,13 +123,17 @@ contract Marketplace {
 
     }
 
-    function claimFees () external {
-        require(payable(msg.sender) == addrContractLotteryGame, "ERROR :: Only the LotteryGame contract can call this function");
-        //If there is money in the contract, we send it to the LotteryGame contract
-        if(address(this).balance > 0){
-            addrContractLotteryGame.transfer(address(this).balance);
-        }
+    function approveFeeManager(address _addrFeeManager) public onlyOwner {
+        addrContractFeeManager = _addrFeeManager;
+        
+        //To avoid a mix with old and new approved amount, we set the allowance to 0 before setting the new allowance
+        IERC20(0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7).approve(_addrFeeManager, 0);
+        IERC20(0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7).approve(_addrFeeManager, 1000);
 
+    }
+
+    function getAllowance() public view returns(uint) {
+        return IERC20(0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7).allowance(address(this), addrContractFeeManager);
     }
 
 }

@@ -2,7 +2,6 @@
 pragma solidity ^0.8.17;
 
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
-import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 
 //Contract managing NFTs for deal on Marketplace.sol and mint on RmcNftMinter.sol 
 

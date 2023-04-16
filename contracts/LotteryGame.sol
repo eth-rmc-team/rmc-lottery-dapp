@@ -72,6 +72,10 @@ contract LotteryGame is LotteryManager {
         return (_period);
     } 
 
+    function getLotteryId() external view returns(uint _lotteryId) {
+        return (_lotteryId);
+    }
+
     function NewCycle() external onlyOwner {
         require(_period == Period.End, "ERROR :: You can't init a new cycle during this period");
         _period = Period.Game;
@@ -151,7 +155,7 @@ contract LotteryGame is LotteryManager {
         currentDay = _totalDay;
         
         //Claim all the fees from Marketplace
-        IRMCFeeInfo(_addrMarketPlace).claimFees();
+        IRMCFeeInfo(addrFeeManager).claimFees();
 
     }
 
