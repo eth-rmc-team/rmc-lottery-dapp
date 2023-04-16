@@ -3,6 +3,7 @@ pragma solidity ^0.8.17;
 
 import './Interfaces/IRMCTicketInfo.sol';
 import './Interfaces/IRMCFeeInfo.sol';
+import './Interfaces/IRMCMinter.sol';
 import './LotteryManager.sol';
 
 //Principal contract of the lottery game
@@ -69,9 +70,11 @@ contract LotteryGame is LotteryManager {
         
         payable(address(this)).transfer(msg.value);
 
-        
-        //TODO : add the minting of the tickets
-        //TODO et renseigner: irmc.setNftInfo(_tokenId, _nftOwner, _nftState, _nftPrice);
+        if(amount >= 1){
+            for (uint i = 1; i <= amount; i++) {
+                IRMCMinter(_addrN).createTicket("todo", msg.sender, IRMCTicketInfo.NftType.Normal);
+            }
+        }
 
         if (cycleStarted == false && nbTicketsSold == nbOfTicketsSalable) {
             cycleStarted = true;
@@ -136,7 +139,8 @@ contract LotteryGame is LotteryManager {
         require(winnerClaimed == false, "ERROR :: You can't claim twice the price pool");
        
         uint gainWinner = IRMCFeeInfo(addrFeeManager).computeGainForWinner(caracNftGagnant, msg.sender); 
-        
+        IRMCMinter(_addrN).burn(caracNftGagnant);
+
         winnerClaimed = true;
         winner.transfer(gainWinner * 1 ether);
 

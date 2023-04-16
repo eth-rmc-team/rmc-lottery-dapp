@@ -9,9 +9,4 @@ contract NormalTicketMinter is TicketMinterManager {
         addrNormalNftContract = address(this);
     }
     
-    function createNormalTicket(string memory metadata) public returns (uint256)
-    {
-        return createNormalTicket(metadata, msg.sender, NftType.Normal);
-    }
-    
 }

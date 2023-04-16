@@ -3,6 +3,7 @@ pragma solidity ^0.8.17;
 
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
+import '../Interfaces/IRMCLotteryInfo.sol';
 import "../TicketInformationController.sol";
 
 //Contract minting NFT
@@ -23,27 +24,26 @@ contract TicketMinterManager is ERC721URIStorage, TicketInformationController {
         return address(this);
     }
 
-    function createNormalTicket(string memory metadata, address _addrMinter, NftType _nftType) public returns (uint256)
+    function createTicket(string memory metadata, address _addrMinter, NftType _nftType) external onlyWhiteListedAddress
     {
         require(
             !hasBeenMinted[metadata],
             "ERROR :: This metadata has already been used to mint an NFT."
         );
 
-        nftInfo memory newNftInfo = nftInfo(_nftType, address(this), 0, payable(_addrMinter), State.NoDeal, 0, false, false);
+        uint _lotteryId = IRMCLotteryInfo(addrLotteryGame).getLotteryId();
+        uint tokendId = _lotteryId; //todo: a changer, pour l'instant on utilise le lotteryId comme tokenId
+        nftInfo memory newNftInfo = nftInfo(_nftType, address(this), tokendId, payable(_addrMinter), State.NoDeal, 0, false, false);
 
-        uint256 newItemId = 0;
-
-        _safeMint(msg.sender, newItemId);
-        _setTokenURI(newItemId, metadata);
-        idNftToNftInfos[newItemId] = newNftInfo;
+        _safeMint(msg.sender, tokendId);
+        _setTokenURI(tokendId, metadata);
+        idNftToNftInfos[tokendId] = newNftInfo;
         hasBeenMinted[metadata] = true;
-        emit ItemMinted(newItemId, msg.sender, metadata, NftType.Normal);
+        emit ItemMinted(tokendId, msg.sender, metadata, NftType.Normal);
         
-        return newItemId;
     }
 
-    function burn(uint tokenId) public onlyOwner {
+    function burn(uint tokenId) external onlyWhiteListedAddress {
         require(_exists(tokenId), "Token does not exist.");
         _burn(tokenId);
     }
