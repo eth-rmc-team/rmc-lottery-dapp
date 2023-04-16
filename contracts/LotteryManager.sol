@@ -95,12 +95,6 @@ contract LotteryManager {
         return (totalDay);
     }
 
-    //Function getter returnning the status of chasePeriod and gamePeriod
-    //To use in FusionManager.sol
-    function getPeriod () external view returns(Period _period){
-        return (_period);
-    } 
-
     function getTicketsSalable() external view returns(uint _nbOfTicketsSalable) {
         return (nbOfTicketsSalable);
     }

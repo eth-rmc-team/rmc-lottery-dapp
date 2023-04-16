@@ -4,7 +4,7 @@ pragma solidity ^0.8.17;
 import '@openzeppelin/contracts/token/ERC721/IERC721.sol';
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-import './IRMC.sol';
+import './Interfaces/IRMCTicketInfo.sol';
 
 //Contract managing deals between players
 
@@ -20,15 +20,15 @@ contract Marketplace {
     address public nftContract;
     address payable public nftOwner;
     uint public nftPrice;
-    IRMC.State public nftState;
+    
+    IRMCTicketInfo.State public nftState;
 
     uint public feeByTrade;
     
     address payable public seller;
     address public buyer;
 
-    IRMC irmc;
-    IRMC irmc_fee;
+    IRMCTicketInfo irmcTI;
 
     constructor () payable  {
 
@@ -46,8 +46,7 @@ contract Marketplace {
         addrContractLotteryGame = payable(_addrContractLotteryGame);
         addrContractFeeManager = _addrContractFeeManager;
 
-        irmc_fee = IRMC(addrContractFeeManager);
-        irmc = IRMC(addrContractTicketManager);
+        irmcTI = IRMCTicketInfo(addrContractTicketManager);
 
     }
     
@@ -69,17 +68,17 @@ contract Marketplace {
     //Fonction de mise en place de la vente quand le SC est dans l'état "Created"
     function setSellernbTicketsAndPrice(uint _price, uint _tokenId) external {
 
-        (, nftContract, , , nftState, , ) = irmc.getNftInfo(_tokenId);
+        (, nftContract, , , nftState, , ) = irmcTI.getNftInfo(_tokenId);
         nftOwner = payable(msg.sender);
 
         nftPrice = _price;
 
-        require(nftState == IRMC.State.NoDeal, 'WARNING :: Deal already in progress');
+        require(nftState == IRMCTicketInfo.State.NoDeal, 'WARNING :: Deal already in progress');
         require(nftOwner == IERC721(nftContract).ownerOf(_tokenId), 'WARNING :: Not owner of this token');
         require(nftPrice > 0, 'WARNING :: Price zero not accepted');
 
-        nftState = IRMC.State.Dealing;
-        irmc.setNftInfo(_tokenId, nftOwner, nftState, nftPrice);
+        nftState = IRMCTicketInfo.State.Dealing;
+        irmcTI.setNftInfo(_tokenId, nftOwner, nftState, nftPrice);
         nftOwner = payable(address(this));       
         nftPrice = 0;
 
@@ -90,14 +89,14 @@ contract Marketplace {
 
     function stopDeal(uint _tokenId) external {
 
-        (, nftContract, , nftOwner, nftState, ,) = irmc.getNftInfo(_tokenId);
+        (, nftContract, , nftOwner, nftState, ,) = irmcTI.getNftInfo(_tokenId);
 
-        require(nftState == IRMC.State.Dealing, 'WARNING :: Deal not in progress for this NFT');
+        require(nftState == IRMCTicketInfo.State.Dealing, 'WARNING :: Deal not in progress for this NFT');
         require(msg.sender == nftOwner, 'WARNING :: Not owner of this token');
         
-        nftState = IRMC.State.NoDeal;
+        nftState = IRMCTicketInfo.State.NoDeal;
         nftPrice = 0;
-        irmc.setNftInfo(_tokenId, nftOwner, nftState, nftPrice);
+        irmcTI.setNftInfo(_tokenId, nftOwner, nftState, nftPrice);
         nftOwner = payable(address(this));
 
         IERC721(nftContract).safeTransferFrom(address(this), nftOwner, _tokenId);
@@ -109,15 +108,15 @@ contract Marketplace {
         uint _minusFeeByTrade = 100 - feeByTrade;
         address payable newOwner = payable(msg.sender);
 
-        (, nftContract, , nftOwner, nftState, nftPrice, ) = irmc.getNftInfo(_tokenId);
+        (, nftContract, , nftOwner, nftState, nftPrice, ) = irmcTI.getNftInfo(_tokenId);
         seller = nftOwner;
 
-        require(nftState == IRMC.State.Dealing, "WARNING :: Deal not in progress for this NFT");
-        nftState = IRMC.State.NoDeal;
+        require(nftState == IRMCTicketInfo.State.Dealing, "WARNING :: Deal not in progress for this NFT");
+        nftState = IRMCTicketInfo.State.NoDeal;
         require(msg.value == nftPrice, "WARNING :: you don't pay the right price");
         require(msg.sender != nftOwner, "WARNING :: you can't buy your own NFT");
 
-        irmc.setNftInfo(_tokenId, newOwner, nftState, nftPrice);
+        irmcTI.setNftInfo(_tokenId, newOwner, nftState, nftPrice);
 
         payable(address(this)).transfer(msg.value);
         IERC721(nftContract).safeTransferFrom(address(this), msg.sender, _tokenId);

@@ -1,15 +1,19 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.17;
 
-import './IRMC.sol';
-import "@openzeppelin/contracts/token/ERC721/extensions/IERC721Enumerable.sol";
+import './Interfaces/IRMCTicketInfo.sol';
+import './Interfaces/IRMCFeeInfo.sol';
 import './LotteryManager.sol';
+import "@openzeppelin/contracts/token/ERC721/extensions/IERC721Enumerable.sol";
 
 //Principal contract of the lottery game
 
 contract LotteryGame is LotteryManager {
 
     address private owner;
+    address private _addrTicketManager;
+    address private _addrFeeManager;
+    address private _addrMarketPlace;
 
     address private _addrN;
     address private _addrG;
@@ -19,8 +23,7 @@ contract LotteryGame is LotteryManager {
     
     address payable winner;
 
-    IRMC irmc_fee;
-    IRMC irmc;
+    IRMCTicketInfo irmc;
 
     uint public nbTicketsSold;
     uint public _nbOfTicketsSalable;
@@ -31,7 +34,6 @@ contract LotteryGame is LotteryManager {
     bool private winnerClaimed;
     
     uint public pricepool;
-    uint public balanceFeesDeals;
 
     uint private start;
     uint private currentDay;
@@ -44,16 +46,20 @@ contract LotteryGame is LotteryManager {
     event Received(address, uint);
 
     //Constructor
-    constructor(address _addrLotMan) payable {
+    constructor() payable {
         owner = msg.sender;
+        _addrTicketManager = addrTicketManager;
+        _addrFeeManager = addrFeeManager;
+        _addrMarketPlace = addrMarketPlace;
+
         nbTicketsSold = 0;
         _lotteryId = lotteryId;
         cycleStarted = false;
         _period = period;
         _totalDay = totalDay;
+        pricepool = address(this).balance;
         start = 0;
         currentDay = 0;
-        irmc = IRMC(_addrLotMan);
         _nbOfTicketsSalable = nbOfTicketsSalable;
 
     }
@@ -63,9 +69,11 @@ contract LotteryGame is LotteryManager {
         emit Received(msg.sender, msg.value);
     }
 
-    function getPricepoolAndDealFees() external view returns(uint pp, uint d){
-        return (pricepool, balanceFeesDeals);
-    }
+    //Function getter returnning the status of chasePeriod and gamePeriod
+    //To use in FusionManager.sol
+    function getPeriod () external view returns(Period){
+        return (_period);
+    } 
 
     function NewCycle() external onlyOwner {
         require(_period == Period.End, "ERROR :: You can't init a new cycle during this period");
@@ -73,9 +81,8 @@ contract LotteryGame is LotteryManager {
         currentDay = 0;
         lotteryId += 1;
         caracNftGagnant = lotteryId * 100000;
-        irmc.setLotteryId(lotteryId);
         winnerClaimed = false;
-        balanceFeesDeals = 0;
+        irmc = IRMCTicketInfo(_addrTicketManager);
 
         //Reset of the claim status of all NFTs
         ( _addrN, _addrG, _addrSG, _addrM, _addrP) = irmc.getAddrTicketContracts();
@@ -177,9 +184,8 @@ contract LotteryGame is LotteryManager {
         (_addrN, _addrG, _addrSG, _addrM, _addrP) = irmc.getAddrTicketContracts();
 
         //Claim all the fees from Marketplace
-        IRMC(addrMarketPlace).claimFees();
+        IRMCFeeInfo(_addrMarketPlace).claimFees();
 
-        balanceFeesDeals = address(this).balance - pricepool;
     }
 
     function claimRewardForWinner() external {
@@ -189,7 +195,7 @@ contract LotteryGame is LotteryManager {
         require(winnerClaimed == false, "ERROR :: You can't claim twice the price pool");
 
         uint _shareWinner;
-        (, _shareWinner, , ,) = IRMC(addrFeeManager).getShareOfPricePoolFor();
+        (, _shareWinner, , ,) = IRMCFeeInfo(_addrFeeManager).getShareOfPricePoolFor();
        
         winnerClaimed = true;
         address addrContr;
@@ -206,8 +212,9 @@ contract LotteryGame is LotteryManager {
     function claimRewardsForAll(address _addrClaimer) external {
         require(_period == Period.Claim, "ERROR :: You can't claim the rewards if the game is not over");
         uint _totalGain;
+
         _addrClaimer = msg.sender;
-        (_totalGain) = irmc_fee.computeGainForAdvantages(_addrClaimer);
+        (_totalGain) = IRMCFeeInfo(addrFeeManager).computeGainForAdvantages(_addrClaimer);
 
         require(_totalGain > 0, "ERROR :: You don't have any rewards to claim");
         payable(_addrClaimer).transfer(_totalGain * 1 ether);

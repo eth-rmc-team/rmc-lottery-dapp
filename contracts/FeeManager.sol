@@ -1,21 +1,27 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.17;
 
-import './IRMC.sol';
+import './Interfaces/IRMCTicketInfo.sol';
+import './Interfaces/IRMCLotteryInfo.sol';
+
 import "@openzeppelin/contracts/token/ERC721/extensions/IERC721Enumerable.sol";
 
 contract FeeManager {
 
     address private owner;
-    address public addrContractTicketManager;
+    address private addrContractTicketManager;
+    address private addrContractLotteryGame;
+    address private addrContractMarketplace;
 
     address _addrG;
     address _addrSG;
     address _addrM;
     address _addrP;
 
-    IRMC irmc;
-    IRMC.Period _period;
+    bool _claimed;
+
+    IRMCTicketInfo irmcTI;
+    IRMCLotteryInfo.Period _period;
     
     //To be divided by 100 in the appropriated compute function
     //Every rewards are claim WHEN a game period is done (triggered by the winner claiming his gain
@@ -46,15 +52,11 @@ contract FeeManager {
         _;
     }
 
-    function setAddr(address _addr)  external onlyOwner {
-        addrContractTicketManager = _addr;
-        (,_addrG, _addrSG, _addrM, _addrP) = IRMC(addrContractTicketManager).getAddrTicketContracts();
+    function setAddr(address _addrTM, address _addrLG, address _addrMP)  external onlyOwner {
+        addrContractTicketManager = _addrTM;
+        addrContractLotteryGame = _addrLG;
+        addrContractMarketplace = _addrMP;
 
-        
-    }
-
-    function setAddrContract(address _addrContractLotteryManager) external onlyOwner {
-        irmc = IRMC(_addrContractLotteryManager);
     }
 
     //Function setting the share of the winner
@@ -122,8 +124,16 @@ contract FeeManager {
         shareOfPricePoolForPlatin);
     }
 
+    function setClaimStatus(uint _id) private {
+        irmcTI.setPPClaimStatus(true, _id);
+        irmcTI.setFeeClaimStatus(true, _id);
+    }
+
+    //Function to compute the gain for the owner of special NFT and disabling the claim afterward
     function computeGainForAdvantages(address _addrClaimer) external returns (uint _totalGain) {
-        require(_period == IRMC.Period.Claim, "ERROR :: You can't claim the winner if the game is not over");
+
+        require(msg.sender == addrContractLotteryGame, "WARNING :: Only the Lottery Game contract can call this function");
+        (,_addrG, _addrSG, _addrM, _addrP) = irmcTI.getAddrTicketContracts();
 
         uint cptG = 0;
         uint cptSG = 0;
@@ -134,24 +144,19 @@ contract FeeManager {
         uint gain_D = 0;
         uint id = 0;
 
-        uint _balanceDealsFees;
-        uint _pricepool;
+        uint _pricepool = addrContractLotteryGame.balance;
+        uint _balanceDealsFees = addrContractMarketplace.balance;
         
-        bool _claimed;
-
-        (_pricepool, _balanceDealsFees) = irmc.getPricepoolAndDealFees();
         uint supplySGG = IERC721Enumerable(_addrSG).totalSupply() + IERC721Enumerable(_addrG).totalSupply();
 
         if (IERC721Enumerable(_addrG).balanceOf(_addrClaimer) > 0 ){
             for (uint i = 0; i < IERC721Enumerable(_addrG).balanceOf(_addrClaimer); i++){
                 
                 id = IERC721Enumerable(_addrG).tokenOfOwnerByIndex(_addrClaimer, i);
-                (_claimed, ) = irmc.getClaimedRewardStatus(id);
+                (_claimed, ) = irmcTI.getClaimedRewardStatus(id);
                 if(_claimed == false) {
-                    irmc.setPPClaimStatus(true, id);
-                    irmc.setFeeClaimStatus(true, id);
+                    setClaimStatus(id);
                     cptG ++;
-
                 }
 
             }
@@ -163,11 +168,10 @@ contract FeeManager {
             for (uint i = 0; i < IERC721Enumerable(_addrSG).balanceOf(_addrClaimer); i++){
                 
                 id = IERC721Enumerable(_addrSG).tokenOfOwnerByIndex(_addrClaimer, i);
-                (_claimed, ) = irmc.getClaimedRewardStatus(id);
+                (_claimed, ) = irmcTI.getClaimedRewardStatus(id);
 
                 if(_claimed == false){
-                    irmc.setPPClaimStatus(true, id);
-                    irmc.setFeeClaimStatus(true, id);
+                    setClaimStatus(id);
                     cptSG ++;
                 }
             }
@@ -179,11 +183,10 @@ contract FeeManager {
             for (uint i = 0; i < IERC721Enumerable(_addrM).balanceOf(_addrClaimer); i++){
                 
                 id = IERC721Enumerable(_addrM).tokenOfOwnerByIndex(_addrClaimer, i);
-                (_claimed, ) = irmc.getClaimedRewardStatus(id);
+                (_claimed, ) = irmcTI.getClaimedRewardStatus(id);
 
                 if(_claimed == false){
-                    irmc.setPPClaimStatus(true, id);
-                    irmc.setFeeClaimStatus(true, id);
+                    setClaimStatus(id);
                     cptM ++;
                 }
             }
@@ -195,11 +198,10 @@ contract FeeManager {
             for (uint i = 0; i < IERC721Enumerable(_addrP).balanceOf(_addrClaimer); i++){
                 
                 id = IERC721Enumerable(_addrP).tokenOfOwnerByIndex(_addrClaimer, i);
-                (_claimed, ) = irmc.getClaimedRewardStatus(id);
+                (_claimed, ) = irmcTI.getClaimedRewardStatus(id);
 
                 if(_claimed == false){
-                    irmc.setPPClaimStatus(true, id);
-                    irmc.setFeeClaimStatus(true, id);
+                    setClaimStatus(id);
                     cptP ++;
                 }
             }
@@ -209,7 +211,7 @@ contract FeeManager {
 
 
         gain_PP = gain_PP * _pricepool / 100;
-        //Todo: Partade des fees mis en brute, à mettre plus tard dans LotteryManager.
+        //Todo: Partage des fees mis en brute, à mettre plus tard dans LotteryManager.
         gain_D = gain_D * _balanceDealsFees / 100;
         uint totalGain;
         totalGain = gain_PP + gain_D;
