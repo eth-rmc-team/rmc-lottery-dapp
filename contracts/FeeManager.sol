@@ -4,8 +4,6 @@ pragma solidity ^0.8.17;
 import './Interfaces/IRMCTicketInfo.sol';
 import './Interfaces/IRMCLotteryInfo.sol';
 
-import "@openzeppelin/contracts/token/ERC721/extensions/IERC721Enumerable.sol";
-
 contract FeeManager {
 
     address private owner;
@@ -115,7 +113,11 @@ contract FeeManager {
     }
 
     //Function get for the different shares
-    function getShareOfPricePoolFor() external view returns(uint _shareProt, uint _shareWinner, uint shareSGG, uint _shareMyth, uint _sharePlat) {
+    function getShareOfPricePoolFor() external view returns(uint _shareProt, 
+                                                            uint _shareWinner, 
+                                                            uint shareSGG, 
+                                                            uint _shareMyth, 
+                                                            uint _sharePlat) {
             
         return (shareOfPricePoolForProtocol, 
         shareOfPricePoolForWinner, 
@@ -147,12 +149,12 @@ contract FeeManager {
         uint _pricepool = addrContractLotteryGame.balance;
         uint _balanceDealsFees = addrContractMarketplace.balance;
         
-        uint supplySGG = IERC721Enumerable(_addrSG).totalSupply() + IERC721Enumerable(_addrG).totalSupply();
+        uint supplySGG = IRMCTicketInfo(_addrSG).totalSupply() + IRMCTicketInfo(_addrG).totalSupply();
 
-        if (IERC721Enumerable(_addrG).balanceOf(_addrClaimer) > 0 ){
-            for (uint i = 0; i < IERC721Enumerable(_addrG).balanceOf(_addrClaimer); i++){
+        if (IRMCTicketInfo(_addrG).balanceOf(_addrClaimer) > 0 ){
+            for (uint i = 0; i < IRMCTicketInfo(_addrG).balanceOf(_addrClaimer); i++){
                 
-                id = IERC721Enumerable(_addrG).tokenOfOwnerByIndex(_addrClaimer, i);
+                id = IRMCTicketInfo(_addrG).tokenOfOwnerByIndex(_addrClaimer, i);
                 (_claimed, ) = irmcTI.getClaimedRewardStatus(id);
                 if(_claimed == false) {
                     setClaimStatus(id);
@@ -161,13 +163,13 @@ contract FeeManager {
 
             }
             gain_PP += (cptG / supplySGG) * shareOfPricePoolForGoldAndSuperGold;
-            gain_D += (cptG / IERC721Enumerable(_addrG).totalSupply()) * 20;
+            gain_D += (cptG / IRMCTicketInfo(_addrG).totalSupply()) * 20;
         }
 
-        if (IERC721Enumerable(_addrSG).balanceOf(_addrClaimer) > 0 ){
-            for (uint i = 0; i < IERC721Enumerable(_addrSG).balanceOf(_addrClaimer); i++){
+        if (IRMCTicketInfo(_addrSG).balanceOf(_addrClaimer) > 0 ){
+            for (uint i = 0; i < IRMCTicketInfo(_addrSG).balanceOf(_addrClaimer); i++){
                 
-                id = IERC721Enumerable(_addrSG).tokenOfOwnerByIndex(_addrClaimer, i);
+                id = IRMCTicketInfo(_addrSG).tokenOfOwnerByIndex(_addrClaimer, i);
                 (_claimed, ) = irmcTI.getClaimedRewardStatus(id);
 
                 if(_claimed == false){
@@ -176,13 +178,13 @@ contract FeeManager {
                 }
             }
             gain_PP += (cptSG / supplySGG) * shareOfPricePoolForGoldAndSuperGold;
-            gain_D += (cptSG / IERC721Enumerable(_addrSG).totalSupply()) * 20;
+            gain_D += (cptSG / IRMCTicketInfo(_addrSG).totalSupply()) * 20;
         }
 
-        if (IERC721Enumerable(_addrM).balanceOf(_addrClaimer) > 0 ){
-            for (uint i = 0; i < IERC721Enumerable(_addrM).balanceOf(_addrClaimer); i++){
+        if (IRMCTicketInfo(_addrM).balanceOf(_addrClaimer) > 0 ){
+            for (uint i = 0; i < IRMCTicketInfo(_addrM).balanceOf(_addrClaimer); i++){
                 
-                id = IERC721Enumerable(_addrM).tokenOfOwnerByIndex(_addrClaimer, i);
+                id = IRMCTicketInfo(_addrM).tokenOfOwnerByIndex(_addrClaimer, i);
                 (_claimed, ) = irmcTI.getClaimedRewardStatus(id);
 
                 if(_claimed == false){
@@ -190,14 +192,14 @@ contract FeeManager {
                     cptM ++;
                 }
             }
-            gain_PP += (cptM / IERC721Enumerable(_addrM).totalSupply()) * shareOfPricePoolForMythic;
-            gain_D += (cptM / IERC721Enumerable(_addrM).totalSupply()) * 0;
+            gain_PP += (cptM / IRMCTicketInfo(_addrM).totalSupply()) * shareOfPricePoolForMythic;
+            gain_D += (cptM / IRMCTicketInfo(_addrM).totalSupply()) * 0;
         }
 
-        if (IERC721Enumerable(_addrP).balanceOf(_addrClaimer) > 0 ){
-            for (uint i = 0; i < IERC721Enumerable(_addrP).balanceOf(_addrClaimer); i++){
+        if (IRMCTicketInfo(_addrP).balanceOf(_addrClaimer) > 0 ){
+            for (uint i = 0; i < IRMCTicketInfo(_addrP).balanceOf(_addrClaimer); i++){
                 
-                id = IERC721Enumerable(_addrP).tokenOfOwnerByIndex(_addrClaimer, i);
+                id = IRMCTicketInfo(_addrP).tokenOfOwnerByIndex(_addrClaimer, i);
                 (_claimed, ) = irmcTI.getClaimedRewardStatus(id);
 
                 if(_claimed == false){
@@ -205,8 +207,8 @@ contract FeeManager {
                     cptP ++;
                 }
             }
-            gain_PP += (cptP / IERC721Enumerable(_addrP).totalSupply()) * shareOfPricePoolForPlatin;
-            gain_D += (cptP / IERC721Enumerable(_addrP).totalSupply()) * 20;
+            gain_PP += (cptP / IRMCTicketInfo(_addrP).totalSupply()) * shareOfPricePoolForPlatin;
+            gain_D += (cptP / IRMCTicketInfo(_addrP).totalSupply()) * 20;
         }
 
 

@@ -4,7 +4,6 @@ pragma solidity ^0.8.17;
 import './Interfaces/IRMCTicketInfo.sol';
 import './Interfaces/IRMCFeeInfo.sol';
 import './LotteryManager.sol';
-import "@openzeppelin/contracts/token/ERC721/extensions/IERC721Enumerable.sol";
 
 //Principal contract of the lottery game
 
@@ -86,30 +85,30 @@ contract LotteryGame is LotteryManager {
 
         //Reset of the claim status of all NFTs
         ( _addrN, _addrG, _addrSG, _addrM, _addrP) = irmc.getAddrTicketContracts();
-        for(uint i= 0; i < IERC721Enumerable(_addrG).totalSupply(); i++){
+        for(uint i= 0; i < IRMCTicketInfo(_addrG).totalSupply(); i++){
             uint id;
-            id = IERC721Enumerable(_addrG).tokenByIndex(i);
+            id = IRMCTicketInfo(_addrG).tokenByIndex(i);
             irmc.setPPClaimStatus(false, id);
             irmc.setFeeClaimStatus(false, id);
         }
 
-        for(uint i= 0; i < IERC721Enumerable(_addrSG).totalSupply(); i++){
+        for(uint i= 0; i < IRMCTicketInfo(_addrSG).totalSupply(); i++){
             uint id;
-            id = IERC721Enumerable(_addrSG).tokenByIndex(i);
+            id = IRMCTicketInfo(_addrSG).tokenByIndex(i);
             irmc.setPPClaimStatus(false, id);
             irmc.setFeeClaimStatus(false, id);
         }
 
-        for(uint i= 0; i < IERC721Enumerable(_addrM).totalSupply(); i++){
+        for(uint i= 0; i < IRMCTicketInfo(_addrM).totalSupply(); i++){
             uint id;
-            id = IERC721Enumerable(_addrM).tokenByIndex(i);
+            id = IRMCTicketInfo(_addrM).tokenByIndex(i);
             irmc.setPPClaimStatus(false, id);
             irmc.setFeeClaimStatus(false, id);        
         }
 
-        for(uint i= 0; i < IERC721Enumerable(_addrP).totalSupply(); i++){
+        for(uint i= 0; i < IRMCTicketInfo(_addrP).totalSupply(); i++){
             uint id;
-            id = IERC721Enumerable(_addrP).tokenByIndex(i);
+            id = IRMCTicketInfo(_addrP).tokenByIndex(i);
             irmc.setPPClaimStatus(false, id);
             irmc.setFeeClaimStatus(false, id);
         }
@@ -201,10 +200,10 @@ contract LotteryGame is LotteryManager {
         address addrContr;
         
         (, addrContr,,,,,) = irmc.getNftInfo(caracNftGagnant);
-        winner = payable(IERC721Enumerable(addrContr).ownerOf(caracNftGagnant));
+        winner = payable(IRMCTicketInfo(addrContr).ownerOf(caracNftGagnant));
         
         require(winner == payable(msg.sender), "ERROR :: You are not the winner of this game");
-        IERC721Enumerable(addrContr).safeTransferFrom(msg.sender, address(0), caracNftGagnant);
+        IRMCTicketInfo(addrContr).safeTransferFrom(msg.sender, address(0), caracNftGagnant);
         winner.transfer(_shareWinner * pricepool / 100);
 
     }
