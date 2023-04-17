@@ -43,7 +43,7 @@ contract FeeManager {
     }
 
     modifier onlyOwner {
-        require(msg.sender == owner, "WARNING :: Only owner can call this function");
+        require(msg.sender == owner, "ERROR :: Only owner can call this function");
         _;
     }
 

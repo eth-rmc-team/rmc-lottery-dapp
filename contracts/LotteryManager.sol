@@ -13,6 +13,8 @@ contract LotteryManager {
     address public addrMarketPlace;
     address public addrTicketInformationController;
     
+    address public addrNormalNftContract;
+
     uint nbOfTicketsSalable;
     
     uint lotteryId;
@@ -70,6 +72,10 @@ contract LotteryManager {
 
     function setAddrFeeManager(address _addrFeeManager) public onlyOwner {
         addrFeeManager = _addrFeeManager;
+    }
+
+    function setAddrContractNormalTicket(address _addrNormalNftContract) public onlyOwner {
+        addrNormalNftContract = _addrNormalNftContract;
     }
 
     //Prévoir fonction récupérant les nft encore en jeu durant le cycle courrant (dans TicketsManager)

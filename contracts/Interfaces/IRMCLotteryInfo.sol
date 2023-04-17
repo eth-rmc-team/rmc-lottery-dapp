@@ -14,6 +14,4 @@ interface IRMCLotteryInfo {
 
     function getLotteryId() external view returns(uint _lotteryId);
 
-
-
 }

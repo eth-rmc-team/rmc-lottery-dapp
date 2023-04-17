@@ -11,12 +11,6 @@ import './LotteryManager.sol';
 contract LotteryGame is LotteryManager {
 
     address private owner;
-
-    address private _addrN;
-    address private _addrG;
-    address private _addrSG;
-    address private _addrM;
-    address private _addrP;
     
     address payable winner;
 
@@ -72,7 +66,7 @@ contract LotteryGame is LotteryManager {
 
         if(amount >= 1){
             for (uint i = 1; i <= amount; i++) {
-                IRMCMinter(_addrN).createTicket("todo", msg.sender, IRMCTicketInfo.NftType.Normal);
+                IRMCMinter(addrNormalNftContract).createTicket("todo", msg.sender, IRMCTicketInfo.NftType.Normal);
             }
         }
 
@@ -139,7 +133,7 @@ contract LotteryGame is LotteryManager {
         require(winnerClaimed == false, "ERROR :: You can't claim twice the price pool");
        
         uint gainWinner = IRMCFeeInfo(addrFeeManager).computeGainForWinner(caracNftGagnant, msg.sender); 
-        IRMCMinter(_addrN).burn(caracNftGagnant);
+        IRMCMinter(addrNormalNftContract).burn(caracNftGagnant);
 
         winnerClaimed = true;
         winner.transfer(gainWinner * 1 ether);
