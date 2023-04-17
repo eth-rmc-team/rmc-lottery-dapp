@@ -6,7 +6,7 @@ import "@openzeppelin/contracts/token/ERC721/extensions/IERC721Enumerable.sol";
 interface IRMCTicketInfo is IERC721Enumerable {
     //Structs from TicketManager.sol
     enum State { NoDeal, Dealing }
-    enum NftType { Normal, Gold, SuperGold, Mythic, Platin }
+    enum NftType { Mini, Normal, Gold, SuperGold, Mythic, Platin }    
 
     //Struct containing all the information about a NFT
     struct nftInfo {
@@ -41,8 +41,6 @@ interface IRMCTicketInfo is IERC721Enumerable {
                         bool _rewardClaimed);
     
     function getClaimedRewardStatus(uint _tokenId) external view returns(bool _pricePoolStatus, bool _feeStatus);
-
-    function getMintPrice() external view returns(uint);
     
     function getAddrTicketContracts() external view returns(address _addrN, 
                                                             address _addrG, 

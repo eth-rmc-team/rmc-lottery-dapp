@@ -13,5 +13,9 @@ interface IRMCLotteryInfo {
     function getPeriod () external view returns(Period _period);
 
     function getLotteryId() external view returns(uint _lotteryId);
+    
+    function getIdTokenWinner() external view returns (uint);
+
+    function getMintPrice() external view returns (uint);
 
 }

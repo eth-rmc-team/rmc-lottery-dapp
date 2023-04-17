@@ -6,7 +6,7 @@ import './TicketManager.sol';
 contract TicketInformationController is TicketManager {
 
     enum State { NoDeal, Dealing }
-    enum NftType { Normal, Gold, SuperGold, Mythic, Platin }    
+    enum NftType { Mini, Normal, Gold, SuperGold, Mythic, Platin }    
 
     //Struct containing all the information about a NFT
     struct nftInfo {
@@ -86,8 +86,4 @@ contract TicketInformationController is TicketManager {
                 addrPlatinNftContract);
     }
 
-    //Function getter returning the price for a mint
-    function getMintPrice() external view returns(uint){
-        return mintPrice;
-    }
 }

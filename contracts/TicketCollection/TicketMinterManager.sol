@@ -24,7 +24,7 @@ contract TicketMinterManager is ERC721URIStorage, TicketInformationController {
         return address(this);
     }
 
-    function createTicket(string memory metadata, address _addrMinter, NftType _nftType) external onlyWhiteListedAddress
+    function createTicket(string memory metadata, address _addrMinter, NftType _nftType) external onlyWhiteListedAddress returns(uint _tokenId)
     {
         require(
             !hasBeenMinted[metadata],
@@ -40,6 +40,8 @@ contract TicketMinterManager is ERC721URIStorage, TicketInformationController {
         idNftToNftInfos[tokendId] = newNftInfo;
         hasBeenMinted[metadata] = true;
         emit ItemMinted(tokendId, msg.sender, metadata, NftType.Normal);
+
+        return tokendId;
         
     }
 

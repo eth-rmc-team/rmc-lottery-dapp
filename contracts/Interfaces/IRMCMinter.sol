@@ -9,7 +9,7 @@ interface IRMCMinter is IRMCTicketInfo {
 
 
     //Functions from TicketMinterManager
-    function createTicket(string memory metadata, address _addrMinter, NftType _nftType) external;
+    function createTicket(string memory metadata, address _addrMinter, NftType _nftType) external returns(uint _tokenId);
     
     function burn(uint tokenId) external;
 

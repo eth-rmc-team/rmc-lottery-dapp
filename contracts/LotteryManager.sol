@@ -1,6 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.17;
 
+import './Interfaces/IRMCTicketInfo.sol';
+import './Interfaces/IRMCFeeInfo.sol';
+import './Interfaces/IRMCMinter.sol';
+
 //Contract managing lottery games
 //Set the period (in chase or in a cycle)
 //Set the rewards et permit their claims
@@ -33,7 +37,12 @@ contract LotteryManager {
 
     //Time settings for a game period
     uint totalDay;
+        
+    uint mintPrice;
+
     
+    event Received(address, uint);
+
     constructor() {
         owner = msg.sender;
 
@@ -43,6 +52,8 @@ contract LotteryManager {
         period = Period.Game;
 
         ticketsFusionClaimedGains = 0;
+
+        mintPrice = 25; //(todo: a mettre en float), actuellement il faudra multiplier par 10 ** 17
     }
 
     //todo: mettre à terme une whiteList, plutot qu'une adresse unique
@@ -54,6 +65,11 @@ contract LotteryManager {
     modifier onlyLotteryGameContract {
         require(msg.sender == addrLotteryGame, "WARNING :: only the LotteryGame contract can have access");
         _;
+    }
+
+    //Function to allow this contract to reveive value from other contracts
+    receive() external payable  {
+        emit Received(msg.sender, msg.value);
     }
 
     //Function setting  the address of the lottery game contract

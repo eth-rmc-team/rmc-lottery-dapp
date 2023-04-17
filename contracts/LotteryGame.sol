@@ -1,10 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.17;
 
-import './Interfaces/IRMCTicketInfo.sol';
-import './Interfaces/IRMCFeeInfo.sol';
-import './Interfaces/IRMCMinter.sol';
 import './LotteryManager.sol';
+import './Interfaces/IRMCStaking.sol';
 
 //Principal contract of the lottery game
 
@@ -13,6 +11,7 @@ contract LotteryGame is LotteryManager {
     address private owner;
     
     address payable winner;
+    address private addrTicketStaking;
 
     uint public nbTicketsSold;
     
@@ -20,8 +19,6 @@ contract LotteryGame is LotteryManager {
     uint private currentDay;
 
     uint private caracNftGagnant;
-
-    event Received(address, uint);
 
     //Constructor
     constructor() payable {
@@ -36,9 +33,21 @@ contract LotteryGame is LotteryManager {
 
     }
 
-    //Function to allow this contract to reveive value from other contracts
-    receive() external payable  {
-        emit Received(msg.sender, msg.value);
+    function setAddrTicketStakingContract(address _addrTicketStaking) public onlyOwner {
+        addrTicketStaking = _addrTicketStaking;
+    }
+
+    //Function setting the price for a mint
+    function setMintPrice(uint _price) public onlyOwner {
+        mintPrice = _price * (10 ** 18); //todo: voir pour prend en compte les float (import math, mul etc)
+    }
+
+    function getMintPrice() external view returns (uint) {
+        return (mintPrice * (10 ** 18));
+    }
+
+    function getIdTokenWinner() external view returns (uint) {
+        return caracNftGagnant;
     }
 
     function NewCycle() external onlyOwner {
@@ -54,7 +63,9 @@ contract LotteryGame is LotteryManager {
     }
 
     function buyTicket(uint amount) payable external{
-        uint _price = amount * IRMCTicketInfo(addrTicketInformationController).getMintPrice() * (10 ** 18);
+        uint _price = amount * mintPrice * (10 ** 18);
+        uint _tokenId;
+        address staked = msg.sender;
 
         require(msg.value == _price, "ERROR :: You must pay the right amount of RMC");
         require(amount <= nbOfTicketsSalable - nbTicketsSold, "WARNING :: Not enough tickets left for your order");
@@ -66,7 +77,9 @@ contract LotteryGame is LotteryManager {
 
         if(amount >= 1){
             for (uint i = 1; i <= amount; i++) {
-                IRMCMinter(addrNormalNftContract).createTicket("todo", msg.sender, IRMCTicketInfo.NftType.Normal);
+                _tokenId = IRMCMinter(addrNormalNftContract).createTicket("todo", msg.sender, IRMCTicketInfo.NftType.Normal);
+                IRMCStaking(addrTicketStaking).setTicketStaked(staked, _tokenId);
+
             }
         }
 
@@ -81,7 +94,7 @@ contract LotteryGame is LotteryManager {
         require(cycleStarted == true, "ERROR :: A game can't start if all tickets haven't been sold");
         require(period == Period.Game, "ERROR :: You can't start a game during this period");
         
-        pricepool = nbTicketsSold * IRMCTicketInfo(addrTicketInformationController).getMintPrice() * (10 ** 17);
+        pricepool = nbTicketsSold * mintPrice * (10 ** 17);
 
         totalDay = totalDay;
 

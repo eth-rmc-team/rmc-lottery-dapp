@@ -17,6 +17,7 @@ contract TicketManager {
     address public addrFeeManager;
     
     //ERC721 address for the minting contract
+    address public addrMiniNormalNftContract;
     address public addrNormalNftContract;
     address public addrGoldNftContract;
     address public addrSuperGoldNftContract;
@@ -28,7 +29,6 @@ contract TicketManager {
 
     uint[] caracteristics;
 
-    uint public mintPrice; //in Avax
     //Array of caracteristics picked during a cycle
     uint[] combinationPicked;
 
@@ -36,7 +36,6 @@ contract TicketManager {
 
     constructor() {
         owner = msg.sender;
-        mintPrice = 25; //(todo: a mettre en float), actuellement il faudra multiplier par 10 ** 17
 
     }
     
@@ -86,6 +85,10 @@ contract TicketManager {
         whiteListedAddresses[_addr] = false;
     }
 
+    function setAddrMiniNormalNftTicketContract(address _addrMiniNormalNftTicketContract) external onlyOwner {
+        addrMiniNormalNftContract = _addrMiniNormalNftTicketContract;
+    }
+
     //Function setting the address of the NFT contract
     function setAddrNormalNftContract(address _addrNormalNftContract) external onlyOwner {
         addrNormalNftContract = _addrNormalNftContract;
@@ -109,20 +112,10 @@ contract TicketManager {
     }
 
     //End of functions
-
-    //Function setting the price for a mint
-    function setMintPrice(uint _price) public onlyOwner {
-        mintPrice = _price; //todo: voir pour prend en compte les float (import math, mul etc)
-    }
     
     //Function getter returning the address of the TicketFusion contract
     function getAddrTicketFusionContract() public view returns(address) {
         return addrTicketFusion;
-    }
-
-    //Function getter returning de caracteristic of the day
-    function getCaracteristicsForADay(uint _day) public view returns(uint){
-        return caracteristics[_day];
     }
 
 }
