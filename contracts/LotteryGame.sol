@@ -47,6 +47,7 @@ contract LotteryGame is LotteryManager {
         emit Received(msg.sender, msg.value);
     }
 
+    //Function settin a new lottery game
     function NewCycle() external onlyOwner {
         require(period == Period.End, "ERROR :: You can't init a new cycle during this period");
         period = Period.Game;
@@ -59,8 +60,9 @@ contract LotteryGame is LotteryManager {
         IRMCFeeInfo(addrFeeManager).resetClaimStatus();
     }
 
+    //Function for tickets purchase and minting
     function buyTicket(uint amount) payable external{
-        uint _price = amount * IRMCTicketInfo(addrTicketInformationController).getMintPrice() * (10 ** 18);
+        uint _price = amount * mintPrice * (10 ** 18);
 
         require(msg.value == _price, "ERROR :: You must pay the right amount of RMC");
         require(amount <= nbOfTicketsSalable - nbTicketsSold, "WARNING :: Not enough tickets left for your order");
@@ -83,11 +85,12 @@ contract LotteryGame is LotteryManager {
 
     }
 
+    //Function called when all the tickets have been sold, starting the game
     function startLottery() private {
         require(cycleStarted == true, "ERROR :: A game can't start if all tickets haven't been sold");
         require(period == Period.Game, "ERROR :: You can't start a game during this period");
         
-        pricepool = nbTicketsSold * IRMCTicketInfo(addrTicketInformationController).getMintPrice() * (10 ** 17);
+        pricepool = nbTicketsSold * mintPrice * (10 ** 17);
 
         totalDay = totalDay;
 
@@ -96,6 +99,7 @@ contract LotteryGame is LotteryManager {
 
     }
 
+    //Function callable by anyone every 24h to reveal one caracteristic of the winning NFT
     function GoToNnextDay() public {
         require(period == Period.Game, "ERROR :: You can't go to the next day if not in a running game");
         require(currentDay < totalDay + start + 1 days, "ERROR :: You can't go to the next day if the game is over");
@@ -118,6 +122,7 @@ contract LotteryGame is LotteryManager {
         
     }
 
+    //Function called when all the caracteristics have been revealed (the winning NFT is known)
     function endLottery() private {
         require(period == Period.Claim, "ERROR :: You can't end the game if it's not over");
         require(currentDay >= totalDay + start, "ERROR :: You can't end the game if it's not over");
@@ -132,6 +137,7 @@ contract LotteryGame is LotteryManager {
 
     }
 
+    //Function to claim the price pool for the winner
     function claimRewardForWinner() external {
         require(period == Period.Claim, "ERROR :: You can't claim the winner if the game is not over");
         require(cycleStarted == false, "ERROR :: You can't claim the winner if the game is not over");
@@ -146,6 +152,7 @@ contract LotteryGame is LotteryManager {
 
     }
 
+    //Function to claim rewards for "Special Tickets" holders
     function claimRewardForAll() external {
         require(period == Period.Claim, "ERROR :: You can't claim the rewards if the game is not over");
         uint _totalGain;
@@ -157,7 +164,8 @@ contract LotteryGame is LotteryManager {
 
     }
 
-    //Function ending the current cycle of the game
+    //Function called by owner ending the current cycle of the game
+    //Used to mark the end of the game and to allow the owner to start a new one
     function endCycle() external onlyOwner {
         period = Period.End;
     }

@@ -109,11 +109,6 @@ contract TicketManager {
     }
 
     //End of functions
-
-    //Function setting the price for a mint
-    function setMintPrice(uint _price) public onlyOwner {
-        mintPrice = _price; //todo: voir pour prend en compte les float (import math, mul etc)
-    }
     
     //Function getter returning the address of the TicketFusion contract
     function getAddrTicketFusionContract() public view returns(address) {

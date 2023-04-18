@@ -33,7 +33,7 @@ contract TicketMinterManager is ERC721URIStorage, TicketInformationController {
 
         uint _lotteryId = IRMCLotteryInfo(addrLotteryGame).getLotteryId();
         uint tokendId = _lotteryId; //todo: a changer, pour l'instant on utilise le lotteryId comme tokenId
-        nftInfo memory newNftInfo = nftInfo(_nftType, address(this), tokendId, payable(_addrMinter), State.NoDeal, 0, false, false);
+        nftInfo memory newNftInfo = nftInfo(_nftType, address(this), payable(_addrMinter), State.NoDeal, 0, false, false);
 
         _safeMint(msg.sender, tokendId);
         _setTokenURI(tokendId, metadata);

@@ -19,6 +19,7 @@ contract LotteryManager {
     bool public cycleStarted;
     bool public winnerClaimed;
     uint public pricepool;
+    uint public mintPrice;
 
     //Amount of RMC reward for minting NFTs
     uint tokenBuyReward; 
@@ -72,6 +73,11 @@ contract LotteryManager {
         addrFeeManager = _addrFeeManager;
     }
 
+    //Function setting the price for a mint
+    function setMintPrice(uint _price) public onlyOwner {
+        mintPrice = _price; //todo: voir pour prend en compte les float (import math, mul etc)
+    }
+
     //Prévoir fonction récupérant les nft encore en jeu durant le cycle courrant (dans TicketsManager)
 
     //Function setting the number of tickets salable for a game
@@ -88,6 +94,11 @@ contract LotteryManager {
         return (totalDay);
     }
 
+    //Function getter returning the price for a mint
+    function getMintPrice() external view returns(uint){
+        return mintPrice;
+    }
+    
     function getTicketsSalable() external view returns(uint _nbOfTicketsSalable) {
         return (nbOfTicketsSalable);
     }

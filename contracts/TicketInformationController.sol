@@ -13,7 +13,6 @@ contract TicketInformationController is TicketManager {
 
         NftType nftType;            //from enum nfType from RmcNftMinter.sol
         address nftContractAddress; //from address___NftContract from RmcNftMinter.sol
-        uint nftID;                 //from tokenId from RmcNftMinter.sol
         address payable nftOwner;   //from ownerOf(tokenId) from Marketplace.sol        
         State nftStateOfDeal;       //from State in Marketplace.sol
         uint nftPrice;              //from price in Marketplace.sol
@@ -36,7 +35,6 @@ contract TicketInformationController is TicketManager {
                         State _nftState, 
                         uint _nftPrice ) external onlyWhiteListedAddress {
                             
-        require(idNftToNftInfos[_tokenId].nftID == _tokenId, "ERROR :: NFT not found");
         idNftToNftInfos[_tokenId].nftOwner = _nftOwner;
         idNftToNftInfos[_tokenId].nftStateOfDeal = _nftState;
         idNftToNftInfos[_tokenId].nftPrice = _nftPrice;
@@ -55,13 +53,11 @@ contract TicketInformationController is TicketManager {
         //Function getter returning all the information about a NFT
     function getNftInfo(uint _tokenId) external view returns (NftType, 
                                                             address _addrContr, 
-                                                            uint _id, 
                                                             address payable _owner, 
                                                             State _dealStatus, 
                                                             uint _price) {
         return (idNftToNftInfos[_tokenId].nftType, 
         idNftToNftInfos[_tokenId].nftContractAddress, 
-        idNftToNftInfos[_tokenId].nftID, 
         idNftToNftInfos[_tokenId].nftOwner, 
         idNftToNftInfos[_tokenId].nftStateOfDeal, 
         idNftToNftInfos[_tokenId].nftPrice);
@@ -86,8 +82,4 @@ contract TicketInformationController is TicketManager {
                 addrPlatinNftContract);
     }
 
-    //Function getter returning the price for a mint
-    function getMintPrice() external view returns(uint){
-        return mintPrice;
-    }
 }

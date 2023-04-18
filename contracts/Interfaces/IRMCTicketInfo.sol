@@ -13,7 +13,6 @@ interface IRMCTicketInfo is IERC721Enumerable {
 
         NftType nftType;            //from enum nfType from RmcNftMinter.sol
         address nftContractAddress; //from address___NftContract from RmcNftMinter.sol
-        uint nftID;                 //from tokenId from RmcNftMinter.sol
         address payable nftOwner;   //from ownerOf(tokenId) from Marketplace.sol        
         State nftStateOfDeal;       //from State in Marketplace.sol
         uint nftPrice;              //from price in Marketplace.sol
@@ -32,13 +31,11 @@ interface IRMCTicketInfo is IERC721Enumerable {
 
     function setFeeClaimStatus(bool _statusFee, uint _tokenId) external;
 
-    function getNftInfo(uint _tokenId) external view returns (NftType, 
-                        address _addrContr, 
-                        uint _id, 
-                        address payable _owner, 
-                        State _dealStatus, 
-                        uint _price, 
-                        bool _rewardClaimed);
+    function getNftInfo(uint _tokenId) external view returns (NftType _nftType, 
+                                                              address _addrContr, 
+                                                              address payable _owner, 
+                                                              State _dealStatus, 
+                                                              uint _price);
     
     function getClaimedRewardStatus(uint _tokenId) external view returns(bool _pricePoolStatus, bool _feeStatus);
 
