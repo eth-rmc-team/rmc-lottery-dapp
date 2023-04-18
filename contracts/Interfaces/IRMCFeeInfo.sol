@@ -15,7 +15,8 @@ interface IRMCFeeInfo {
                                                             uint _shareWinner, 
                                                             uint shareSGG, 
                                                             uint _shareMyth, 
-                                                            uint _sharePlat);
+                                                            uint _sharePlat,
+                                                            uint _shareStake);
 
     //Function from Marketplace.sol
     function claimFees () external;

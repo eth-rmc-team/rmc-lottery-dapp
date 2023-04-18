@@ -3,14 +3,15 @@ pragma solidity ^0.8.17;
 
 import './LotteryManager.sol';
 import './Interfaces/IRMCStaking.sol';
+import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 
 //Principal contract of the lottery game
 
 contract LotteryGame is LotteryManager {
 
     address private owner;
-    
     address payable winner;
+    address private addrContractFeeManager;
     address private addrTicketStaking;
 
     uint public nbTicketsSold;
@@ -167,6 +168,19 @@ contract LotteryGame is LotteryManager {
     //Function ending the current cycle of the game
     function endCycle() external onlyOwner {
         period = Period.End;
+    }
+
+    function approveFeeManager(address _addrFeeManager) public onlyOwner {
+        addrContractFeeManager = _addrFeeManager;
+        
+       //To avoid a mix with old and new approved amount, we set the allowance to 0 before setting the new allowance
+        IERC20(0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7).approve(_addrFeeManager, 0);
+        IERC20(0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7).approve(_addrFeeManager, 1000);
+
+    }
+
+    function getAllowance() public view returns(uint) {
+        return IERC20(0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7).allowance(address(this), addrContractFeeManager);
     }
 
 }

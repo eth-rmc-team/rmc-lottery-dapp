@@ -4,10 +4,12 @@ pragma solidity ^0.8.17;
 import './LotteryManager.sol';
 import "@openzeppelin/contracts/token/ERC721/extensions/IERC721Enumerable.sol";
 import './Interfaces/IRMCLotteryInfo.sol';
+import './Interfaces/IRMCFeeInfo.sol';
 
 contract TicketStaking is LotteryManager{
 
-    address private addrContractMiniNormalTicket;        
+    address private addrContractMiniNormalTicket;  
+    address public addrContractFeeManager;      
     address private winnerStaked;
 
     uint private stakingDiviser;
@@ -22,7 +24,16 @@ contract TicketStaking is LotteryManager{
         
     }
 
+    struct StakedInfo{
+        uint nbTicketsStaked;
+        uint amountToRepay;
+        uint amountPayable;
+        bool isStakerRepayable;
+        bool isStaker;
+    }
+
     mapping (address => uint) public addressStakedToNbStaker;
+    mapping (address => StakedInfo) public addressStakedToStakedInfo;
     mapping (uint => address) public idTicketToAddressStaked;
     mapping (address => StakerInfo) public addressStakerToStakerInfo;
 
@@ -30,6 +41,10 @@ contract TicketStaking is LotteryManager{
         setAddrContractMiniNormalTicket(_addrMiniTicket);
         getStakingBalance = false;
 
+    }
+
+    function setAddrContractFeeManager (address _addrContractFeeManager) public onlyOwner {
+        addrContractFeeManager = _addrContractFeeManager;
     }
 
     //Function setting the contract address of the "MiniTicket"
@@ -44,8 +59,20 @@ contract TicketStaking is LotteryManager{
 
     //Function called by LotteryGame whenever a player buy (and so mint) ticket(s)
     function setTicketStaked(address _addrStaked, uint _tokenId) external onlyLotteryGameContract {
+        //Reset of bool "getStakingBalance"
+        if(getStakingBalance == true) {
+            getStakingBalance = false;
+        }
         //Add token ID of recently minted ticket to the map of ticket ID of stakable addresses
         idTicketToAddressStaked[_tokenId] = _addrStaked;
+        addressStakedToStakedInfo[_addrStaked].nbTicketsStaked ++;
+        addressStakedToStakedInfo[_addrStaked].amountToRepay += IRMCLotteryInfo(addrLotteryGame).getMintPrice() * (10 ** 18);
+        
+        //Firs time this function is called, we set the sender as a staker
+        if(addressStakedToStakedInfo[msg.sender].isStaker == false) {
+            addressStakedToStakedInfo[msg.sender].isStaker = true;
+        }
+
     }
 
     //Function used to stake a stakable address
@@ -67,6 +94,15 @@ contract TicketStaking is LotteryManager{
         //Add the next amount of "Mini-tickets" minted for a stakable address, to the mapping of the staker
         addressStakerToStakerInfo[staker].nbTicketStaked += _amount;
 
+        //While 50% of the staked address is not repay, we increase amoutPayable
+        if (addressStakedToStakedInfo[_addrStaked].amountPayable < addressStakedToStakedInfo[_addrStaked].amountToRepay / 2) {
+            addressStakedToStakedInfo[_addrStaked].amountPayable += price * (10 ** 18);
+        }
+        else if(addressStakedToStakedInfo[_addrStaked].isStakerRepayable == false){
+            addressStakedToStakedInfo[_addrStaked].isStakerRepayable = true;
+
+        }
+
         //Add the token ID of the minted "Mini-tickets" to the mapping of the staker
         for (uint i = 0; i < _amount; i++) {
             uint miniTokenId;
@@ -75,6 +111,19 @@ contract TicketStaking is LotteryManager{
         }
 
     }
+
+    //Function called by staked address to claim rewards
+    function claimForStaked() external {
+        //Check that the address is a staked address and has rewards to claim
+        require(addressStakedToStakedInfo[msg.sender].isStaker == true, "ERROR :: You haven't been staked");
+        require(addressStakedToStakedInfo[msg.sender].amountPayable > 0, "ERROR :: You don't have any reward to claim");
+        
+        uint gain = addressStakedToStakedInfo[msg.sender].amountPayable;
+        addressStakedToStakedInfo[msg.sender].amountPayable = 0;
+        addressStakedToStakedInfo[msg.sender].amountToRepay -= gain;
+        payable(msg.sender).transfer(gain);
+        
+        }
 
     //Function used to claim rewards for stakers
     function claimForStaker() external {
@@ -85,6 +134,7 @@ contract TicketStaking is LotteryManager{
         //Bool "getStakingBalance" is used to avoid calling the balanceOf function multiple times
         if(getStakingBalance == false){
             getStakingBalance = true;
+            IRMCFeeInfo(addrContractFeeManager).claimFees();
             stakingReward = address(this).balance;
         }
 
@@ -107,9 +157,14 @@ contract TicketStaking is LotteryManager{
         addressStakerToStakerInfo[msg.sender].addrStaked = address(0);
 
         //Calculate and send the amount of rewards to the staker
-        uint gain = cpt / addressStakedToNbStaker[winnerStaked] * stakingReward;
+        uint gain = 90 * (cpt / addressStakedToNbStaker[winnerStaked] * stakingReward) / 100;
         payable(msg.sender).transfer(gain * (10 ** 18));
 
+    }
+
+    function claimForProtocol() public onlyOwner{
+        uint gain = 10 * stakingReward / 100;
+        payable(owner).transfer(gain * (10 ** 18));
     }
 
 }

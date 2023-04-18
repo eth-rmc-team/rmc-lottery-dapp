@@ -9,6 +9,7 @@ contract FeeManager {
     address private owner;
     address private addrContractLotteryGame;
     address private addrContractMarketplace;
+    address private addrContractTicketStaking;
 
     address private addrN;
     address private addrG;
@@ -29,6 +30,7 @@ contract FeeManager {
     uint shareOfPricePoolForMythic;
     uint shareOfPricePoolForPlatin;
     uint shareOfPricePoolForProtocol;
+    uint shareOfPricePoolForStakers;
 
     constructor() {
         owner = msg.sender;
@@ -110,7 +112,7 @@ contract FeeManager {
                 shareOfPricePoolForGoldAndSuperGold +
                 shareOfPricePoolForProtocol < 100, "WARNING :: the total share must be less than 100");
             
-        require(_share > 1 && _share < 5, "WARNING :: the share must be between 2 and 5");
+        require(_share > 1 && _share < 5, "WARNING :: the share must be between 1 and 5");
             shareOfPricePoolForGoldAndSuperGold = _share;
     }
 
@@ -121,7 +123,17 @@ contract FeeManager {
                 shareOfPricePoolForGoldAndSuperGold +
                 shareOfPricePoolForProtocol < 100, "WARNING :: the total share must be less than 100");
             
-        require(_share > 1 && _share < 7, "WARNING :: the share must be between 1 and 5");
+        require(_share > 1 && _share < 7, "WARNING :: the share must be between 1 and 7");
+            shareOfPricePoolForGoldAndSuperGold = _share;
+    }
+
+    function setShareOfPricePoolForStakers(uint _share) public onlyOwner {
+        require(_share + shareOfPricePoolForWinner + 
+                shareOfPricePoolForMythic + 
+                shareOfPricePoolForGoldAndSuperGold +
+                shareOfPricePoolForProtocol < 100, "WARNING :: the total share must be less than 100");
+            
+        require(_share > 1 && _share < 15, "WARNING :: the share must be between 1 and 15");
             shareOfPricePoolForGoldAndSuperGold = _share;
     }
 
@@ -130,22 +142,35 @@ contract FeeManager {
                                                             uint _shareWinner, 
                                                             uint shareSGG, 
                                                             uint _shareMyth, 
-                                                            uint _sharePlat) {
+                                                            uint _sharePlat,
+                                                            uint _shareStakers) {
             
         return (shareOfPricePoolForProtocol, 
         shareOfPricePoolForWinner, 
         shareOfPricePoolForGoldAndSuperGold, 
         shareOfPricePoolForMythic, 
-        shareOfPricePoolForPlatin);
+        shareOfPricePoolForPlatin,
+        shareOfPricePoolForStakers);
     }
 
     function claimFees () external {
-        require(payable(msg.sender) == addrContractLotteryGame, "ERROR :: Only the LotteryGame contract can call this function");
-        //If there is money in the contract, we send it to the LotteryGame contract
-        if(addrContractMarketplace.balance > 0){
-            IERC20(0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7).transferFrom(addrContractMarketplace, 
-                                                                            addrContractLotteryGame, 
-                                                                            (addrContractMarketplace.balance * (10 ** 18)));
+        if(msg.sender == addrContractLotteryGame) {
+            //If there is money in the contract, we send it to the LotteryGame contract
+            if(addrContractMarketplace.balance > 0){
+                IERC20(0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7).transferFrom(addrContractMarketplace, 
+                                                                                addrContractLotteryGame, 
+                                                                                (addrContractMarketplace.balance * (10 ** 18)));
+            }
+
+        }
+
+        if(msg.sender == addrContractTicketStaking){
+            IERC20(0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7).transferFrom(addrContractLotteryGame, 
+                                                                            addrContractTicketStaking, 
+                                                                           (shareOfPricePoolForStakers * addrContractMarketplace.balance / 100 * (10 ** 18)));
+        }
+        else {
+            revert("ERROR :: You are not allowed to claim the fees");
         }
 
     }
@@ -291,5 +316,6 @@ contract FeeManager {
         return _gain;
 
     }
+
  
 } 

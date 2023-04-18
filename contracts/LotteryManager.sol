@@ -11,7 +11,7 @@ import './Interfaces/IRMCMinter.sol';
 
 contract LotteryManager {
     
-    address private owner;
+    address public owner;
     address public addrLotteryGame;
     address public addrFeeManager;
     address public addrMarketPlace;
