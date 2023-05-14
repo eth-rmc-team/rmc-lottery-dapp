@@ -2,31 +2,28 @@
 pragma solidity ^0.8.17;
 
 interface interfaceRmcToken {
-    function _mintPlayersReward(address payable _player) external;
+    //function _mintPlayersReward(address payable _player, State _rewardState) external;
     
 }
 
-//Contrat générant le token RMC
-
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-//Contrat pour mettre une supply maximale
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Capped.sol";
-//Contrat pour permettre le burn de token
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
 
+//Contract managing RMC token and his minting
 
-//ERC20Capped hérite de ERC20, donc on a juste à garder ERC20Capped
 contract RmcToken is ERC20Capped, ERC20Burnable {
     
     address payable private owner;
-    
-    uint public playerReward;
+    enum State { Fusion, Mint, Stacking, Deal, LiquidityPool }
+    State private rewardState;
+    uint public totalReward;
    
-    constructor(uint cap, uint reward) ERC20("Royal Mountains Club", "RMC") ERC20Capped(cap * (10 ** decimals())) {//Nom du token et son trigramme
+    constructor(uint cap, uint reward) ERC20("Royal Mountains Club", "RMC") ERC20Capped(cap * (10 ** decimals())) {
 
         owner = payable(msg.sender);
         _mint(owner, 7000000 * (10 ** decimals()));
-        playerReward = reward * (10 ** decimals());
+        totalReward = reward * (10 ** decimals());
     }
     
     modifier onlyOwner {
@@ -34,29 +31,52 @@ contract RmcToken is ERC20Capped, ERC20Burnable {
         _;
     }
 
+    //Function overriding the _mint function from ERC20Capped
     function _mint(address account, uint256 amount) internal virtual override(ERC20Capped, ERC20) {
         require(ERC20.totalSupply() + amount <= cap(), "ERC20Capped: cap exceeded");
         super._mint(account, amount);
     }
 
-    //Fonction de mint pour les joueurs de la lotterie achetant des tickets
-    //Internal: utilisable que dans le SC, non appelable depuis l'extérieur
-    function _mintPlayersReward(address payable _player) external{
+    //Function permitting to mint token to the player depending on the type of claimer
+    function _mintPlayersReward(address payable _player, State _rewardState) external{
         if (_player != address(0)){
-            _mint(_player, playerReward);
+            if (_rewardState == State.Fusion){
+                uint fusionReward = totalReward / 6;
+                _mint(_player, fusionReward);
+            }
+            else if (_rewardState == State.Mint){
+                uint mintReward = totalReward / 6;
+                _mint(_player, mintReward);
+            }
+            else if (_rewardState == State.Stacking){
+                uint stackingReward = 0;
+                _mint(_player, stackingReward);
+            }
+            else if (_rewardState == State.Deal){
+                uint dealReward = totalReward / 6;
+                _mint(_player, dealReward);
+            }
+            else if (_rewardState == State.LiquidityPool){
+                uint liquidityPoolReward = totalReward / 2;
+                _mint(_player, liquidityPoolReward);
+            }
+            else{
+                revert("WARNING :: No token can be minted");
+            }
         }
     }
-
-    //Fonction permettant de régler l'emission de nouveau token
-    function setplayerReward(uint reward) public onlyOwner {
-        playerReward = reward * (10 ** decimals());
+    
+    //Function setting the number of token to mint
+    function settotalReward(uint reward) public onlyOwner {
+        totalReward = reward * (10 ** decimals());
     }
 
+    //Function getter returning the address of the contract
     function getAddrRmcToken() public view returns(address){
         return address(this);
     }
 
-    //Fonction permettant de détruire le SC si on veut
+    //Function permitting to destroy the contract
     function destroy() public onlyOwner {
         selfdestruct(owner);
     }

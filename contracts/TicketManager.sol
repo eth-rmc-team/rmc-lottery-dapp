@@ -2,29 +2,37 @@
 pragma solidity ^0.8.17;
 
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
- 
+
+//Contract managing NFTs for deal on Marketplace.sol and mint on RmcNftMinter.sol 
+
 contract TicketManager {
 
     address private owner;
+    address public whiteListedAddr;
 
-    //ERC721 address for the minting contract
-    address public addrContractNft;
     address public addrMarketPlace;
+    address public addrTicketFusion;
+    address public addrNftMinter;
+    address public addrLotteryGame;
+    address public addrFeeManager;
+    
+    //ERC721 address for the minting contract
+    address public addrNormalNftContract;
+    address public addrGoldNftContract;
+    address public addrSuperGoldNftContract;
+    address public addrMythicNftContract;
+    address public addrPlatinNftContract;
 
-    uint feeByTrade;
+    uint public normalTicketFusionRequirement; 
+    uint public goldTicketFusionRequirement;
 
     uint[] caracteristics;
 
-    uint private mintPrice; //in Avax
+    uint public mintPrice; //in Avax
     //Array of caracteristics picked during a cycle
     uint[] combinationPicked;
 
-    //Mapping (nftAddress => ownerAdress)
-    //Completed when a user uses the MarketPlace for a trade 
-    //in order to know whose the NFT belongs to
-
-    mapping(address => address) private nftOwners;
-    mapping(address => int) private nftPrices;
+    mapping(address => bool) public whiteListedAddresses;
 
     constructor() {
         owner = msg.sender;
@@ -34,76 +42,82 @@ contract TicketManager {
     
     //todo: mettre à terme une whiteList, plutot qu'une adresse unique
     modifier onlyOwner {
-        require(msg.sender == owner, "WARNING :: only the owner can have access");
+         _;
+    }
+
+    modifier onlyWhiteListedAddress {
+        bool status = whiteListedAddresses[msg.sender];
+        require(status == true, "ERROR :: Only the Marketplace contract can call this function");
         _;
     }
 
     //function updateCaracteristic(uint _carac) public
     // A faire 
 
-    function setAddrNftContract(address _addrContractNft) external onlyOwner {
-        addrContractNft = _addrContractNft;
+    //Function setting the address of the TicketFusion contract
+    function setAddrTicketFusion(address _addrTicketFusion) external onlyOwner {
+        addrTicketFusion = _addrTicketFusion;
+        whiteListedAddresses[_addrTicketFusion] = true;
     }
 
-    function  getAddrNftContract() public view returns(address){
-        return addrContractNft;
-    }
-        
-    //Function setting the price for a mint
-    function setMintPrice(uint _price) public onlyOwner {
-        mintPrice = _price; //todo: voir pour prend en compte les float (import math, mul etc)
+    //Function setting the address of the MarketPlace contract
+    function setAddrMarketPlace(address _addrMarketPlace) external onlyOwner {
+        addrMarketPlace = _addrMarketPlace;
+        whiteListedAddresses[_addrMarketPlace] = true;
     }
 
-    function getMintPrice() public view returns(uint){
-        return mintPrice;
+    //function setting the address of the NftMinter contract
+    function setAddrNftMinter(address _addrNftMinter) external onlyOwner {
+        addrNftMinter = _addrNftMinter;
+        whiteListedAddresses[_addrNftMinter] = true;
+    }
+
+    function setAddrLotteryGameContract(address _addrLotteryGameContract) external onlyOwner {
+        addrLotteryGame = _addrLotteryGameContract;
+        whiteListedAddresses[_addrLotteryGameContract] = true;
+    }
+
+    function setAddrFeeManagerContract(address _addrFeeManagerContract) external onlyOwner {
+        addrFeeManager = _addrFeeManagerContract;
+        whiteListedAddresses[_addrFeeManagerContract] = true;
+    }
+
+    function deleteWhiteListedAddress(address _addr) external onlyOwner {
+        whiteListedAddresses[_addr] = false;
+    }
+
+    //Function setting the address of the NFT contract
+    function setAddrNormalNftContract(address _addrNormalNftContract) external onlyOwner {
+        addrNormalNftContract = _addrNormalNftContract;
+    }
+
+    //Multiple functions to set address of all king of NFTs contracts
+    function setAddrGoldNftContract(address _addrGoldNftContract) external onlyOwner {
+        addrGoldNftContract = _addrGoldNftContract;
+    }
+
+    function setAddrSuperGoldNftContract(address _addrSuperGoldNftContract) external onlyOwner {
+        addrSuperGoldNftContract = _addrSuperGoldNftContract;
+    }
+
+    function setAddrMythicNftContract(address _addrMythicNftContract) external onlyOwner {
+        addrMythicNftContract = _addrMythicNftContract;
+    }
+
+    function setAddrPlatinNftContract(address _addrPlatinNftContract) external onlyOwner {
+        addrPlatinNftContract = _addrPlatinNftContract;
+    }
+
+    //End of functions
+    
+    //Function getter returning the address of the TicketFusion contract
+    function getAddrTicketFusionContract() public view returns(address) {
+        return addrTicketFusion;
     }
 
     //Function getter returning de caracteristic of the day
     function getCaracteristicsForADay(uint _day) public view returns(uint){
         return caracteristics[_day];
-    }
-
-    //Function getter returning lotteryId for NFT
-    function getIdLotteryForNft(address _addrNft) public pure returns(uint _lotteryId) {
-        //todo: A FAIRE, code allant chercher lotteryId dans le NFT
-        return _lotteryId;
-    }
-
-    //Function getter returning the owner of NFT by IERC721
-    function getOwnerOfNft(address _addressNft, uint _tokenId) public view returns(address){
-        return IERC721(_addressNft).ownerOf(_tokenId);
-    }
-
-    //Function setting the owner of NFT todo: pour l'instant que pour Marketplace.sol
-    function setOwnerOfNft(address _addressNft, address _addressOwner) public onlyOwner {
-        nftOwners[_addressNft] = _addressOwner;
-    }
-
-    //todo: update 20230411 20h41 => surement à supprimer
-    //Function used by MarketPlace.sol to update the ownership and price (if on sale) of NFT
-    function updateNftRecordings(address _addrNft, uint _priceToSell, uint mode) internal {
-        //If freshly minted, we set nftOwners and nftPrices
-        if( mode == 0 ){
-            nftOwners[_addrNft] = msg.sender;
-            nftPrices[_addrNft] = -1;
-        }
-        //Trade is live, seller gives protocol ownership on NFT
-        else if( mode == 1 ){
-            require(nftPrices[_addrNft] == -1, "WARNING :: NFT already on sale");
-            //Here, msg.sender = seller
-            nftOwners[_addrNft] = msg.sender;
-            nftPrices[_addrNft] = int(_priceToSell);
-        }
-        //Trade is finished, protocol gives buyer ownership of NFT
-        else {
-            //Here, msg.sender = buyer if the deal is succeeded, or seller if he stopped it
-            nftOwners[_addrNft] = msg.sender;
-            nftPrices[_addrNft] = -1;
-        }
-    }
-
-    function _transferFrom(address _from, address _to, uint256 _tokenId) external {
-        IERC721(addrContractNft).transferFrom(_from, _to, _tokenId);
     }
 
 }
