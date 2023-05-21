@@ -5,6 +5,7 @@ import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import './Interfaces/IRMCLotteryInfo.sol';
 import "./TicketInformationController.sol";
+import "hardhat/console.sol";
 
 //Contract minting NFT
 
@@ -12,7 +13,6 @@ contract TicketMinterManager is ERC721URIStorage, TicketInformationController
 {
 
     mapping(string => uint32) public validUris;
-    mapping(uint8 => uint8) public featuresByDay;
 
     uint8 lotteryId;
 
@@ -64,7 +64,7 @@ contract TicketMinterManager is ERC721URIStorage, TicketInformationController
             validUris[uris[i]] = features[i];
         }
         for(uint8 i = 0; i < _featuresByDay.length; i++) {
-            featuresByDay[i] = _featuresByDay[i];
+            featuresByDay[i+1] = _featuresByDay[i];
         }
     }
 
@@ -86,12 +86,12 @@ contract TicketMinterManager is ERC721URIStorage, TicketInformationController
         );
 
         //uint _lotteryId = IRMCLotteryInfo(addrLotteryGame).getLotteryId();
-        uint tokendId = (validUris[uri] * 100) + lotteryId;
+        uint tokenId = (validUris[uri] * 100) + lotteryId;
 
-        _safeMint(_addrMinter, tokendId);
-        _setTokenURI(tokendId, uri);
+        _safeMint(_addrMinter, tokenId);
+        _setTokenURI(tokenId, uri);
 
-        idNftToNftInfos[tokendId] = nftInfo(
+        idNftToNftInfos[tokenId] = nftInfo(
             _nftType, 
             address(this), 
             payable(_addrMinter), 
@@ -102,7 +102,7 @@ contract TicketMinterManager is ERC721URIStorage, TicketInformationController
         );
         validUris[uri] = 0;
 
-        emit ItemMinted(tokendId, _addrMinter, uri, NftType.NORMAL);
+        emit ItemMinted(tokenId, _addrMinter, uri, NftType.NORMAL);
     }
 
     function burn(uint tokenId) external onlyWhiteListedAddress 

@@ -182,7 +182,7 @@ contract FeeManager
     }
 
     //Function called by LotteryGame contract to claim the rewards from "Marketplace" contract
-    function claimFees () external 
+    function claimFees() external 
     {
         //Check that the caller address is the LotteryGame contract
         require(

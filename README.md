@@ -89,10 +89,10 @@ $ docker-compose stop;
 
 ## Running Tests
 
-Main test files can be found in `/test`.
+Main test files can be found in `/test` (from inside docker container).
 
 ```bash
-$ npm run test:local;
+$ yarn test:local;
 ```
 
 ## Useful commands

@@ -16,6 +16,9 @@ interface IRMCMinter is IRMCTicketInfo {
     ) external;
 
     function setLotteryId(uint8 _lotteryId) external;
+
+    function getNbFeaturesForADay(uint8 _day) external view returns(uint8);
+
     
     function burn(uint tokenId) external;
 }

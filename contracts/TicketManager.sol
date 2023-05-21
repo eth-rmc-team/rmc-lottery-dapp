@@ -29,6 +29,8 @@ contract TicketManager
 
     uint32 combinationPicked;
 
+    mapping(uint8 => uint8) public featuresByDay;
+
     uint public mintPrice; //in Avax
 
     mapping(address => bool) public whiteListedAddresses;
@@ -130,10 +132,8 @@ contract TicketManager
         return addrTicketFusion;
     }
 
-    //Function getter returning de caracteristic of the day
-    // function getCaracteristicForADay(uint _day) public view returns(uint)
-    // {
-    //     return caracteristics[_day];
-    // }
-
+    function getNbFeaturesForADay(uint8 _day) external view returns(uint8)
+    {
+        return featuresByDay[_day];
+    }
 }

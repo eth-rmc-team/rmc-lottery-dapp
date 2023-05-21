@@ -73,7 +73,6 @@ contract LotteryGame is LotteryManager
         winningCombination = lotteryId;
         winnerClaimed = false;
         
-        IRMCMinter(addrNormalTicket).setLotteryId(lotteryId);
         IRMCFeeInfo(addrFeeManager).resetClaimStatus();
     }
 
@@ -100,6 +99,10 @@ contract LotteryGame is LotteryManager
             cycleStarted == false, 
             "ERROR :: You can't buy tickets while a game is running"
         );
+
+        if(nbTicketsSold == 0) {
+            IRMCMinter(addrNormalTicket).setLotteryId(lotteryId); 
+        }
         
         //Transfer the funds to this contract and mint the NFTs using the "NormalTicketMinter" contract
         nbTicketsSold += uint16(uris.length);
@@ -178,7 +181,7 @@ contract LotteryGame is LotteryManager
         
         pricepool = nbTicketsSold * mintPrice * (10 ** 17);
 
-        lastStepTime = block.timestamp;     
+        lastStepTime = block.timestamp;    
     }
 
     //Function callable by anyone every 24h to reveal one caracteristic of the winning NFT
@@ -194,8 +197,11 @@ contract LotteryGame is LotteryManager
             "WARNING :: You can't go to the next day if it's not the right time"
         );
             
+        
         unchecked {
-            winningCombination += (getRandomDigit()*10) * (10**currentStep);
+            winningCombination += getRandomDigit(
+                IRMCMinter(addrNormalTicket).getNbFeaturesForADay(uint8(currentStep))
+            )*(10**(currentStep + 1));
         }
 
         if(currentStep < nbStep) {
@@ -299,7 +305,11 @@ contract LotteryGame is LotteryManager
         period = Period.END;
     }
 
-    function getRandomDigit() private returns (uint8) {
+    function getRandomDigit(uint256 max) private returns (uint8) {
+        require(
+            max > 0 && max < 10,
+            "ERROR :: You must provide a number between 1 and 9"
+        );
         nonce++;
         uint256 randomNumber = uint256(keccak256(abi.encodePacked(
             block.timestamp, 
@@ -307,6 +317,6 @@ contract LotteryGame is LotteryManager
             msg.sender, 
             nonce
         )));
-        return uint8((randomNumber % 9) + 1);
+        return uint8((randomNumber % max) + 1);
     }
 }
