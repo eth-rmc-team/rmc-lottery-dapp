@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.17;
+pragma solidity ^0.8.11;
 
 interface IRMCLotteryInfo {
     
     //From LotteryGame.sol
-    enum Period { Game, Claim, Chase, End }
+    enum Period { GAME, CLAIM, CHASE, END }
     
     function getTotalDay() external view returns(uint _totalDay);
     

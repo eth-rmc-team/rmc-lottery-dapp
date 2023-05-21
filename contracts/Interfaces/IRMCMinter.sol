@@ -1,5 +1,5 @@
 //SPDX-Licence-I// SPDX-License-Identifier: MIT
-pragma solidity ^0.8.17;
+pragma solidity ^0.8.11;
 
 import './IRMCTicketInfo.sol';
 
@@ -9,8 +9,13 @@ interface IRMCMinter is IRMCTicketInfo {
 
 
     //Functions from TicketMinterManager
-    function createTicket(string memory metadata, address _addrMinter, NftType _nftType) external;
+    function createTicket(
+        string memory metadata, 
+        address _addrMinter, 
+        NftType _nftType
+    ) external;
+
+    function setLotteryId(uint8 _lotteryId) external;
     
     function burn(uint tokenId) external;
-
 }

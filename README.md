@@ -14,7 +14,8 @@
 $ nvm install;
 ```
 
-2. In dependencies
+Following is DEPRECATED
+<!-- 2. In dependencies
 
 ```bash
 $ npm install;
@@ -24,7 +25,8 @@ $ npm install;
 
 ```bash
 $ npm run compile:local; # build client/node.js file
-```
+``` -->
+End
 
 4. Build and launch docker
 
@@ -35,7 +37,7 @@ $ docker-compose up -d
 6. Verify that container is running
 
 ```bash
-$ docker-compose logs;
+$ docker-compose logs
 # Should see an output of wallet addresses and private keys
 ```
 

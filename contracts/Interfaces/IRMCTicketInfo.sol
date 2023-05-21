@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.17;
+pragma solidity ^0.8.11;
 
 import "@openzeppelin/contracts/token/ERC721/extensions/IERC721Enumerable.sol";
 
 interface IRMCTicketInfo is IERC721Enumerable {
     //Structs from TicketManager.sol
-    enum State { NoDeal, Dealing }
-    enum NftType { Normal, Gold, SuperGold, Mythic, Platin }
+    enum State { NODEAL, DEALING }
+    enum NftType { NORMAL, GOLD, SUPERGOLD, MYTHIC, PLATIN }
 
     //Struct containing all the information about a NFT
     struct nftInfo {

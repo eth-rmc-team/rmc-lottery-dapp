@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.17;
+pragma solidity ^0.8.11;
 
 interface interfaceRmcToken {
     //function _mintPlayersReward(address payable _player, State _rewardState) external;
@@ -12,51 +12,62 @@ import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
 
 //Contract managing RMC token and his minting
 
-contract RmcToken is ERC20Capped, ERC20Burnable {
-    
+contract RmcToken is ERC20Capped, ERC20Burnable 
+{        
+    enum State { FUSION, MINT, STACKING, DEAL, LIQUIDITY_POOL }
+
     address payable private owner;
-    enum State { Fusion, Mint, Stacking, Deal, LiquidityPool }
     State private rewardState;
     uint public totalReward;
    
-    constructor(uint cap, uint reward) ERC20("Royal Mountains Club", "RMC") ERC20Capped(cap * (10 ** decimals())) {
-
+    constructor(uint cap, uint reward) 
+    ERC20("Royal Mountains Club", "RMC") ERC20Capped(cap * (10 ** decimals())) 
+    {
         owner = payable(msg.sender);
         _mint(owner, 7000000 * (10 ** decimals()));
         totalReward = reward * (10 ** decimals());
     }
     
-    modifier onlyOwner {
-        require(msg.sender == owner, "Seul le proprietaire du SC peut utiliser cette fonction");
+    modifier onlyOwner 
+    {
+        require(
+            msg.sender == owner, 
+            "Seul le proprietaire du SC peut utiliser cette fonction"
+        );
         _;
     }
 
     //Function overriding the _mint function from ERC20Capped
-    function _mint(address account, uint256 amount) internal virtual override(ERC20Capped, ERC20) {
-        require(ERC20.totalSupply() + amount <= cap(), "ERC20Capped: cap exceeded");
+    function _mint(address account, uint256 amount) internal virtual override(ERC20Capped, ERC20) 
+    {
+        require(
+            ERC20.totalSupply() + amount <= cap(), 
+            "ERC20Capped: cap exceeded"
+        );
         super._mint(account, amount);
     }
 
     //Function permitting to mint token to the player depending on the type of claimer
-    function _mintPlayersReward(address payable _player, State _rewardState) external{
-        if (_player != address(0)){
-            if (_rewardState == State.Fusion){
+    function _mintPlayersReward(address payable _player, State _rewardState) external
+    {
+        if(_player != address(0)) {
+            if(_rewardState == State.FUSION) {
                 uint fusionReward = totalReward / 6;
                 _mint(_player, fusionReward);
             }
-            else if (_rewardState == State.Mint){
+            else if(_rewardState == State.MINT) {
                 uint mintReward = totalReward / 6;
                 _mint(_player, mintReward);
             }
-            else if (_rewardState == State.Stacking){
+            else if(_rewardState == State.STACKING) {
                 uint stackingReward = 0;
                 _mint(_player, stackingReward);
             }
-            else if (_rewardState == State.Deal){
+            else if (_rewardState == State.DEAL) {
                 uint dealReward = totalReward / 6;
                 _mint(_player, dealReward);
             }
-            else if (_rewardState == State.LiquidityPool){
+            else if (_rewardState == State.LIQUIDITY_POOL) {
                 uint liquidityPoolReward = totalReward / 2;
                 _mint(_player, liquidityPoolReward);
             }
@@ -67,18 +78,20 @@ contract RmcToken is ERC20Capped, ERC20Burnable {
     }
     
     //Function setting the number of token to mint
-    function settotalReward(uint reward) public onlyOwner {
+    function settotalReward(uint reward) public onlyOwner 
+    {
         totalReward = reward * (10 ** decimals());
     }
 
     //Function getter returning the address of the contract
-    function getAddrRmcToken() public view returns(address){
+    function getAddrRmcToken() public view returns(address)
+    {
         return address(this);
     }
 
     //Function permitting to destroy the contract
-    function destroy() public onlyOwner {
+    function destroy() public onlyOwner 
+    {
         selfdestruct(owner);
     }
-
 }

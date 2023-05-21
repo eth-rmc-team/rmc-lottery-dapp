@@ -1,0 +1,38 @@
+{
+    "couleur_map": {
+        "red": 1,
+        "blue": 2,
+        "green": 3
+    },
+    "nb_colors": 3,
+    "nb_days": 3,
+    "hashes": [
+        "Qmeh6PMdLqzpWc4go6wCh4zsNg8KU3oFRa4HkhFZuKiQm6",
+        "QmY5EzyFTq3bfEhGLBapXSTjaKt3kyn33rRDAUvMz4THp3",
+        "QmdihB4KCshv7HpzdTUDMjQwnpxjyZmkyE23aryX7Zou8U",
+        "QmVqcqUdYdGp55A5Bm8QBidzPTjjKcuyGmbhzsgMTLf8Ru",
+        "QmRC11NJTU56xfxxUxv6kLwQ6bMsCw7ML39xSZUsqpb4MS",
+        "QmW2bu7XD6ehicMAkecYETRJQQ4dnAk4v1p4jqYe4Czz1z",
+        "QmSreqtb195zXKg6Lb3pTizhQwiX7yzWxJja7PrArGadJo",
+        "QmVtm2hZDPiGjpF4XTcGP1JsQkWLDKsT8popXnzKv1VhWX",
+        "Qmee48ib5yJeTL5wKCG6svw2zKeTENyNyJ2519Wvac1hqG",
+        "QmNxVF8uTKCMYaTGCHa4xm4SH7ffRNMbykFnrS6Ud6vGZ5",
+        "Qme8Psvr3WWuKjbGMFeJEeMW7LyC1d4cVQzrYJrEP4tN2i",
+        "QmQwU74HdAXNxzXNW7gN5Y2eimoqwUHj9hoBZ83AooDrYn",
+        "QmWknX2P1kScqxhLgf7Gt3UipeEdxT2XMYJPqhADmUft5B",
+        "Qma5sM7W3HCgfCC1ipuUG4XbbccUhBT5zQajqhoDpaGxjH",
+        "QmTTaj49w17iqhkxfAo1hMUXTfZ3iCVq5asyyLq1VyzUYd",
+        "QmaksSvNeqQQuGx5NeUq7eSjGamh2Vs6K1xN4ao55coW7s",
+        "QmYtB93PFo2aLV7THeYmADQVStTp6XveBFt1VJmVjpVogx",
+        "QmQ2hyXaMTbaMq2RjauoSGgmp2WcHPP4fexRQFEQBkDgy7",
+        "QmfDEk7HSGAtG29tGKxCMGeyRtY42DpKzxA3DszgMRM2Td",
+        "QmdtTokQoSn8pH2DiAYGkyMgSenUNECTRC4zKYNuwqVK2L",
+        "QmZ1kUgs88apFaNxLYNp735n6aurnHJ4f4ky57MPcfidu8",
+        "QmNy3hUC3DBE8kvzc4zSy1GwmZS3ZzyN6U2fkGymNRpY7F",
+        "QmPZnCLCY6kC8dbEc7ynGg4HBrJCj2fx4gbxdU1g729VEF",
+        "QmRtTNJiyD6WNSvc5FsVRFrBzGTBZhquJfhekH2R5SduDj",
+        "QmVHCcm9Z6aJj4jCGpp5iucsXG3DLhnuqipwfcMytP8isx",
+        "Qmape3X7Nzs32spVtFCLt6zWmfkhgaHuBGy5r1bUWApTjb",
+        "QmZN9B4aMt3PQFcQ4AryBuhBcDDqKb8mnF7h3djzj6nJTg"
+    ]
+}

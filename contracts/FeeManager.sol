@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.17;
+pragma solidity ^0.8.11;
 
 import './Interfaces/IRMCTicketInfo.sol';
 import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 
-contract FeeManager {
-
+contract FeeManager 
+{
     address private owner;
     address private addrContractLotteryGame;
     address private addrContractMarketplace;
@@ -24,13 +24,14 @@ contract FeeManager {
     //It remains claimable UNTIL a new cycle begins.
     //NFT merged during chase period can't received rewards from previous cycles.
 
-    uint shareOfPricePoolForWinner;
-    uint shareOfPricePoolForGoldAndSuperGold;
-    uint shareOfPricePoolForMythic;
-    uint shareOfPricePoolForPlatin;
-    uint shareOfPricePoolForProtocol;
+    uint8 shareOfPricePoolForWinner;
+    uint8 shareOfPricePoolForGoldAndSuperGold;
+    uint8 shareOfPricePoolForMythic;
+    uint8 shareOfPricePoolForPlatin;
+    uint8 shareOfPricePoolForProtocol;
 
-    constructor() {
+    constructor() 
+    {
         owner = msg.sender;
         
         shareOfPricePoolForWinner = 33;
@@ -42,27 +43,35 @@ contract FeeManager {
         
     }
 
-    modifier onlyOwner {
-        require(msg.sender == owner, "WARNING :: Only owner can call this function");
+    modifier onlyOwner 
+    {
+        require(msg.sender == owner,
+        "WARNING :: Only owner can call this function");
         _;
     }
 
-    modifier onlyLotteryGame {
-        require(msg.sender == addrContractLotteryGame, "ERROR :: Only LotteryGame contract can call this function");
+    modifier onlyLotteryGame 
+    {
+        require(msg.sender == addrContractLotteryGame, 
+        "ERROR :: Only LotteryGame contract can call this function");
         _;
     }
 
-    function setAddrGame(address _addrLG, address _addrMP)  external onlyOwner {
+    function setAddrGame(address _addrLG, address _addrMP) external onlyOwner 
+    {
         addrContractLotteryGame = _addrLG;
         addrContractMarketplace = _addrMP;
 
     }
 
-    function setAddrTicketContract(address _addrN, 
-                                   address _addrG, 
-                                   address _addrSG, 
-                                   address _addrM, 
-                                   address _addrP) external onlyOwner {
+    function setAddrTicketContract(
+        address _addrN, 
+        address _addrG, 
+        address _addrSG, 
+        address _addrM, 
+        address _addrP
+    ) external onlyOwner
+    {
         addrN = _addrN;
         addrG = _addrG;
         addrSG = _addrSG;
@@ -71,66 +80,99 @@ contract FeeManager {
     }
 
     //Function setting the share of the winner
-    function setShareOfPricePoolForWinner (uint _share) public onlyOwner {
+    function setShareOfPricePoolForWinner (uint8 _share) public onlyOwner 
+    {
         require(_share + shareOfPricePoolForProtocol + 
                 shareOfPricePoolForPlatin + 
                 shareOfPricePoolForMythic +
-                shareOfPricePoolForGoldAndSuperGold < 100, "WARNING :: the total share must be less than 100");
+                shareOfPricePoolForGoldAndSuperGold < 100, 
+                "WARNING :: the total share must be less than 100");
 
-        require(_share > 15 && _share < 51, "WARNING :: the share must be between 15 and 51");
-            shareOfPricePoolForWinner = _share;
+        require(_share > 15 && _share < 51, 
+        "WARNING :: the share must be between 15 and 51");
+        
+        shareOfPricePoolForWinner = _share;
     }
 
     //Same function but for the protocol
-    function setShareOfPricePoolForProtocol(uint _share) public onlyOwner {
+    function setShareOfPricePoolForProtocol(uint8 _share) public onlyOwner 
+    {
         require(_share + shareOfPricePoolForWinner + 
                 shareOfPricePoolForPlatin + 
                 shareOfPricePoolForMythic +
-                shareOfPricePoolForGoldAndSuperGold < 100, "WARNING :: the total share must be less than 100");
+                shareOfPricePoolForGoldAndSuperGold < 100, 
+                "WARNING :: the total share must be less than 100");
         
-        require(_share > 15 && _share < 40, "WARNING :: the share must be between 15 and 40");
-                shareOfPricePoolForProtocol = _share;
+        require(_share > 15 && _share < 40, 
+        "WARNING :: the share must be between 15 and 40");
+        
+        shareOfPricePoolForProtocol = _share;
     }
 
     //Same function but for the Gold and SuperGold
-    function setShareOfPricePoolForGoldAndSuperGold(uint _share) public onlyOwner {
-        require(_share + shareOfPricePoolForWinner + 
-                shareOfPricePoolForPlatin + 
-                shareOfPricePoolForMythic +
-                shareOfPricePoolForProtocol < 100, "WARNING :: the total share must be less than 100");
+    function setShareOfPricePoolForGoldAndSuperGold(uint8 _share) public onlyOwner 
+    {
+        require(
+            _share + shareOfPricePoolForWinner + 
+            shareOfPricePoolForPlatin + 
+            shareOfPricePoolForMythic +
+            shareOfPricePoolForProtocol < 100, 
+            "WARNING :: the total share must be less than 100"
+        );
             
-        require(_share > 5 && _share < 10, "WARNING :: the share must be between 5 and 10");
-            shareOfPricePoolForGoldAndSuperGold = _share;
+        require(
+            _share > 5 && _share < 10, 
+            "WARNING :: the share must be between 5 and 10"
+        );
+        shareOfPricePoolForGoldAndSuperGold = _share;
     }
 
     //Same function but for the Mythic
-    function setShareOfPricePoolForMythic(uint _share) public onlyOwner {
-        require(_share + shareOfPricePoolForWinner + 
-                shareOfPricePoolForPlatin + 
-                shareOfPricePoolForGoldAndSuperGold +
-                shareOfPricePoolForProtocol < 100, "WARNING :: the total share must be less than 100");
+    function setShareOfPricePoolForMythic(uint8 _share) public onlyOwner 
+    {
+        require(
+            _share + shareOfPricePoolForWinner + 
+            shareOfPricePoolForPlatin + 
+            shareOfPricePoolForGoldAndSuperGold +
+            shareOfPricePoolForProtocol < 100, 
+            "WARNING :: the total share must be less than 100"
+        );
             
-        require(_share > 1 && _share < 5, "WARNING :: the share must be between 2 and 5");
-            shareOfPricePoolForGoldAndSuperGold = _share;
+        require(
+            _share > 1 && _share < 5, 
+            "WARNING :: the share must be between 2 and 5"
+        );
+        shareOfPricePoolForGoldAndSuperGold = _share;
     }
 
     //Same function but for the Platin
-    function setShareOfPricePoolForPlatin(uint _share) public onlyOwner {            
-        require(_share + shareOfPricePoolForWinner + 
-                shareOfPricePoolForMythic + 
-                shareOfPricePoolForGoldAndSuperGold +
-                shareOfPricePoolForProtocol < 100, "WARNING :: the total share must be less than 100");
+    function setShareOfPricePoolForPlatin(uint8 _share) public onlyOwner 
+    {            
+        require(
+            _share + shareOfPricePoolForWinner + 
+            shareOfPricePoolForMythic + 
+            shareOfPricePoolForGoldAndSuperGold +
+            shareOfPricePoolForProtocol < 100, 
+            "WARNING :: the total share must be less than 100"
+        );
             
-        require(_share > 1 && _share < 7, "WARNING :: the share must be between 1 and 5");
-            shareOfPricePoolForGoldAndSuperGold = _share;
+        require(
+            _share > 1 && _share < 7, 
+            "WARNING :: the share must be between 1 and 5"
+        );
+        shareOfPricePoolForGoldAndSuperGold = _share;
     }
 
     //Function get for the different shares
-    function getShareOfPricePoolFor() external view returns(uint _shareProt, 
-                                                            uint _shareWinner, 
-                                                            uint shareSGG, 
-                                                            uint _shareMyth, 
-                                                            uint _sharePlat) {
+    function getShareOfPricePoolFor() 
+        external view returns (
+            uint8 _shareProt, 
+            uint8 _shareWinner, 
+            uint8 shareSGG, 
+            uint8 _shareMyth, 
+            uint8 _sharePlat
+        ) 
+    {
             
         return (shareOfPricePoolForProtocol, 
         shareOfPricePoolForWinner, 
@@ -140,51 +182,58 @@ contract FeeManager {
     }
 
     //Function called by LotteryGame contract to claim the rewards from "Marketplace" contract
-    function claimFees () external {
+    function claimFees () external 
+    {
         //Check that the caller address is the LotteryGame contract
-        require(payable(msg.sender) == addrContractLotteryGame, "ERROR :: Only the LotteryGame contract can call this function");
+        require(
+            payable(msg.sender) == addrContractLotteryGame, 
+            "ERROR :: Only the LotteryGame contract can call this function"
+        );
         //If there is money in the contract, we send it to the LotteryGame contract
         if(addrContractMarketplace.balance > 0){
-            IERC20(0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7).transferFrom(addrContractMarketplace, 
-                                                                            addrContractLotteryGame, 
-                                                                            (addrContractMarketplace.balance * (10 ** 18)));
+            IERC20(0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7).transferFrom(
+                addrContractMarketplace, 
+                addrContractLotteryGame, 
+                (addrContractMarketplace.balance * (10 ** 18))
+            );
         }
-
     }
 
     //Function used to disable the claim ability of a NFT after the claim
-    function disableClaim(uint _id, address addrNftContract) private {
+    function disableClaim(uint _id, address addrNftContract) private 
+    {
         //True = reward claimed by the NFT
         IRMCTicketInfo(addrNftContract).setPPClaimStatus(true, _id);
         IRMCTicketInfo(addrNftContract).setFeeClaimStatus(true, _id);
     }
 
     //Function resetting the claim ability. Called by the LotteryGame contract for a new cycle
-    function resetClaimStatus() external onlyLotteryGame {
+    function resetClaimStatus() external onlyLotteryGame 
+    {
 
         //Get the total supply for each NFT contract and loop through them
-        for(uint i= 0; i < IRMCTicketInfo(addrG).totalSupply(); i++){
+        for(uint i = 0; i < IRMCTicketInfo(addrG).totalSupply(); i++) {
             uint id;
             id = IRMCTicketInfo(addrG).tokenByIndex(i);
             IRMCTicketInfo(addrG).setPPClaimStatus(false, id);
             IRMCTicketInfo(addrG).setFeeClaimStatus(false, id);
         }
 
-        for(uint i= 0; i < IRMCTicketInfo(addrSG).totalSupply(); i++){
+        for(uint i = 0; i < IRMCTicketInfo(addrSG).totalSupply(); i++) {
             uint id;
             id = IRMCTicketInfo(addrSG).tokenByIndex(i);
             IRMCTicketInfo(addrSG).setPPClaimStatus(false, id);
             IRMCTicketInfo(addrSG).setFeeClaimStatus(false, id);
         }
 
-        for(uint i= 0; i < IRMCTicketInfo(addrM).totalSupply(); i++){
+        for(uint i = 0; i < IRMCTicketInfo(addrM).totalSupply(); i++) {
             uint id;
             id = IRMCTicketInfo(addrM).tokenByIndex(i);
             IRMCTicketInfo(addrM).setPPClaimStatus(false, id);
             IRMCTicketInfo(addrM).setFeeClaimStatus(false, id);        
         }
 
-        for(uint i= 0; i < IRMCTicketInfo(addrP).totalSupply(); i++){
+        for(uint i = 0; i < IRMCTicketInfo(addrP).totalSupply(); i++) {
             uint id;
             id = IRMCTicketInfo(addrP).tokenByIndex(i);
             IRMCTicketInfo(addrP).setPPClaimStatus(false, id);
@@ -193,8 +242,10 @@ contract FeeManager {
     }
 
     //Function computing the gain for the owner of "Special NFT" and disabling the claim afterward
-    function computeGainForAdvantages(address addrClaimer) external onlyLotteryGame returns (uint _totalGain) {
-
+    function computeGainForAdvantages(
+        address addrClaimer
+    ) external onlyLotteryGame returns (uint _totalGain) 
+    {
         uint cptG = 0;
         uint cptSG = 0;
         uint cptM = 0;
@@ -215,9 +266,8 @@ contract FeeManager {
         //Disable the claim ability of the NFT
         //Increase the counter for the NFT type
         //Calculate the gain knowing the share of the price pool for each type of NFT and the number of NFT owned
-        if (IRMCTicketInfo(addrG).balanceOf(addrClaimer) > 0 ){
-            for (uint i = 0; i < IRMCTicketInfo(addrG).balanceOf(addrClaimer); i++){
-                
+        if (IRMCTicketInfo(addrG).balanceOf(addrClaimer) > 0 ) {
+            for (uint i = 0; i < IRMCTicketInfo(addrG).balanceOf(addrClaimer); i++) {
                 id = IRMCTicketInfo(addrG).tokenOfOwnerByIndex(addrClaimer, i);
                 (_claimed, ) = IRMCTicketInfo(addrG).getClaimedRewardStatus(id);
                 if(_claimed == false) {
@@ -230,13 +280,13 @@ contract FeeManager {
             gain_D += (cptG / IRMCTicketInfo(addrG).totalSupply()) * 20;
         }
 
-        if (IRMCTicketInfo(addrSG).balanceOf(addrClaimer) > 0 ){
-            for (uint i = 0; i < IRMCTicketInfo(addrSG).balanceOf(addrClaimer); i++){
+        if (IRMCTicketInfo(addrSG).balanceOf(addrClaimer) > 0 ) {
+            for (uint i = 0; i < IRMCTicketInfo(addrSG).balanceOf(addrClaimer); i++) {
                 
                 id = IRMCTicketInfo(addrSG).tokenOfOwnerByIndex(addrClaimer, i);
                 (_claimed, ) = IRMCTicketInfo(addrSG).getClaimedRewardStatus(id);
 
-                if(_claimed == false){
+                if(_claimed == false) {
                     disableClaim(id, addrSG);
                     cptSG ++;
                 }
@@ -246,12 +296,12 @@ contract FeeManager {
         }
 
         if (IRMCTicketInfo(addrM).balanceOf(addrClaimer) > 0 ){
-            for (uint i = 0; i < IRMCTicketInfo(addrM).balanceOf(addrClaimer); i++){
+            for (uint i = 0; i < IRMCTicketInfo(addrM).balanceOf(addrClaimer); i++) {
                 
                 id = IRMCTicketInfo(addrM).tokenOfOwnerByIndex(addrClaimer, i);
                 (_claimed, ) = IRMCTicketInfo(addrM).getClaimedRewardStatus(id);
 
-                if(_claimed == false){
+                if(_claimed == false) {
                     disableClaim(id, addrM);
                     cptM ++;
                 }
@@ -261,12 +311,12 @@ contract FeeManager {
         }
 
         if (IRMCTicketInfo(addrP).balanceOf(addrClaimer) > 0 ){
-            for (uint i = 0; i < IRMCTicketInfo(addrP).balanceOf(addrClaimer); i++){
+            for (uint i = 0; i < IRMCTicketInfo(addrP).balanceOf(addrClaimer); i++) {
                 
                 id = IRMCTicketInfo(addrP).tokenOfOwnerByIndex(addrClaimer, i);
                 (_claimed, ) = IRMCTicketInfo(addrP).getClaimedRewardStatus(id);
 
-                if(_claimed == false){
+                if(_claimed == false) {
                     disableClaim(id, addrP);
                     cptP ++;
                 }
@@ -286,17 +336,17 @@ contract FeeManager {
     }
 
     //Function computin the gain for the winner
-    function computeGainForWinner(uint _idWinner, 
-                                  address _claimer) external view onlyLotteryGame returns(uint _gain) {
-
-
+    function computeGainForWinner(
+        uint _idWinner, 
+        address _claimer
+    ) external view onlyLotteryGame returns(uint _gain)
+    {
         address payable _winner = payable(IRMCTicketInfo(addrN).ownerOf(_idWinner));
-        require(payable(_claimer) == _winner, "ERROR :: you don't have the winning ticket"); 
+        require(payable(_claimer) == _winner, 
+        "ERROR :: you don't have the winning ticket"); 
 
         _gain = shareOfPricePoolForWinner * addrContractLotteryGame.balance / 100;
 
         return _gain;
-
     }
- 
 } 

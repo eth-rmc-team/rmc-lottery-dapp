@@ -73,7 +73,7 @@ nb_images = len(list(itertools.product(couleurs, repeat=nb_bandeaux)))
 # Créer un dictionnaire pour mapper chaque couleur à un entier positif
 couleur_map = {}
 for i, couleur in enumerate(couleurs):
-    couleur_map[couleur] = i
+    couleur_map[couleur] = i + 1
 
 # Créer une liste pour contenir toutes les URLs
 urls = []
