@@ -5,7 +5,7 @@ import './TicketMinterManager.sol';
 
 contract MythicTicketMinter is TicketMinterManager 
 {    
-    constructor() TicketMinterManager("MythicTicket", "%TCK") 
+    constructor() TicketMinterManager("MythicTicket", "MTCK") 
     {
         addrMythicNftContract = address(this);
     }

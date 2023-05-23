@@ -117,8 +117,10 @@ contract Marketplace {
         nftOwner = payable(address(this));       
         nftPrice = 0;
 
+        address previousOwner = msg.sender;
+
         IERC721(nftContract).approve(address(this), _tokenId);
-        IERC721(nftContract).safeTransferFrom(msg.sender, address(this), _tokenId);
+        IERC721(nftContract).safeTransferFrom(previousOwner, address(this), _tokenId);
     }
 
     //Function used to send out a NFT previously in sale
@@ -181,8 +183,7 @@ contract Marketplace {
         IRMCTicketInfo(_addrNftContract).setNftInfo(_tokenId, newOwner, nftState, nftPrice);
 
         //Transfer the NFT to the buyer and the funds to the seller (minus fees)
-        payable(address(this)).transfer(msg.value);
-        IERC721(nftContract).safeTransferFrom(address(this), msg.sender, _tokenId);
+        IERC721(nftContract).safeTransferFrom(address(this), newOwner, _tokenId);
 
         seller.transfer(_minusFeeByTrade * msg.value / 100);
     }
