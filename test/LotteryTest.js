@@ -1,8 +1,9 @@
-const { use, expect } = require('chai');
-const { ethers, waffle, network } = require('hardhat');
-const { loadFixture } = require('@nomicfoundation/hardhat-network-helpers');
+const { use, expect } = require('chai')
+const { ethers, waffle, network } = require('hardhat')
+const BigNumber = require('bignumber.js');
+const { loadFixture } = require('@nomicfoundation/hardhat-network-helpers')
 
-const fs = require("fs");
+const fs = require("fs")
 
 const hashes = {
     "Qmeh6PMdLqzpWc4go6wCh4zsNg8KU3oFRa4HkhFZuKiQm6": 111,
@@ -38,64 +39,65 @@ const featuresByDay = [3, 3, 3]
 
 
 describe("Lottery test", function () {
-    let normalTicketMinter;
-    let lotteryGame;
-    let feeManager;
-    let lotteryManager;
-    let marketplace;
-    let rmcToken;
-    let ticketFusion;
-    let ticketInformationController;
-    let ticketManager;
-    let goldTicketMinter;
-    let mythicTicketMinter;
-    let platinTicketMinter;
-    let superGoldTicketMinter;
-    let ticketMinterManager;
+    let normalTicketMinter
+    let lotteryGame
+    let feeManager
+    let lotteryManager
+    let marketplace
+    let rmcToken
+    let ticketFusion
+    let ticketInformationController
+    let ticketManager
+    let goldTicketMinter
+    let mythicTicketMinter
+    let platinTicketMinter
+    let superGoldTicketMinter
+    let ticketMinterManager
     
-    let users;
-    let owner;
+    let users
+    let tokenIds = []
+    let owner
 
     before(async function deployContracts() {
-        const u = await ethers.getSigners();
-        users = u.slice(1);
-        owner = u[0];
+        const u = await ethers.getSigners()
+        users = u.slice(1)
+        owner = u[0]
 
-        const FeeManager = await ethers.getContractFactory("FeeManager");
-        const LotteryGame = await ethers.getContractFactory("LotteryGame");
-        const LotteryManager = await ethers.getContractFactory("LotteryManager");
-        const Marketplace = await ethers.getContractFactory("Marketplace");
-        const RmcToken = await ethers.getContractFactory("RmcToken");
-        const TicketFusion = await ethers.getContractFactory("TicketFusion");
-        const TicketInformationController = await ethers.getContractFactory("TicketInformationController");
-        const TicketManager = await ethers.getContractFactory("TicketManager");
-        const GoldTicketMinter = await ethers.getContractFactory("GoldTicketMinter");
-        const MythicTicketMinter = await ethers.getContractFactory("MythicTicketMinter");
-        const NormalTicketMinter = await ethers.getContractFactory("NormalTicketMinter");
-        const PlatinTicketMinter = await ethers.getContractFactory("PlatinTicketMinter");
-        const SuperGoldTicketMinter = await ethers.getContractFactory("SuperGoldTicketMinter");
-        const TicketMinterManager = await ethers.getContractFactory("TicketMinterManager");
+        const FeeManager = await ethers.getContractFactory("FeeManager")
+        const LotteryGame = await ethers.getContractFactory("LotteryGame")
+        const LotteryManager = await ethers.getContractFactory("LotteryManager")
+        const Marketplace = await ethers.getContractFactory("Marketplace")
+        const RmcToken = await ethers.getContractFactory("RmcToken")
+        const TicketFusion = await ethers.getContractFactory("TicketFusion")
+        const TicketInformationController = await ethers.getContractFactory("TicketInformationController")
+        const TicketManager = await ethers.getContractFactory("TicketManager")
+        const GoldTicketMinter = await ethers.getContractFactory("GoldTicketMinter")
+        const MythicTicketMinter = await ethers.getContractFactory("MythicTicketMinter")
+        const NormalTicketMinter = await ethers.getContractFactory("NormalTicketMinter")
+        const PlatinTicketMinter = await ethers.getContractFactory("PlatinTicketMinter")
+        const SuperGoldTicketMinter = await ethers.getContractFactory("SuperGoldTicketMinter")
+        const TicketMinterManager = await ethers.getContractFactory("TicketMinterManager")
 
-        feeManager = await FeeManager.deploy();
-        lotteryManager = await LotteryManager.deploy();
-        lotteryGame = await LotteryGame.deploy();
+        feeManager = await FeeManager.deploy()
+        lotteryManager = await LotteryManager.deploy()
+        lotteryGame = await LotteryGame.deploy()
     
-        marketplace = await Marketplace.deploy();
-        rmcToken = await RmcToken.deploy("1000000000000000000", 10000);
-        ticketFusion = await TicketFusion.deploy();
-        ticketInformationController = await TicketInformationController.deploy();
-        ticketManager = await TicketManager.deploy();
-        goldTicketMinter = await GoldTicketMinter.deploy();
-        mythicTicketMinter = await MythicTicketMinter.deploy();
-        normalTicketMinter = await NormalTicketMinter.deploy();
-        platinTicketMinter = await PlatinTicketMinter.deploy();
-        superGoldTicketMinter = await SuperGoldTicketMinter.deploy();
-        ticketMinterManager = await TicketMinterManager.deploy("ticketMinter", "name      ");
+        marketplace = await Marketplace.deploy()
+        rmcToken = await RmcToken.deploy("1000000000000000000", 10000)
+        ticketFusion = await TicketFusion.deploy()
+        ticketInformationController = await TicketInformationController.deploy()
+        ticketManager = await TicketManager.deploy()
+        goldTicketMinter = await GoldTicketMinter.deploy()
+        mythicTicketMinter = await MythicTicketMinter.deploy()
+        normalTicketMinter = await NormalTicketMinter.deploy()
+        platinTicketMinter = await PlatinTicketMinter.deploy()
+        superGoldTicketMinter = await SuperGoldTicketMinter.deploy()
+        ticketMinterManager = await TicketMinterManager.deploy("ticketMinter", "name      ")
 
-        await normalTicketMinter.setAddrLotteryGameContract(lotteryGame.address);
-        await lotteryGame.setAddrNormalTicket(normalTicketMinter.address);
-        await lotteryGame.setAddrFeeManager(feeManager.address);
-        await feeManager.setAddrGame(lotteryGame.address, marketplace.address);
+        await normalTicketMinter.setAddrLotteryGameContract(lotteryGame.address)
+        await lotteryGame.setAddrNormalTicket(normalTicketMinter.address)
+        await lotteryGame.setAddrFeeManager(feeManager.address)
+        await feeManager.setAddrGame(lotteryGame.address, marketplace.address)
 
         return { 
             owner, 
@@ -113,7 +115,7 @@ describe("Lottery test", function () {
             superGoldTicketMinter,
             ticketMinterManager,
             normalTicketMinter
-        };
+        }
     })
 
     describe("Deployment", async function () {
@@ -123,42 +125,56 @@ describe("Lottery test", function () {
                 Object.values(hashes),
                 featuresByDay
             );
-            await lotteryGame.setNbStep(3);
+            await lotteryGame.setNbStep(3)
 
             for(let i = 0; i < hashes.length; i++) {
-                expect(await normalTicketMinter.getUriFeatures(hashes[i])).to.equal(features[i]);
-                expect(await normalTicketMinter.isValidUri(hashes[i])).to.equal(true);
+                expect(await normalTicketMinter.getUriFeatures(hashes[i])).to.equal(features[i])
+                expect(await normalTicketMinter.isValidUri(hashes[i])).to.equal(true)
             }
         });
 
         it("Should buy tickets", async function () { 
+
+            this.timeout(200000); // Définit la limite de temps à 60000ms (60 secondes)
+
             for(let i = 0; i < Object.keys(hashes).length; i++) {
-                await lotteryGame.connect(users[i < users.length ? i : 0]).buyTicket([
+                const index = i < users.length ? i : 0
+                await lotteryGame.connect(users[index]).buyTicket([
                     Object.keys(hashes)[i]
-                ]);
+                ])
+                const tokenId = parseInt(Object.values(hashes)[i]+"01")
+                tokenIds[index] = tokenIds[index] ? [...tokenIds[index], tokenId] : [tokenId]
+
+                // await new Promise((resolve) => {
+                //     normalTicketMinter.once("ItemMinted", (setter, ItemMinted, event) => {
+                //         tokenIds[i] = tokenIds[i] ? [...tokenIds[i], setter] : [setter]
+                //         resolve()
+                //     })
+                // })
             }
+
             for(let i = 0; i < users.length; i++) {
                 expect(await normalTicketMinter.balanceOf(users[i].address)).to.equal(
                     i == 0 ? 9 : 1
-                );
+                )
             }
         });
     });
 
     describe("Game Period", function() {
         it("Cycle should be started", async function() {
-            expect(await lotteryGame.isCycleStarted()).to.equal(true);
-            expect(await lotteryGame.isStartLotteryFunc()).to.equal(true);
+            expect(await lotteryGame.isCycleStarted()).to.equal(true)
+            expect(await lotteryGame.isStartLotteryFunc()).to.equal(true)
         })
         
         it("Go to nextDay n days should end game period", async function () {
-            const [ user2 ] = await ethers.getSigners();
+            const [ user2 ] = await ethers.getSigners()
 
             function sleep(time) {
                 return new Promise(resolve => {
                     setTimeout(() => {
-                        resolve();
-                    }, time);
+                        resolve()
+                    }, time)
                 });
             }
 
@@ -175,7 +191,25 @@ describe("Lottery test", function () {
 
     describe("Claim Period", function() {
         it("Claim period should be started", async function() {
-            expect(await lotteryGame.getPeriod()).to.equal(1);
+            expect(await lotteryGame.getPeriod()).to.equal(1)
+        })
+
+        it("Winner should be able to claim", async function() {
+            const winningCombination = parseInt(
+                (await lotteryGame.getWinningCombination()).toString()
+            )
+            
+            for(let i = 0; i < users.length; i++) {
+                for(let j = 0; j < tokenIds[i].length; j++) {
+                    const tokenId = tokenIds[i][j];
+                    if(tokenId == winningCombination) {
+                        console.log("user[i] is winner ", users[i] )
+                        await lotteryGame.connect(users[i]).claimRewardForWinner()
+                    }
+                }
+            }
+
+            console.log(winningCombination)
         })
     })
 

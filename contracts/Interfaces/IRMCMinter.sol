@@ -13,7 +13,7 @@ interface IRMCMinter is IRMCTicketInfo {
         string memory metadata, 
         address _addrMinter, 
         NftType _nftType
-    ) external;
+    ) external returns (uint256);
 
     function setLotteryId(uint8 _lotteryId) external;
 

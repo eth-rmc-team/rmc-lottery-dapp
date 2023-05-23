@@ -77,7 +77,7 @@ contract LotteryGame is LotteryManager
     }
 
     //Function for tickets purchase and minting
-    function buyTicket(string[] memory uris) payable external 
+    function buyTicket(string[] memory uris) payable external
     {
         //Calculate the price for the given amount of NFTs to buy
         uint _price = uris.length * mintPrice * (10 ** 18);
@@ -244,7 +244,7 @@ contract LotteryGame is LotteryManager
     }
 
     //Function to claim the price pool for the winner
-    function claimRewardForWinner() external 
+    function claimRewardForWinner() external payable 
     {
         //Check that the game is in claim period, that the game is over, that the winner hasn't claimed the price pool yet
         require(
