@@ -4,6 +4,9 @@ pragma solidity ^0.8.11;
 import './Interfaces/IRMCTicketInfo.sol';
 import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 
+import "hardhat/console.sol";
+
+
 contract FeeManager 
 {
     address private owner;
@@ -339,14 +342,19 @@ contract FeeManager
     function computeGainForWinner(
         uint _idWinner, 
         address _claimer
-    ) external view onlyLotteryGame returns(uint _gain)
+    ) external view onlyLotteryGame returns(uint)
     {
         address payable _winner = payable(IRMCTicketInfo(addrN).ownerOf(_idWinner));
-        require(payable(_claimer) == _winner, 
-        "ERROR :: you don't have the winning ticket"); 
+        require(
+            payable(_claimer) == _winner, 
+            "ERROR :: you don't have the winning ticket"
+        ); 
 
-        _gain = shareOfPricePoolForWinner * addrContractLotteryGame.balance / 100;
+        console.log(shareOfPricePoolForWinner);
+        console.log(addrContractLotteryGame);
+        console.log(addrContractLotteryGame.balance / 100);
+        console.log(shareOfPricePoolForWinner * addrContractLotteryGame.balance / 100);
 
-        return _gain;
+        return shareOfPricePoolForWinner * addrContractLotteryGame.balance / 100;
     }
 } 

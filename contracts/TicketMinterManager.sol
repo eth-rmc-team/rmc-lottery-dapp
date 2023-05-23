@@ -78,7 +78,7 @@ contract TicketMinterManager is ERC721URIStorage, TicketInformationController
         string memory uri, 
         address _addrMinter, 
         NftType _nftType
-    ) external onlyWhiteListedAddress
+    ) external onlyWhiteListedAddress returns(uint256) 
     {
         require(
             validUris[uri] > 0,
@@ -103,6 +103,8 @@ contract TicketMinterManager is ERC721URIStorage, TicketInformationController
         validUris[uri] = 0;
 
         emit ItemMinted(tokenId, _addrMinter, uri, NftType.NORMAL);
+
+        return tokenId;
     }
 
     function burn(uint tokenId) external onlyWhiteListedAddress 

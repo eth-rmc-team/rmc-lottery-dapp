@@ -21,7 +21,7 @@ contract TicketInformationController is TicketManager
     }
     
     //Creation of a mapping connecting each tokenId to its nftInfo struct
-    mapping(uint => nftInfo) public idNftToNftInfos;
+    mapping(uint256 => nftInfo) public idNftToNftInfos;
 
     constructor() 
     {
