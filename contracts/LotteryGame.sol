@@ -6,25 +6,18 @@ import './Interfaces/IRMCFeeInfo.sol';
 import './Interfaces/IRMCMinter.sol';
 import './LotteryManager.sol';
 
+
+
 import "hardhat/console.sol";
 
 
 //Principal contract of the lottery game
 
-contract LotteryGame is LotteryManager 
+contract LotteryGame is LotteryManager
 {
-    address private owner;
-
-    address private _addrG;
-    address private _addrSG;
-    address private _addrM;
-    address private _addrP;
-    
-    address payable winner;
-
-
     bool private startLotteryFunc;
     bool private endLotteryFunc;
+
     uint16 public nbTicketsSold;
     uint256 private winningCombination;
     uint256 private nonce;
@@ -39,14 +32,11 @@ contract LotteryGame is LotteryManager
     //Constructor
     constructor() 
     {
-        owner = msg.sender;
-
         period = Period.GAME;
         cycleStarted = false;
         lotteryId = 1;
         winningCombination = 1;
         currentStep = 1;
-        pricepool = address(this).balance;
     }
 
     //Function to allow this contract to reveive value from other contracts
@@ -65,13 +55,14 @@ contract LotteryGame is LotteryManager
         );
         //Resset all the necessary variables
         period = Period.GAME;
-        cycleStarted == true;
+        cycleStarted == false;
         startLotteryFunc = false;
         endLotteryFunc = false;
         currentStep = 1;
         lotteryId += 1;
         winningCombination = lotteryId;
         winnerClaimed = false;
+        pricepool = address(this).balance;
         
         IRMCFeeInfo(addrFeeManager).resetClaimStatus();
     }
@@ -80,7 +71,7 @@ contract LotteryGame is LotteryManager
     function buyTicket(string[] memory uris) payable external
     {
         //Calculate the price for the given amount of NFTs to buy
-        uint _price = uris.length * mintPrice * (10 ** 18);
+        uint _price = uris.length * mintPrice;
 
         //Check the buyer has paid the right amount, that there are enough tickets left, that the game is running and that the game has started
         require(
@@ -106,7 +97,10 @@ contract LotteryGame is LotteryManager
         
         //Transfer the funds to this contract and mint the NFTs using the "NormalTicketMinter" contract
         nbTicketsSold += uint16(uris.length);
-        payable(address(this)).transfer(msg.value);
+        //payable(address(this)).transfer(msg.value);
+        
+        (bool sent,) = payable(address(this)).call{value: msg.value}("");
+        require(sent, "Failed to transfer funds to this contract");
 
         if(uris.length >= 1) {
             for (uint i = 0; i < uris.length; i++) {
@@ -179,7 +173,7 @@ contract LotteryGame is LotteryManager
         );
         startLotteryFunc = true;
         
-        pricepool = nbTicketsSold * mintPrice * (10 ** 17);
+        pricepool = nbTicketsSold * mintPrice;
 
         lastStepTime = block.timestamp;    
     }
@@ -269,13 +263,17 @@ contract LotteryGame is LotteryManager
             winningCombination, 
             msg.sender
         ); 
-        //Burn the NFT of the winner
-        IRMCTicketInfo(addrNormalTicket).approve(address(this), winningCombination);
-        IRMCMinter(addrNormalTicket).burn(winningCombination);
 
-        //Change the state of "winnerCLaimed" and transfer reward to the winner
+        //transfer gains to the owner of the winningCombination
+        payable(IRMCTicketInfo(addrNormalTicket)
+        .ownerOf(winningCombination))
+        .transfer(gainWinner);
+
+        //Burn the NFT of the winner
+        //IRMCTicketInfo(addrNormalTicket).approve(address(this), winningCombination);
+        IRMCMinter(addrNormalTicket).burn(winningCombination);
+        
         winnerClaimed = true;
-        winner.transfer(gainWinner * 1 ether);
     }
 
     //Function to claim rewards for "Special Tickets" holders
@@ -286,6 +284,7 @@ contract LotteryGame is LotteryManager
             period == Period.CLAIM, 
             "ERROR :: You can't claim the rewards if the game is not over"
         );
+        
         uint _totalGain;
 
         _totalGain = IRMCFeeInfo(addrFeeManager).computeGainForAdvantages(msg.sender);

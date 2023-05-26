@@ -2,15 +2,20 @@
 pragma solidity ^0.8.11;
 
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
+import "@openzeppelin/contracts/token/ERC721/extensions/IERC721Enumerable.sol";
+import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
+
 import './Interfaces/IRMCLotteryInfo.sol';
 import "./TicketInformationController.sol";
 import "hardhat/console.sol";
 
 //Contract minting NFT
 
-contract TicketMinterManager is ERC721URIStorage, TicketInformationController 
+contract TicketMinterManager is ERC721URIStorage, TicketInformationController, IERC721Enumerable
 {
+    using Counters for Counters.Counter;
+    Counters.Counter private _tokenIdCounter;
 
     mapping(string => uint32) public validUris;
 
@@ -18,7 +23,7 @@ contract TicketMinterManager is ERC721URIStorage, TicketInformationController
 
     event ItemMinted(uint256 tokenId, address creator, string uri, NftType nftType);
     
-    constructor(string memory name , string memory symbol) ERC721(name, symbol) 
+    constructor(string memory name , string memory symbol) ERC721(name, symbol) IERC721Enumerable() 
     {
         addrNftMinter = address(this);
     }
@@ -101,6 +106,7 @@ contract TicketMinterManager is ERC721URIStorage, TicketInformationController
             false
         );
         validUris[uri] = 0;
+        _tokenIdCounter.increment();
 
         emit ItemMinted(tokenId, _addrMinter, uri, NftType.NORMAL);
 
@@ -111,5 +117,19 @@ contract TicketMinterManager is ERC721URIStorage, TicketInformationController
     {
         require(_exists(tokenId), "Token does not exist.");
         _burn(tokenId);
+    }
+
+    function totalSupply() external view override returns (uint256) {
+        return _tokenIdCounter.current();
+    }
+
+    function tokenByIndex(uint256 index) external view override returns (uint256) {
+        require(index < _tokenIdCounter.current(), "ERC721Enumerable: Invalid index");
+        return index;
+    }
+
+    function tokenOfOwnerByIndex(address owner, uint256 index) external view override returns (uint256) {
+        require(index < balanceOf(owner), "ERC721Enumerable: Invalid index");
+        return index;
     }
 }

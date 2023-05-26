@@ -3,17 +3,18 @@ pragma solidity ^0.8.11;
 
 import "hardhat/console.sol";
 
+import "@openzeppelin/contracts/access/Ownable.sol";
+
 
 //Contract managing lottery games
 //Set the period (in chase or in a cycle)
 //Set the rewards et permit their claims
 
-contract LotteryManager 
+contract LotteryManager is Ownable
 {
     //Booleans parametring the game status
     enum Period { GAME, CLAIM, CHASE, END }
 
-    address private owner;
     address public addrNormalTicket;
     address public addrLotteryGame;
     address public addrFeeManager;
@@ -37,25 +38,14 @@ contract LotteryManager
     
     constructor() 
     {
-        owner = msg.sender;
-
         lotteryId = 0;
         totalDay = 3;
 
         period = Period.GAME;
+        mintPrice = 2500000000000000000 wei;
 
         ticketsFusionClaimedGains = 0;
         nbOfTicketsSalable = 27; //todo: a changer, pour l'instant on met pour les tests
-    }
-
-    //todo: mettre à terme une whiteList, plutot qu'une adresse unique
-    modifier onlyOwner 
-    {
-        require(
-            msg.sender == owner, 
-            "WARNING :: only the owner can have access"
-        );
-        _;
     }
 
     modifier onlyLotteryGameContract

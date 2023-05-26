@@ -197,7 +197,7 @@ contract FeeManager
             IERC20(0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7).transferFrom(
                 addrContractMarketplace, 
                 addrContractLotteryGame, 
-                (addrContractMarketplace.balance * (10 ** 18))
+                (addrContractMarketplace.balance)
             );
         }
     }
@@ -349,11 +349,6 @@ contract FeeManager
             payable(_claimer) == _winner, 
             "ERROR :: you don't have the winning ticket"
         ); 
-
-        console.log(shareOfPricePoolForWinner);
-        console.log(addrContractLotteryGame);
-        console.log(addrContractLotteryGame.balance / 100);
-        console.log(shareOfPricePoolForWinner * addrContractLotteryGame.balance / 100);
 
         return shareOfPricePoolForWinner * addrContractLotteryGame.balance / 100;
     }
