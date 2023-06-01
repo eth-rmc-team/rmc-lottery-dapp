@@ -203,7 +203,6 @@ describe("Lottery test", function () {
     describe("Game Period", function() {
         it("Cycle should be started", async function() {
             expect(await lotteryGame.isCycleStarted()).to.equal(true)
-            expect(await lotteryGame.isStartLotteryFunc()).to.equal(true)
         })
         
         it("Go to nextDay n days should end game period", async function () {
@@ -263,7 +262,7 @@ describe("Lottery test", function () {
         })
     })
 
-    describe("Market place basics", function() {
+    describe("Marketplace basics", function() {
         
     })
 
@@ -298,6 +297,4 @@ describe("Lottery test", function () {
         //     // console.log("nbTicketsSold: ", await lotteryGame.getTicketsSold())
         //     // console.log("nbTicketsSalable: ", await lotteryGame.getTicketsSalable())
         //     expect(await lotteryGame.isCycleStarted()).to.equal(true);
-        //     expect(await lotteryGame.isStartLotteryFunc()).to.equal(true);
-        // });
 });

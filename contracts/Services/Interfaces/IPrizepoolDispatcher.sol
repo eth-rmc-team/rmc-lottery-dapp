@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.11;
 
-interface IRMCFeeInfo {
+interface IPrizepoolDispatcher
+{
 
     //Function from FeeManager.sol
     //gain_PP = gain for price pool; gain_D = gain for deal fees
@@ -26,7 +27,7 @@ interface IRMCFeeInfo {
     );
 
     //Function from Marketplace.sol
-    function claimFees () external;
+    function claimFees() external;
 
     function resetClaimStatus() external;
 }
