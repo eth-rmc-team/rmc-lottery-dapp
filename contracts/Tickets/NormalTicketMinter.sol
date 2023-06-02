@@ -16,7 +16,7 @@ contract NormalTicketMinter is TicketMinter
     function addABatchOfMintableTickets(
         string[] calldata uris, 
         uint32[] calldata features
-    ) external onlyOwner 
+    ) external onlyWhitelisted 
     {
         require(
             uris.length == features.length, 
@@ -47,7 +47,7 @@ contract NormalTicketMinter is TicketMinter
         string memory uri, 
         address _addrMinter,
         uint8 suffix
-    ) external returns(uint256) 
+    ) external onlyWhitelisted returns(uint256)
     {
         require(
             validUris[uri] > 0,

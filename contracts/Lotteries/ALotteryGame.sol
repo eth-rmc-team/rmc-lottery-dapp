@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.11;
 
-import "@openzeppelin/contracts/access/Ownable.sol";
 import "../Services/Interfaces/IDiscoveryService.sol";
+import "../Services/Whitelisted.sol";
 
-abstract contract ALotteryGame is Ownable
+abstract contract ALotteryGame is Whitelisted
 {    
     IDiscoveryService discoveryService;
     uint256 winningCombination;
@@ -29,22 +29,22 @@ abstract contract ALotteryGame is Ownable
         _;
     }
 
-    function setDiscoveryService(address _address) external onlyOwner onlyWhenCycleNotRunning 
+    function setDiscoveryService(address _address) external onlyAdmin onlyWhenCycleNotRunning 
     {
         discoveryService = IDiscoveryService(_address);
     }
 
-    function setTicketCapacity(uint16 _ticketCapacity) external onlyOwner onlyWhenCycleNotRunning
+    function setTicketCapacity(uint16 _ticketCapacity) external onlyAdmin onlyWhenCycleNotRunning
     {
         ticketCapacity = _ticketCapacity;
     }
 
-    function setMinimumTimeStep(uint256 _minimumTimeStep) external onlyOwner onlyWhenCycleNotRunning
+    function setMinimumTimeStep(uint256 _minimumTimeStep) external onlyAdmin onlyWhenCycleNotRunning
     {
         minimumTimeStep = _minimumTimeStep;
     }
 
-    function setTotalSteps(uint8 _totalSteps) external onlyOwner onlyWhenCycleNotRunning
+    function setTotalSteps(uint8 _totalSteps) external onlyAdmin onlyWhenCycleNotRunning
     {       
         totalSteps = _totalSteps;
     }

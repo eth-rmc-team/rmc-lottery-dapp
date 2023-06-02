@@ -33,7 +33,7 @@ contract Season1LotteryGame is ALotteryGame
         currentPeriod = LotteryDef.Period.OFF;
     }
 
-    function setTicketPrice(uint256 _ticketPrice) external onlyOwner onlyWhenCycleNotRunning
+    function setTicketPrice(uint256 _ticketPrice) external onlyAdmin onlyWhenCycleNotRunning
     {
         ticketPrice = _ticketPrice;
     }
@@ -53,7 +53,7 @@ contract Season1LotteryGame is ALotteryGame
         ALotteryGame Implementation
      */   
 
-    function resetCycle() external override onlyOwner onlyWhenCycleNotRunning
+    function resetCycle() external override onlyAdmin onlyWhenCycleNotRunning
     {
         currentPeriod = LotteryDef.Period.SALES;
         isCycleRunning = true;
@@ -159,7 +159,7 @@ contract Season1LotteryGame is ALotteryGame
         IPrizepoolDispatcher(discoveryService.getPrizepoolDispatcherAddr()).claimFees();
     }
 
-    function endCycle() external override onlyOwner
+    function endCycle() external override onlyAdmin
     {
         currentPeriod = LotteryDef.Period.OFF;
         isCycleRunning = false;
@@ -170,7 +170,7 @@ contract Season1LotteryGame is ALotteryGame
         uint32[] calldata features,
         uint8[] calldata _featuresByDay
     ) 
-    external onlyOwner onlyWhenCycleNotRunning
+    external onlyAdmin onlyWhenCycleNotRunning
     {
         INormalTicketMinter(discoveryService.getNormalTicketAddr()).addABatchOfMintableTickets(
             uris, features

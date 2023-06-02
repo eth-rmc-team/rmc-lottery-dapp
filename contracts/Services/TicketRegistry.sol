@@ -3,7 +3,9 @@ pragma solidity ^0.8.11;
 
 import "../Librairies/LotteryDef.sol";
 
-contract TicketRegistry 
+import "./Whitelisted.sol";
+
+contract TicketRegistry is Whitelisted
 {
     using LotteryDef for LotteryDef.TicketState;
     using LotteryDef for LotteryDef.TicketType;
@@ -22,7 +24,7 @@ contract TicketRegistry
         uint256 _dealPrice,        
         bool _isPrizepoolClaimed, 
         bool _isFeesClaimed
-    ) external
+    ) external onlyWhitelisted
     {
         ticketInfos[_tokenId] = LotteryDef.TicketInfo(
             _ticketType,
@@ -43,19 +45,19 @@ contract TicketRegistry
         address payable _ticketOwner, 
         LotteryDef.TicketState _dealState, 
         uint256 _dealPrice 
-    ) external 
+    ) external onlyWhitelisted
     {             
         ticketInfos[_tokenId].ticketOwner = _ticketOwner;
         ticketInfos[_tokenId].dealState = _dealState;
         ticketInfos[_tokenId].dealPrice = _dealPrice;
     }
 
-    function setPrizepoolClaimStatus(bool _status, uint _tokenId) external 
+    function setPrizepoolClaimStatus(bool _status, uint _tokenId) external onlyWhitelisted
     {
         ticketInfos[_tokenId].isPrizepoolClaimed = _status;
     }
 
-    function setFeesClaimStatus(bool _status, uint _tokenId) external 
+    function setFeesClaimStatus(bool _status, uint _tokenId) external onlyWhitelisted
     {
         ticketInfos[_tokenId].isFeesClaimed = _status;
     }

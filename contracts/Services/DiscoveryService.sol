@@ -1,12 +1,12 @@
 pragma solidity ^0.8.11;
 
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "./Whitelisted.sol";
 
 /** 
     This service hold all contrats addresses 
     composing the lotterygame
  */
-contract DiscoveryService is Ownable
+contract DiscoveryService is Whitelisted
 {
     address private normalTicketAddr;
     address private goldTicketAddr;
@@ -65,52 +65,52 @@ contract DiscoveryService is Ownable
         return rmcMarketplaceAddr;
     }
 
-    function setNormalTicketAddr(address _normalTicketAddr) external onlyOwner
+    function setNormalTicketAddr(address _normalTicketAddr) external onlyAdmin
     {
         normalTicketAddr = _normalTicketAddr;
     }
 
-    function setGoldTicketAddr(address _goldTicketAddr) external onlyOwner
+    function setGoldTicketAddr(address _goldTicketAddr) external onlyAdmin
     {
         goldTicketAddr = _goldTicketAddr;
     }
 
-    function setSuperGoldTicketAddr(address _superGoldTicketAddr) external onlyOwner
+    function setSuperGoldTicketAddr(address _superGoldTicketAddr) external onlyAdmin
     {
         superGoldTicketAddr = _superGoldTicketAddr;
     }
 
-    function setMythicTicketAddr(address _mythicTicketAddr) external onlyOwner
+    function setMythicTicketAddr(address _mythicTicketAddr) external onlyAdmin
     {
         mythicTicketAddr = _mythicTicketAddr;
     }
 
-    function setPlatiniumTicketAddr(address _platinumTicketAddr) external onlyOwner
+    function setPlatiniumTicketAddr(address _platinumTicketAddr) external onlyAdmin
     {
         platinumTicketAddr = _platinumTicketAddr;
     }
 
-    function setPrizepoolDispatcherAddr(address _prizepoolDispatcherAddr) external onlyOwner
+    function setPrizepoolDispatcherAddr(address _prizepoolDispatcherAddr) external onlyAdmin
     {
         prizepoolDispatcherAddr = _prizepoolDispatcherAddr;
     }
 
-    function setLotteryGameAddr(address _lotteryGameAddr) external onlyOwner
+    function setLotteryGameAddr(address _lotteryGameAddr) external onlyAdmin
     {
         lotteryGameAddr = _lotteryGameAddr;
     }
 
-    function setFusionHandlerAddr(address _fusionHandlerAddr) external onlyOwner
+    function setFusionHandlerAddr(address _fusionHandlerAddr) external onlyAdmin
     {
         fusionHandlerAddr = _fusionHandlerAddr;
     }
     
-    function setRmcMarketplaceAddr(address _rmcMarketplaceAddr) external onlyOwner
+    function setRmcMarketplaceAddr(address _rmcMarketplaceAddr) external onlyAdmin
     {
         rmcMarketplaceAddr = _rmcMarketplaceAddr;
     }
     
-    function setTicketRegistryAddr(address _ticketRegistryAddr) external onlyOwner
+    function setTicketRegistryAddr(address _ticketRegistryAddr) external onlyAdmin
     {
         ticketRegistryAddr = _ticketRegistryAddr;
     }

@@ -2,16 +2,16 @@
 pragma solidity ^0.8.11;
 
 import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
-import "@openzeppelin/contracts/access/Ownable.sol";
 
 import "hardhat/console.sol";
 
+import "./Whitelisted.sol";
 import "./Interfaces/ITicketRegistry.sol";
 import "../Tickets/Interfaces/ITicketMinter.sol";
 import "./Interfaces/IDiscoveryService.sol";
 
 
-contract PrizepoolDispatcher is Ownable
+contract PrizepoolDispatcher is Whitelisted
 {
     IDiscoveryService discoveryService;
 
@@ -49,12 +49,12 @@ contract PrizepoolDispatcher is Ownable
         _;
     }
 
-    function setDiscoveryService(address _address) external onlyOwner 
+    function setDiscoveryService(address _address) external onlyAdmin 
     {
         discoveryService = IDiscoveryService(_address);
     }
 
-    function setWinnerSharePrizepool(uint8 _share) public onlyOwner 
+    function setWinnerSharePrizepool(uint8 _share) public onlyAdmin 
     {
         require(
             _share + protocolSharePrizepool + 
@@ -73,7 +73,7 @@ contract PrizepoolDispatcher is Ownable
         winnerSharePrizepool = _share;
     }
 
-    function setProtocolSharePrizepool(uint8 _share) public onlyOwner 
+    function setProtocolSharePrizepool(uint8 _share) public onlyAdmin 
     {
         require(
             _share + winnerSharePrizepool + 
@@ -92,7 +92,7 @@ contract PrizepoolDispatcher is Ownable
         protocolSharePrizepool = _share;
     }
 
-    function setGoldSharePrizepool(uint8 _share) public onlyOwner 
+    function setGoldSharePrizepool(uint8 _share) public onlyAdmin 
     {
         require(
             _share + winnerSharePrizepool + 
@@ -110,7 +110,7 @@ contract PrizepoolDispatcher is Ownable
         goldSharePrizepool = _share;
     }
 
-    function setSuperGoldSharePrizepool(uint8 _share) public onlyOwner 
+    function setSuperGoldSharePrizepool(uint8 _share) public onlyAdmin 
     {
         require(
             _share + winnerSharePrizepool + 
@@ -129,7 +129,7 @@ contract PrizepoolDispatcher is Ownable
     }
 
     //Same function but for the Mythic
-    function setMythicSharePrizepool(uint8 _share) public onlyOwner 
+    function setMythicSharePrizepool(uint8 _share) public onlyAdmin 
     {
         require(
             _share + winnerSharePrizepool + 
@@ -148,7 +148,7 @@ contract PrizepoolDispatcher is Ownable
     }
 
     //Same function but for the Platin
-    function setPlatinSharePrizepool(uint8 _share) public onlyOwner 
+    function setPlatinSharePrizepool(uint8 _share) public onlyAdmin 
     {            
         require(
             _share + winnerSharePrizepool + 
@@ -187,7 +187,7 @@ contract PrizepoolDispatcher is Ownable
     }
 
     //Function called by LotteryGame contract to claim the rewards from "Marketplace" contract
-    function claimFees() external onlyLotteryGame
+    function claimFees() external onlyWhitelisted
     {
         //If there is money in the contract, we send it to the LotteryGame contract
         if(discoveryService.getRmcMarketplaceAddr().balance > 0){
@@ -210,7 +210,7 @@ contract PrizepoolDispatcher is Ownable
     }
 
     //Function resetting the claim ability. Called by the LotteryGame contract for a new cycle
-    function resetClaimStatus() external onlyLotteryGame 
+    function resetClaimStatus() external onlyWhitelisted 
     {
 
         //Get the total supply for each NFT contract and loop through them
@@ -246,7 +246,7 @@ contract PrizepoolDispatcher is Ownable
     //Function computing the gain for the owner of "Special NFT" and disabling the claim afterward
     function computeGainForAdvantages(
         address addrClaimer
-    ) external onlyLotteryGame returns (uint _totalGain) 
+    ) external onlyWhitelisted returns (uint _totalGain) 
     {
         uint cptG = 0;
         uint cptSG = 0;
@@ -342,7 +342,7 @@ contract PrizepoolDispatcher is Ownable
     function computeGainForWinner(
         uint _idWinner, 
         address _claimer
-    ) external view onlyLotteryGame returns(uint)
+    ) external view onlyWhitelisted returns(uint)
     {
         address payable _winner = payable(ITicketMinter(discoveryService.getNormalTicketAddr()).ownerOf(_idWinner));
         require(
