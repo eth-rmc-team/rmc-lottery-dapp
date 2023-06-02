@@ -29,7 +29,7 @@ contract Season1LotteryGame is ALotteryGame
 
     bool public isWinnerClaimed;
     
-    constructor() {
+    constructor() payable {
         currentPeriod = LotteryDef.Period.OFF;
     }
 
@@ -179,6 +179,7 @@ contract Season1LotteryGame is ALotteryGame
         for(uint8 i = 0; i < _featuresByDay.length; i++) {
             featuresByDay[i+1] = _featuresByDay[i];
         }
+        ticketCapacity = uint16(uris.length);
     }
 
     function getRandomDigit(uint256 max) private returns (uint8) {
@@ -198,66 +199,52 @@ contract Season1LotteryGame is ALotteryGame
 
     function claimReward() external override payable
     {
+        //Check that the game is in claim period, that the game is over, that the winner hasn't claimed the price pool yet
+        require(
+            currentPeriod == LotteryDef.Period.CLAIM, 
+            "ERROR :: You can't claim the winner if the game is not over"
+        );
+        require(
+            isWinnerClaimed == false, 
+            "ERROR :: You can't claim twice the price pool"
+        );
+       
+       //"FeeManager" contract compute the gain of the winner and check his NFT
+        uint gainWinner = IPrizepoolDispatcher(discoveryService.getPrizepoolDispatcherAddr())
+        .computeGainForWinner(
+            winningCombination, 
+            msg.sender
+        ); 
+
+        //transfer gains to the owner of the winningCombination
+        payable(INormalTicketMinter(discoveryService.getNormalTicketAddr())
+        .ownerOf(winningCombination))
+        .transfer(gainWinner);
+
+        //Burn the NFT of the winner
+        //IRMCTicketInfo(addrNormalTicket).approve(address(this), winningCombination);
+        INormalTicketMinter(discoveryService.getNormalTicketAddr()).burn(winningCombination);
         
+        isWinnerClaimed = true;
     }
 
-
-    //     function claimRewardForWinner() external payable 
-    // {
-    //     //Check that the game is in claim period, that the game is over, that the winner hasn't claimed the price pool yet
-    //     require(
-    //         period == Period.CLAIM, 
-    //         "ERROR :: You can't claim the winner if the game is not over"
-    //     );
-    //     require(
-    //         cycleStarted == false, 
-    //         "ERROR :: You can't claim the winner if the game is not over"
-    //     );
-    //     require(
-    //         currentStep == nbStep, 
-    //         "ERROR :: You can't claim the winner if the game is not over"
-    //     );
-    //     require(
-    //         winnerClaimed == false, 
-    //         "ERROR :: You can't claim twice the price pool"
-    //     );
-       
-    //    //"FeeManager" contract compute the gain of the winner and check his NFT
-    //     uint gainWinner = IRMCFeeInfo(addrFeeManager).computeGainForWinner(
-    //         winningCombination, 
-    //         msg.sender
-    //     ); 
-
-    //     //transfer gains to the owner of the winningCombination
-    //     payable(IRMCTicketInfo(addrNormalTicket)
-    //     .ownerOf(winningCombination))
-    //     .transfer(gainWinner);
-
-    //     //Burn the NFT of the winner
-    //     //IRMCTicketInfo(addrNormalTicket).approve(address(this), winningCombination);
-    //     IRMCMinter(addrNormalTicket).burn(winningCombination);
+    function claimAdvantagesReward() external 
+    {
+        require(
+            currentPeriod == LotteryDef.Period.CLAIM, 
+            "ERROR :: You can't claim the rewards if the game is not over"
+        );
         
-    //     winnerClaimed = true;
-    // }
+        uint _totalGain;
 
-    // //Function to claim rewards for "Special Tickets" holders
-    // function claimRewardForAll() external 
-    // {
-    //     //Basically the same as "claimRewardForWinner" but for "Special Tickets" holders
-    //     require(
-    //         period == Period.CLAIM, 
-    //         "ERROR :: You can't claim the rewards if the game is not over"
-    //     );
-        
-    //     uint _totalGain;
+        _totalGain = IPrizepoolDispatcher(discoveryService.getPrizepoolDispatcherAddr())
+        .computeGainForAdvantages(msg.sender);
 
-    //     _totalGain = IRMCFeeInfo(addrFeeManager).computeGainForAdvantages(msg.sender);
-
-    //     //Check that the gain is more than before transfer
-    //     require(
-    //         _totalGain > 0, 
-    //         "ERROR :: You don't have any rewards to claim"
-    //     );
-    //     payable(msg.sender).transfer(_totalGain * (10 ** 18));
-    // }
+        //Check that the gain is more than before transfer
+        require(
+            _totalGain > 0, 
+            "ERROR :: You don't have any rewards to claim"
+        );
+        payable(msg.sender).transfer(_totalGain * (10 ** 18));
+    }
 }

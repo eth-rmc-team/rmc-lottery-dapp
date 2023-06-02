@@ -98,7 +98,10 @@ describe("Lottery test", function () {
         prizepoolDispatcher.setDiscoveryService(discoveryService.address);
         normalTicketMinter.setDiscoveryService(discoveryService.address);
 
+        // Configure whitelists
         normalTicketMinter.addToWhitelist(lotteryGame.address);
+        prizepoolDispatcher.addToWhitelist(lotteryGame.address);
+        ticketRegistry.addToWhitelist(normalTicketMinter.address);
 
         return { 
             owner, 
@@ -124,16 +127,125 @@ describe("Lottery test", function () {
                 Object.values(hashes),
                 featuresByDay
             );
+            await lotteryGame.setTicketPrice("2500000000000000000");
             await lotteryGame.setTotalSteps(3)
 
             const keyHashes = Object.keys(hashes)
 
             for(let i = 0; i < keyHashes.length; i++) {
                 //on vérifie que chaque hash est bien associé à la bonne combinaison
-                expect(await lotteryGame.getUriFeatures(keyHashes[i])).to.equal(hashes[keyHashes[i]])
+                expect(await normalTicketMinter.getUriFeatures(keyHashes[i])).to.equal(hashes[keyHashes[i]])
                 //on vérifie que chaque hash est bien considéré comme valide
                 expect(await normalTicketMinter.isValidUri(keyHashes[i])).to.equal(true)
             }
+        })
+
+        it("Should reset Cycle", async function () {
+            await lotteryGame.resetCycle()
+
+            expect(await lotteryGame.getCurrentPeriod()).to.equal(1)
+        })
+
+        it("Should buy tickets", async function () { 
+            for(let i = 0; i < users.length; i++) {
+                let boughtHashes;
+
+                const keyHashes = Object.keys(hashes)
+
+                //il y a 19 users pour 27 hashes
+                //donc le dernier user va acheter 9 hashes au lieu de 1
+                //pour compléter
+                if(i === users.length - 1) {
+                    boughtHashes = keyHashes.slice(i, keyHashes.length)
+                    tokenIds[i] = []
+                    for(let j = i; j < keyHashes.length; j++) {
+                        //on concatène la combinaison avec 01, le lottery ID
+                        tokenIds[i].push(parseInt(Object.values(hashes)[j]+"01"))
+                    }
+                } else {
+                    boughtHashes = [keyHashes[i]] 
+                    tokenIds[i] = [parseInt(Object.values(hashes)[i]+"01")]
+                }
+
+                const tx = await lotteryGame.connect(users[i]).buyTicket(
+                    boughtHashes,
+                {value: ethers.utils.parseEther("2.5").mul(boughtHashes.length)})
+                
+                const receipt = await tx.wait()
+                const gasUsed = BigInt(receipt.cumulativeGasUsed) * BigInt(receipt.effectiveGasPrice);
+
+                //on vérifie la nouvelle balance de l'utilisateur
+                expect(await users[i].getBalance()).to.equal(
+                    ethers.utils.parseEther("10000")
+                    .sub(ethers.utils.parseEther("2.5").mul(boughtHashes.length))
+                    .sub(gasUsed)
+                )
+                //on vérifie que l'utilisateur dispose bien du nombre
+                //de hashes achetés
+                expect(await normalTicketMinter.balanceOf(users[i].address)).to.equal(boughtHashes.length)
+            }
         });
-    });
-});
+    })
+
+    describe("Game Period", function() {
+        it("We should be in GAME Period", async function() {
+            expect(await lotteryGame.getCurrentPeriod()).to.equal(2)
+        })
+        
+        it("Go to nextDay n days should end game period and pick winning combinaison", async function () {
+            const [ user2 ] = await ethers.getSigners()
+
+            function sleep(time) {
+                return new Promise(resolve => {
+                    setTimeout(() => {
+                        resolve()
+                    }, time)
+                });
+            }
+
+            for(let i = 0; i < featuresByDay.length; i++) {
+                await sleep(1500)
+                await lotteryGame.connect(user2).nextStep();
+            }
+
+            expect(await lotteryGame.getCurrentPeriod()).to.equal(3);
+            //on vérifie que la combinaison gagnante est bien un nombre
+            //composés d'autant de chiffre que de jours + 2 chiffres pour le lotterie ID
+            expect(await lotteryGame.getWinningCombination() > 10**(featuresByDay.length+1) + 1)
+            .to.equal(true)
+        });
+    })
+
+    describe("Claim Period", function() {
+        it("Claim period should be started", async function() {
+            expect(await lotteryGame.getCurrentPeriod()).to.equal(3)
+        })
+
+        it("Winner should be able to claim", async function() {
+            const winningCombination = parseInt(
+                (await lotteryGame.getWinningCombination()).toString()
+            )
+            
+            for(let i = 0; i < users.length; i++) {
+                for(let j = 0; j < tokenIds[i].length; j++) {
+                    const tokenId = tokenIds[i][j];
+                    if(tokenId == winningCombination) {
+                        const oldBalance = await users[i].getBalance()
+                        await lotteryGame.connect(users[i]).claimReward()
+                        const newBalance = await users[i].getBalance()
+                        //on vérifie la nouvelle balance de l'utilisateur
+                        expect(Number(newBalance))
+                        .to.be.greaterThan(Number(oldBalance))
+                    }
+                }
+            }
+        })
+
+        it("Other users shouldn't be able to claim any reward", async function() {
+            for(let i = 0; i < users.length; i++) {
+                await expect(lotteryGame.connect(users[i]).claimAdvantagesReward())
+                .to.be.revertedWith("ERROR :: You don't have any rewards to claim");
+            }
+        })
+    })
+})

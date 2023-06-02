@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.11;
 
 import "./Whitelisted.sol";
@@ -63,6 +64,11 @@ contract DiscoveryService is Whitelisted
     function getRmcMarketplaceAddr() view external returns (address)
     {
         return rmcMarketplaceAddr;
+    }
+    
+    function getTicketRegistryAddr() view external returns (address)
+    {
+        return ticketRegistryAddr;
     }
 
     function setNormalTicketAddr(address _normalTicketAddr) external onlyAdmin

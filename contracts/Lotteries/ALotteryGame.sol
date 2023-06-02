@@ -29,6 +29,12 @@ abstract contract ALotteryGame is Whitelisted
         _;
     }
 
+    //Function to allow this contract to reveive value from other contracts
+    receive() external payable  
+    {
+        emit Received(msg.sender, msg.value);
+    }
+
     function setDiscoveryService(address _address) external onlyAdmin onlyWhenCycleNotRunning 
     {
         discoveryService = IDiscoveryService(_address);
