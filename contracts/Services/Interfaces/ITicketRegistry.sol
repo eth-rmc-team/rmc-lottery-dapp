@@ -19,26 +19,20 @@ interface ITicketRegistry is IERC721Enumerable, ILotteryDef
         bool _isFeesClaimed
     ) external;
 
-    function setTicketState(
-        uint _tokenId, 
-        address _ticketOwner, 
-        LotteryDef.TicketState _dealState, 
-        uint _dealPrice
-    ) external;
+    function putTicketOnSale(uint _tokenId, uint256 _dealPrice) external;
        
+    function removeSalesTicket(uint _tokenId) external;
+
+    function transferTicketOwnership(uint256 _tokenId, address payable _newOwner) external;
+
     function setPrizepoolClaimStatus(bool _statusPP, uint _tokenId) external;
 
     function setFeesClaimStatus(bool _statusFee, uint _tokenId) external;
 
-    function getTicketState(uint _tokenId) 
-    external view returns (
-        LotteryDef.TicketType, 
-        address, 
-        address payable, 
-        LotteryDef.TicketState, 
-        uint
-    );
+    function getTicketState(uint _tokenId) external view returns (LotteryDef.TicketInfo memory);
     
+    function setTicketDealState(uint _tokenId, LotteryDef.TicketState _dealState) external;
+
     function getClaimedRewardStatus(uint _tokenId)
     external view returns(bool, bool);
 }

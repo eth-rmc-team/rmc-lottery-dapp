@@ -182,7 +182,8 @@ contract Season1LotteryGame is ALotteryGame
         ticketCapacity = uint16(uris.length);
     }
 
-    function getRandomDigit(uint256 max) private returns (uint8) {
+    function getRandomDigit(uint256 max) private returns (uint8) 
+    {
         require(
             max > 0 && max < 10,
             "ERROR :: You must provide a number between 1 and 9"
@@ -246,5 +247,17 @@ contract Season1LotteryGame is ALotteryGame
             "ERROR :: You don't have any rewards to claim"
         );
         payable(msg.sender).transfer(_totalGain * (10 ** 18));
+    }
+
+    function endClaimPeriod() external onlyAdmin
+    {
+        //@todo require something to limit admin power
+
+        require(
+            currentPeriod == LotteryDef.Period.CLAIM, 
+            "ERROR :: You can't end the claim period if it's not started"
+        );
+
+        currentPeriod = LotteryDef.Period.CHASE;
     }
 }

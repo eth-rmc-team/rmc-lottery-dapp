@@ -37,19 +37,23 @@ contract TicketRegistry is Whitelisted
         );
     }
 
-    //Function setting informations about a NFT from the Marketplace contract 
-    //(owner, state of deal, price)
-    //todo: faire de meme avec tokenId, addresseCOntract et Type NFT depuis le Minter et Fusion
-    function setTicketInfo(
-        uint _tokenId, 
-        address payable _ticketOwner, 
-        LotteryDef.TicketState _dealState, 
-        uint256 _dealPrice 
-    ) external onlyWhitelisted
-    {             
-        ticketInfos[_tokenId].ticketOwner = _ticketOwner;
-        ticketInfos[_tokenId].dealState = _dealState;
+    function putTicketOnSale(uint256 _tokenId, uint256 _dealPrice) external onlyWhitelisted
+    {
+        ticketInfos[_tokenId].dealState = LotteryDef.TicketState.DEALING;
         ticketInfos[_tokenId].dealPrice = _dealPrice;
+    }
+
+    function removeSalesTicket(uint256 _tokenId) external onlyWhitelisted
+    {
+        ticketInfos[_tokenId].dealState = LotteryDef.TicketState.NODEAL;
+        ticketInfos[_tokenId].dealPrice = 0;
+    }
+
+    function transferTicketOwnership(uint256 _tokenId, address payable _newOwner) external onlyWhitelisted
+    {
+        ticketInfos[_tokenId].ticketOwner = _newOwner;
+        ticketInfos[_tokenId].dealState = LotteryDef.TicketState.NODEAL;
+        ticketInfos[_tokenId].dealPrice = 0;
     }
 
     function setPrizepoolClaimStatus(bool _status, uint _tokenId) external onlyWhitelisted
@@ -63,22 +67,9 @@ contract TicketRegistry is Whitelisted
     }
     //End of functions
 
-    function getTicketState(uint _tokenId) 
-    external view returns (
-        LotteryDef.TicketType, 
-        address, 
-        address payable, 
-        LotteryDef.TicketState, 
-        uint
-    ) 
+    function getTicketState(uint _tokenId) external view returns (LotteryDef.TicketInfo memory) 
     {
-        return (
-            ticketInfos[_tokenId].ticketType, 
-            ticketInfos[_tokenId].contractAddress, 
-            ticketInfos[_tokenId].ticketOwner, 
-            ticketInfos[_tokenId].dealState, 
-            ticketInfos[_tokenId].dealPrice
-        );
+        return ticketInfos[_tokenId];
     }
 
     function getClaimedRewardStatus(uint _tokenId) 

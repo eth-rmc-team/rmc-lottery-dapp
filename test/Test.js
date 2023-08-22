@@ -1,9 +1,5 @@
-const { use, expect } = require('chai')
-const { ethers, waffle, network } = require('hardhat')
-const BigNumber = require('bignumber.js');
-const { loadFixture } = require('@nomicfoundation/hardhat-network-helpers')
-
-const fs = require("fs")
+const { expect } = require('chai')
+const { ethers } = require('hardhat')
 
 //on déclare les hashs de la billeterie
 //et la combinaison de couleurs associée
@@ -102,6 +98,7 @@ describe("Lottery test", function () {
         normalTicketMinter.addToWhitelist(lotteryGame.address);
         prizepoolDispatcher.addToWhitelist(lotteryGame.address);
         ticketRegistry.addToWhitelist(normalTicketMinter.address);
+        ticketRegistry.addToWhitelist(marketPlace.address);
 
         return { 
             owner, 
@@ -246,6 +243,16 @@ describe("Lottery test", function () {
                 await expect(lotteryGame.connect(users[i]).claimAdvantagesReward())
                 .to.be.revertedWith("ERROR :: You don't have any rewards to claim");
             }
+        })
+    })
+
+    describe("MarketPlace", function() {
+        it("User should be able to create a deal", async function() {
+            console.log(tokenIds[1])
+            await marketPlace.connect(users[0]).putNftOnSale(
+                ethers.utils.parseEther("4"),
+                tokenIds[0][0]
+            );
         })
     })
 })
