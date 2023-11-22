@@ -71,7 +71,6 @@ contract NormalTicketMinter is TicketMinter
         );
 
         validUris[uri] = 0;
-        _tokenIdCounter.increment();
         
         emit ItemMinted(tokenId, _addrMinter, uri, LotteryDef.TicketType.NORMAL);
 

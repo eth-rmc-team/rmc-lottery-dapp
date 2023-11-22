@@ -2,9 +2,7 @@
 pragma solidity ^0.8.11;
 
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
-import "@openzeppelin/contracts/token/ERC721/extensions/IERC721Enumerable.sol";
-import "@openzeppelin/contracts/utils/Counters.sol";
-import "@openzeppelin/contracts/utils/math/SafeMath.sol";
+import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
 
 import "../Services/Whitelisted.sol";
 
@@ -13,21 +11,39 @@ import "../Services/Interfaces/IDiscoveryService.sol";
 
 import "hardhat/console.sol";
 
-abstract contract TicketMinter is ERC721URIStorage, IERC721Enumerable, Whitelisted {
-    using Counters for Counters.Counter;
+abstract contract TicketMinter is ERC721URIStorage, ERC721Enumerable, Whitelisted {
     using LotteryDef for LotteryDef.TicketState;
     using LotteryDef for LotteryDef.TicketType;
 
     IDiscoveryService discoveryService;
-    Counters.Counter internal _tokenIdCounter;
 
     event ItemMinted(uint256 tokenId, address creator, string uri, LotteryDef.TicketType nftType);
     
-    constructor(string memory name , string memory symbol) ERC721(name, symbol) IERC721Enumerable() {}
+    constructor(string memory name , string memory symbol) ERC721(name, symbol) {}
 
-    function supportsInterface(bytes4 interfaceId) public view virtual override(ERC721, IERC165, AccessControl) returns (bool) {
+    
+    function _beforeTokenTransfer(address from, address to, uint256 firstTokenId, uint256 batchSize) internal override(ERC721, ERC721Enumerable) {
+        ERC721Enumerable._beforeTokenTransfer(from, to, firstTokenId, batchSize);
+    }
+
+    function _burn(uint256 tokenId) internal override(ERC721, ERC721URIStorage) {
+        ERC721URIStorage._burn(tokenId);
+    }
+
+    function tokenURI(uint256 tokenId) public view override(ERC721, ERC721URIStorage) returns (string memory) 
+    {
+        return ERC721URIStorage.tokenURI(tokenId);
+    }
+
+    function supportsInterface(bytes4 interfaceId)
+        public
+        view
+        override(ERC721, ERC721Enumerable, AccessControl)
+        returns (bool)
+    {
         return super.supportsInterface(interfaceId);
     }
+
 
     function setDiscoveryService(address _address) external onlyAdmin {
         discoveryService = IDiscoveryService(_address);
@@ -38,17 +54,4 @@ abstract contract TicketMinter is ERC721URIStorage, IERC721Enumerable, Whitelist
         _burn(tokenId);
     }
 
-    function totalSupply() external view override returns (uint256) {
-        return _tokenIdCounter.current();
-    }
-
-    function tokenByIndex(uint256 index) external view override returns (uint256) {
-        require(index < _tokenIdCounter.current(), "ERC721Enumerable: Invalid index");
-        return index;
-    }
-
-    function tokenOfOwnerByIndex(address owner, uint256 index) external view override returns (uint256) {
-        require(index < balanceOf(owner), "ERC721Enumerable: Invalid index");
-        return index;
-    }
 }

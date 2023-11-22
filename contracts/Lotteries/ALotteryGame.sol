@@ -55,6 +55,11 @@ abstract contract ALotteryGame is Whitelisted
         totalSteps = _totalSteps;
     }
 
+    function getLotteryId() external view returns(uint8) 
+    {
+        return lotteryId;
+    }
+
     function getMinimumTimeStep() external view returns(uint256) 
     {
         return minimumTimeStep;

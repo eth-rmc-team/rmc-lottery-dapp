@@ -1,32 +1,40 @@
 {
-    "name": "hardhat-docker",
-    "scripts": {
-        "start:local": "./node_modules/.bin/hardhat --config hardhat.config.local.js node",
-        "deploy:local": "./node_modules/.bin/hardhat --config hardhat.config.local.js --network localhost deploy-collection",
-        "deploy:lottery": "./node_modules/.bin/hardhat --config hardhat.config.local.js --network localhost deploy-lottery",
-        "test:lottery": "./node_modules/.bin/hardhat --config hardhat.config.local.js --network localhost test-lottery",
-        "test:local": "./node_modules/.bin/hardhat --config hardhat.config.local.js test",
-        "compile:local": "./node_modules/.bin/hardhat --config hardhat.config.local.js compile",
-        "accounts:local": "./node_modules/.bin/hardhat --config hardhat.config.local.js --network localhost accounts",
-        "account_detail:local": "./node_modules/.bin/hardhat --config hardhat.config.local.js --network localhost account_detail",
-        "start:deployment": "./node_modules/.bin/hardhat --config hardhat.config.js node",
-        "deploy:rinkeby": "./node_modules/.bin/hardhat --config hardhat.config.js --network rinkeby deploy-collection",
-        "test:deployment": "./node_modules/.bin/hardhat --config hardhat.config.js test",
-        "compile:deployment": "./node_modules/.bin/hardhat --config hardhat.config.js compile"
-    },
-    "devDependencies": {
-        "@nomiclabs/hardhat-ethers": "^2.0.2",
-        "@nomiclabs/hardhat-waffle": "^2.0.6",
-        "chai": "^4.3.4",
-        "dotenv": "^10.0.0",
-        "ethereum-waffle": "^4.0.10",
-        "ethers": "^5.4.7",
-        "hardhat": "^2.14.0"
-    },
-    "dependencies": {
-        "@chainlink/contracts": "^0.6.1",
-        "@nomicfoundation/hardhat-network-helpers": "^1.0.8",
-        "@openzeppelin/contracts": "^4.8.2",
-        "mocha": "^10.2.0"
-    }
+  "name": "hardhat-docker",
+  "scripts": {
+    "start:local": "hardhat --config hardhat.config.local.js node",
+    "deploy:local": "hardhat --config hardhat.config.local.js --network localhost deploy-collection",
+    "deploy:lottery": "hardhat --config hardhat.config.local.js --network localhost deploy-lottery",
+    "test:lottery": "hardhat --config hardhat.config.local.js --network localhost test-lottery",
+    "test:local": "hardhat --config hardhat.config.local.js test",
+    "compile:local": "hardhat --config hardhat.config.local.js compile",
+    "accounts:local": "hardhat --config hardhat.config.local.js --network localhost accounts",
+    "account_detail:local": "hardhat --config hardhat.config.local.js --network localhost account_detail",
+    "start:deployment": "hardhat --config hardhat.config.js node",
+    "deploy:rinkeby": "hardhat --config hardhat.config.js --network rinkeby deploy-collection",
+    "test:deployment": "hardhat --config hardhat.config.js test",
+    "compile:deployment": "hardhat --config hardhat.config.js compile"
+  },
+  "devDependencies": {
+    "@nomiclabs/hardhat-ethers": "^2.0.2",
+    "@nomiclabs/hardhat-waffle": "^2.0.6",
+    "chai": "^4.3.4",
+    "dotenv": "^10.0.0",
+    "ethereum-waffle": "^4.0.10",
+    "ethers": "^5.4.7",
+    "hardhat": "^2.19.1"
+  },
+  "dependencies": {
+    "@chainlink/contracts": "^0.6.1",
+    "@nomicfoundation/hardhat-network-helpers": "^1.0.8",
+    "@openzeppelin/contracts": "^4.8.2",
+    "mocha": "^10.2.0"
+  },
+  "description": "- NVM or NodeJS `v14.17.6`\r - Docker `v20.10.8`\r - Npm `v1.22.10`",
+  "version": "1.0.0",
+  "main": "hardhat.config.js",
+  "directories": {
+    "test": "test"
+  },
+  "author": "",
+  "license": "ISC"
 }

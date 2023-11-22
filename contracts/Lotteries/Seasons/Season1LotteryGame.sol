@@ -63,7 +63,6 @@ contract Season1LotteryGame is ALotteryGame
         isWinnerClaimed = false;
         prizepool = address(this).balance;
         
-        IPrizepoolDispatcher(discoveryService.getPrizepoolDispatcherAddr()).resetClaimStatus();
     } 
     
     function buyTicket(string[] calldata uris) payable external override
@@ -239,7 +238,7 @@ contract Season1LotteryGame is ALotteryGame
         uint _totalGain;
 
         _totalGain = IPrizepoolDispatcher(discoveryService.getPrizepoolDispatcherAddr())
-        .computeGainForAdvantages(msg.sender);
+        .computeGainForAdvantages(msg.sender, prizepool);
 
         //Check that the gain is more than before transfer
         require(
