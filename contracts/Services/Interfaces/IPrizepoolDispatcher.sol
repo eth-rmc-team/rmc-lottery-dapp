@@ -7,7 +7,8 @@ interface IPrizepoolDispatcher
     //Function from FeeManager.sol
     //gain_PP = gain for price pool; gain_D = gain for deal fees
     function computeGainForAdvantages(
-        address _addrClaimer
+        address _addrClaimer,
+        uint256 _prizepool
     ) external returns (uint _totalGain);
 
     function computeGainForWinner(
@@ -21,9 +22,7 @@ interface IPrizepoolDispatcher
     external view returns(
         uint _shareProt, 
         uint _shareWinner, 
-        uint shareSGG, 
-        uint _shareMyth, 
-        uint _sharePlat
+        uint _shareAdvantages
     );
 
     //Function from Marketplace.sol

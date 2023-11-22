@@ -237,6 +237,10 @@ contract Season1LotteryGame is ALotteryGame
         
         uint _totalGain;
 
+        require(
+            ticketsFusionClaimedGains < ticketsSold, 
+            "ERROR :: You can't claim twice the price pool"
+        );
         _totalGain = IPrizepoolDispatcher(discoveryService.getPrizepoolDispatcherAddr())
         .computeGainForAdvantages(msg.sender, prizepool);
 
