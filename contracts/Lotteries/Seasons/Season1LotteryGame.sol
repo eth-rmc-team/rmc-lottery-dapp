@@ -10,6 +10,8 @@ import "../../Tickets/Interfaces/INormalTicketMinter.sol";
 import "../ALotteryGame.sol";
 import "../../Librairies/LotteryDef.sol";
 
+import "hardhat/console.sol";
+
 contract Season1LotteryGame is ALotteryGame
 {
     using LotteryDef for LotteryDef.Period;

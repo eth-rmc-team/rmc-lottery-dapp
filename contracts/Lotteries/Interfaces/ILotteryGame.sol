@@ -3,8 +3,9 @@ pragma solidity ^0.8.11;
 
 import "../../Librairies/LotteryDef.sol";
 
-interface ILotteryGame
+interface ILotteryGame 
 { 
-
     function getLotteryId() external view returns(uint8);
+    function getCurrentPeriod() external view returns(LotteryDef.Period);
+
 }

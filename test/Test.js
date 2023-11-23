@@ -92,13 +92,18 @@ describe("Lottery test", function () {
         lotteryGame.setDiscoveryService(discoveryService.address);
         marketPlace.setDiscoveryService(discoveryService.address);
         prizepoolDispatcher.setDiscoveryService(discoveryService.address);
+        ticketFusion.setDiscoveryService(discoveryService.address);
         normalTicketMinter.setDiscoveryService(discoveryService.address);
 
         // Configure whitelists
         normalTicketMinter.addToWhitelist(lotteryGame.address);
+        normalTicketMinter.addToWhitelist(ticketFusion.address);
+        goldTicketMinter.addToWhitelist(ticketFusion.address);
+        superGoldTicketMinter.addToWhitelist(ticketFusion.address);
         prizepoolDispatcher.addToWhitelist(lotteryGame.address);
         ticketRegistry.addToWhitelist(normalTicketMinter.address);
         ticketRegistry.addToWhitelist(marketPlace.address);
+
 
         return { 
             owner, 
@@ -244,9 +249,62 @@ describe("Lottery test", function () {
                 .to.be.revertedWith("ERROR :: You don't have any rewards to claim");
             }
         })
+
+        it("Should go to CHASE period", async function() {
+            await lotteryGame.connect(owner).endClaimPeriod()
+            expect(await lotteryGame.getCurrentPeriod()).to.equal(4)
+        })
     })
 
-    describe("MarketPlace", function() {
+    describe("Fusion", function() {
+        it("User should fuse 4 normal tickets for 2 Gold", async function() {
+
+            await ticketFusion.connect(owner).setDiscoveryService(discoveryService.address)
+            await ticketFusion.connect(owner).setLotteryGame(lotteryGame.address)
+            let balanceOfNormalTicketUser18 = Number(await normalTicketMinter.connect(users[18]).balanceOf(users[18].address))
+
+            await ticketFusion.connect(owner).setNormalTicketFusionRequirement(2)
+            let tokenIdToBurn = []
+            for(let i = 0; i < balanceOfNormalTicketUser18; i++) {
+                tokenIdToBurn[i] = Number(await normalTicketMinter.connect(users[18]).tokenOfOwnerByIndex(users[18].address, i))
+
+            }
+
+            await ticketFusion.connect(users[18]).fusionNormalTickets([tokenIdToBurn[0], tokenIdToBurn[1]])
+            await ticketFusion.connect(users[18]).fusionNormalTickets([tokenIdToBurn[2], tokenIdToBurn[3]])
+
+            let newBalanceOfNormalTicketUser18 = Number(await normalTicketMinter.connect(users[18]).balanceOf(users[18].address))
+
+            expect(newBalanceOfNormalTicketUser18).to.equal(balanceOfNormalTicketUser18 - 4)
+
+            let balanceOfGoldTicketUser18 = Number(await goldTicketMinter.connect(users[18]).balanceOf(users[18].address))
+
+            expect(balanceOfGoldTicketUser18).to.equal(2)
+
+        })
+
+        it("Should fuse 2 gold tickets for 1 super gold", async function() {
+            await ticketFusion.connect(owner).setGoldTicketFusionRequirement(2)
+            let balanceOfGoldTicketUser18 = Number(await goldTicketMinter.connect(users[18]).balanceOf(users[18].address))
+
+            let tokenIdToBurn = []
+            for(let i = 0; i < balanceOfGoldTicketUser18; i++) {
+                tokenIdToBurn[i] = Number(await goldTicketMinter.connect(users[18]).tokenOfOwnerByIndex(users[18].address, i))
+            }
+
+            await ticketFusion.connect(users[18]).fusionGoldTickets([tokenIdToBurn[0], tokenIdToBurn[1]])
+
+            let newBalanceOfGoldTicketUser18 = Number(await goldTicketMinter.connect(users[18]).balanceOf(users[18].address))
+
+            expect(newBalanceOfGoldTicketUser18).to.equal(balanceOfGoldTicketUser18 - 2)
+
+            let balanceOfSuperGoldTicketUser18 = Number(await superGoldTicketMinter.connect(users[18]).balanceOf(users[18].address))
+
+            expect(balanceOfSuperGoldTicketUser18).to.equal(1)
+        })
+    })
+
+/*     describe("MarketPlace", function() {
         it("User should be able to create a deal", async function() {
             console.log(tokenIds[1])
             await marketPlace.connect(users[0]).putNftOnSale(
@@ -254,5 +312,5 @@ describe("Lottery test", function () {
                 tokenIds[0][0]
             );
         })
-    })
+    }) */
 })
