@@ -100,7 +100,6 @@ describe("Lottery test", function () {
         normalTicketMinter.addToWhitelist(ticketFusion.address);
         goldTicketMinter.addToWhitelist(ticketFusion.address);
         superGoldTicketMinter.addToWhitelist(ticketFusion.address);
-        mythicTicketMinter.addToWhitelist(lotteryGame.address);
         prizepoolDispatcher.addToWhitelist(lotteryGame.address);
         ticketRegistry.addToWhitelist(normalTicketMinter.address);
         ticketRegistry.addToWhitelist(marketPlace.address);
@@ -130,7 +129,7 @@ describe("Lottery test", function () {
                 Object.values(hashes),
                 featuresByDay
             );
-            await lotteryGame.setTicketPrice("250000000000000000000");
+            await lotteryGame.setTicketPrice("2500000000000000000");
             await lotteryGame.setTotalSteps(3)
 
             const keyHashes = Object.keys(hashes)
@@ -172,7 +171,7 @@ describe("Lottery test", function () {
 
                 const tx = await lotteryGame.connect(users[i]).buyTicket(
                     boughtHashes,
-                {value: ethers.utils.parseEther("250").mul(boughtHashes.length)})
+                {value: ethers.utils.parseEther("2.5").mul(boughtHashes.length)})
                 
                 const receipt = await tx.wait()
                 const gasUsed = BigInt(receipt.cumulativeGasUsed) * BigInt(receipt.effectiveGasPrice);
@@ -180,10 +179,9 @@ describe("Lottery test", function () {
                 //on vérifie la nouvelle balance de l'utilisateur
                 expect(await users[i].getBalance()).to.equal(
                     ethers.utils.parseEther("10000")
-                    .sub(ethers.utils.parseEther("250").mul(boughtHashes.length))
+                    .sub(ethers.utils.parseEther("2.5").mul(boughtHashes.length))
                     .sub(gasUsed)
                 )
-
                 //on vérifie que l'utilisateur dispose bien du nombre
                 //de hashes achetés
                 expect(await normalTicketMinter.balanceOf(users[i].address)).to.equal(boughtHashes.length)
@@ -221,8 +219,6 @@ describe("Lottery test", function () {
     })
 
     describe("Claim Period", function() {
-        let mythicHolder
-
         it("Claim period should be started", async function() {
             expect(await lotteryGame.getCurrentPeriod()).to.equal(3)
         })
@@ -236,34 +232,18 @@ describe("Lottery test", function () {
                 for(let j = 0; j < tokenIds[i].length; j++) {
                     const tokenId = tokenIds[i][j];
                     if(tokenId == winningCombination) {
-                        mythicHolder = users[i]
-
-                        await normalTicketMinter.connect(users[i]).setApprovalForAll(lotteryGame.address, true)
-                        const oldBalanceNormal = await normalTicketMinter.balanceOf(users[i].address)
                         const oldBalance = await users[i].getBalance()
                         await lotteryGame.connect(users[i]).claimReward()
                         const newBalance = await users[i].getBalance()
-                        const newBalanceNormal = await normalTicketMinter.balanceOf(users[i].address)
                         //on vérifie la nouvelle balance de l'utilisateur
                         expect(Number(newBalance))
                         .to.be.greaterThan(Number(oldBalance))
-                        expect(Number(await mythicTicketMinter.balanceOf(users[i].address))).to.equal(1)
-                        expect(Number(newBalanceNormal)).to.equal(oldBalanceNormal - 1)
                     }
                 }
             }
         })
 
-        it("should be able to claim advantages reward", async function() {
-            const oldBalanceOfMythicHolder = Number(await mythicHolder.getBalance())
-            await lotteryGame.connect(mythicHolder).claimAdvantagesReward()
-            const newBalanceOfMythicHolder = Number(await mythicHolder.getBalance())
-
-            expect(newBalanceOfMythicHolder).to.be.greaterThan(oldBalanceOfMythicHolder)
-            
-        })
-
-        it("Other or already claimed users shouldn't be able to claim any reward", async function() {
+        it("Other users shouldn't be able to claim any reward", async function() {
             for(let i = 0; i < users.length; i++) {
                 await expect(lotteryGame.connect(users[i]).claimAdvantagesReward())
                 .to.be.revertedWith("ERROR :: You don't have any rewards to claim");

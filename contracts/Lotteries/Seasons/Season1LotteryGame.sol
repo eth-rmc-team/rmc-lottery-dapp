@@ -7,12 +7,16 @@ import "../../Services/Interfaces/IPrizepoolDispatcher.sol";
 import "../../Services/TicketRegistry.sol";
 import "../../Tickets/Interfaces/ITicketMinter.sol";
 import "../../Tickets/Interfaces/INormalTicketMinter.sol";
+import "../../Tickets/Interfaces/ISpecialTicketMinter.sol";
 import "../ALotteryGame.sol";
 import "../../Librairies/LotteryDef.sol";
 
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import '@openzeppelin/contracts/utils/math/SafeMath.sol';
+
 import "hardhat/console.sol";
 
-contract Season1LotteryGame is ALotteryGame
+contract Season1LotteryGame is ALotteryGame, ReentrancyGuard
 {
     using LotteryDef for LotteryDef.Period;
 
@@ -30,9 +34,12 @@ contract Season1LotteryGame is ALotteryGame
     LotteryDef.Period public currentPeriod;
 
     bool public isWinnerClaimed;
+
+    using SafeMath for uint256;
     
     constructor() payable {
         currentPeriod = LotteryDef.Period.OFF;
+        lotteryId = 0;
     }
 
     function setTicketPrice(uint256 _ticketPrice) external onlyAdmin onlyWhenCycleNotRunning
@@ -67,7 +74,7 @@ contract Season1LotteryGame is ALotteryGame
         
     } 
     
-    function buyTicket(string[] calldata uris) payable external override
+    function buyTicket(string[] calldata uris) payable external override nonReentrant
     {    
         require(
             uris.length > 0, 
@@ -83,13 +90,13 @@ contract Season1LotteryGame is ALotteryGame
         );
 
         require(
-            msg.value == uris.length * ticketPrice, 
-            "ERROR :: You must pay the right amount of RMC"
+            msg.value >= uris.length * ticketPrice, 
+            "ERROR :: You must pay the right price for your order"
         );       
 
         ticketsSold += uint16(uris.length);
-        
         (bool sent,) = payable(address(this)).call{value: msg.value}("");
+
         require(sent, "Failed to transfer funds to the contract");
 
         for(uint i = 0; i < uris.length; i++) {
@@ -116,8 +123,7 @@ contract Season1LotteryGame is ALotteryGame
         );
         
         currentPeriod = LotteryDef.Period.GAME;
-        prizepool = ticketsSold * ticketPrice;
-        lastStepAt = block.timestamp;    
+        lastStepAt = block.timestamp;  
     }
 
     function nextStep() public override
@@ -156,14 +162,9 @@ contract Season1LotteryGame is ALotteryGame
         );
         
         currentPeriod = LotteryDef.Period.CLAIM;  
+        prizepool = address(this).balance;
         
         IPrizepoolDispatcher(discoveryService.getPrizepoolDispatcherAddr()).claimFees();
-    }
-
-    function endCycle() external override onlyAdmin
-    {
-        currentPeriod = LotteryDef.Period.OFF;
-        isCycleRunning = false;
     }
 
     function initializeBoxOffice(
@@ -199,7 +200,7 @@ contract Season1LotteryGame is ALotteryGame
         return uint8((randomNumber % max) + 1);
     }
 
-    function claimReward() external override payable
+    function claimReward() external override payable nonReentrant
     {
         //Check that the game is in claim period, that the game is over, that the winner hasn't claimed the price pool yet
         require(
@@ -215,22 +216,28 @@ contract Season1LotteryGame is ALotteryGame
         uint gainWinner = IPrizepoolDispatcher(discoveryService.getPrizepoolDispatcherAddr())
         .computeGainForWinner(
             winningCombination, 
-            msg.sender
+            msg.sender,
+            prizepool
         ); 
 
         //transfer gains to the owner of the winningCombination
-        payable(INormalTicketMinter(discoveryService.getNormalTicketAddr())
+/*         payable(INormalTicketMinter(discoveryService.getNormalTicketAddr())
         .ownerOf(winningCombination))
-        .transfer(gainWinner);
+        .transfer(gainWinner); */
+
+        (bool sent,) =payable(INormalTicketMinter(discoveryService.getNormalTicketAddr())
+        .ownerOf(winningCombination)).call{value: gainWinner}("");
+        require(sent, "Failed to transfer funds");
 
         //Burn the NFT of the winner
         //IRMCTicketInfo(addrNormalTicket).approve(address(this), winningCombination);
         INormalTicketMinter(discoveryService.getNormalTicketAddr()).burn(winningCombination);
+        ISpecialTicketMinter(discoveryService.getMythicTicketAddr()).mintSpecial(msg.sender);
         
         isWinnerClaimed = true;
     }
 
-    function claimAdvantagesReward() external 
+    function claimAdvantagesReward() external nonReentrant 
     {
         require(
             currentPeriod == LotteryDef.Period.CLAIM, 
@@ -239,10 +246,6 @@ contract Season1LotteryGame is ALotteryGame
         
         uint _totalGain;
 
-        require(
-            ticketsFusionClaimedGains < ticketsSold, 
-            "ERROR :: You can't claim twice the price pool"
-        );
         _totalGain = IPrizepoolDispatcher(discoveryService.getPrizepoolDispatcherAddr())
         .computeGainForAdvantages(msg.sender, prizepool);
 
@@ -251,7 +254,30 @@ contract Season1LotteryGame is ALotteryGame
             _totalGain > 0, 
             "ERROR :: You don't have any rewards to claim"
         );
+
+        (bool sent,) = payable(msg.sender).call{value: _totalGain}("");
+        require(sent, "Failed to transfer funds");
+ 
+    }
+
+    function claimProtocolReward() external onlyAdmin nonReentrant
+    {
+        require(
+            currentPeriod == LotteryDef.Period.CLAIM, 
+            "ERROR :: You can't claim the rewards if the game is not over"
+        );
+
+        uint8 shareProt;
+        (shareProt,,) = IPrizepoolDispatcher(discoveryService.getPrizepoolDispatcherAddr()).getShareOfPricePoolFor();
+        uint256 _totalGain = (prizepool * shareProt) / 100;
+
+        //Check that the gain is more than before transfer
+        require(
+            _totalGain > 0, 
+            "ERROR :: You don't have any rewards to claim"
+        );
         payable(msg.sender).transfer(_totalGain * (10 ** 18));
+        
     }
 
     function endClaimPeriod() external onlyAdmin
@@ -264,5 +290,11 @@ contract Season1LotteryGame is ALotteryGame
         );
 
         currentPeriod = LotteryDef.Period.CHASE;
+    }
+
+    function endCycle() external override onlyAdmin
+    {
+        currentPeriod = LotteryDef.Period.OFF;
+        isCycleRunning = false;
     }
 }

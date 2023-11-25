@@ -78,12 +78,12 @@ contract TicketFusion is Whitelisted, ReentrancyGuard
     //   The normal tickets with the specified token IDs are burned (destroyed).
     //   The calling user is awarded a new gold ticket.
     //
-    function fusionNormalTickets(uint[] memory tokenIds) external 
+    function fusionNormalTickets(uint[] memory tokenIds) external nonReentrant
     {
 
         require(
             lotteryGame.getCurrentPeriod() == LotteryDef.Period.CHASE, 
-            "ERROR :: Fusion is not allowed while a lottery is live"
+            "ERROR :: Fusion is not allowed while a lottery is live or ended"
         );
 
         uint256 balance = ISpecialTicketMinter(discoveryService.getNormalTicketAddr()).balanceOf(msg.sender);
@@ -120,7 +120,7 @@ contract TicketFusion is Whitelisted, ReentrancyGuard
 
     }
 
-    function fusionGoldTickets(uint[] memory tokenIds) external 
+    function fusionGoldTickets(uint[] memory tokenIds) external nonReentrant
     {
         require(
             ISpecialTicketMinter(discoveryService.getGoldTicketAddr()).totalSupply() > 1,
@@ -128,7 +128,7 @@ contract TicketFusion is Whitelisted, ReentrancyGuard
         );
         require(
             lotteryGame.getCurrentPeriod() == LotteryDef.Period.CHASE, 
-            "ERROR :: Fusion is not allowed while a lottery is live"
+            "ERROR :: Fusion is not allowed while a lottery is live or ended"
         );
         
         uint256 balance = ISpecialTicketMinter(discoveryService.getGoldTicketAddr()).balanceOf(msg.sender);

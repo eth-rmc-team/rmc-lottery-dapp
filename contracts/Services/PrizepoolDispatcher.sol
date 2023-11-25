@@ -17,7 +17,6 @@ contract PrizepoolDispatcher is Whitelisted
     address public tokenAllowedForTrade;
 
     IDiscoveryService discoveryService;
-    ILotteryGame lotteryGame;
 
     bool private _claimed;
 
@@ -75,11 +74,6 @@ contract PrizepoolDispatcher is Whitelisted
         discoveryService = IDiscoveryService(_address);
     }
 
-    function setLotteryGame(address _address) external onlyAdmin 
-    {
-        lotteryGame = ILotteryGame(_address);
-    }
-
    //Function setting the share of the winner
     function setShareOfPricePoolForWinner (uint8 _share) public onlyAdmin 
     {
@@ -122,7 +116,7 @@ contract PrizepoolDispatcher is Whitelisted
     }
 
     //Function get for the different shares
-    function getShares() external view returns (
+    function getShareOfPricePoolFor() external view returns (
         uint8, 
         uint8, 
         uint8
@@ -144,27 +138,20 @@ contract PrizepoolDispatcher is Whitelisted
     //Function called by LotteryGame contract to claim the rewards from "Marketplace" contract
     function claimFees() external onlyWhitelisted
     {
-        //If there is money in the contract, we send it to the LotteryGame contract
-        if(discoveryService.getRmcMarketplaceAddr().balance > 0){
-            IERC20(0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7).transferFrom(
-                discoveryService.getRmcMarketplaceAddr(), 
-                discoveryService.getLotteryGameAddr(), 
-                (discoveryService.getRmcMarketplaceAddr().balance)
-            );
-        }
+
     }
 
     //Function used to disable the claim ability of a NFT after the claim
     function disableClaim(uint _id, uint8 nft) private 
     {
         if (nft == 1)
-            gHasClaimed[_id] = lotteryGame.getLotteryId();
+            gHasClaimed[_id] = ILotteryGame(discoveryService.getLotteryGameAddr()).getLotteryId();
         else if (nft == 2)
-            sgHasClaimed[_id] = lotteryGame.getLotteryId();
+            sgHasClaimed[_id] = ILotteryGame(discoveryService.getLotteryGameAddr()).getLotteryId();
         else if (nft == 3)
-            mHasClaimed[_id] = lotteryGame.getLotteryId();
+            mHasClaimed[_id] = ILotteryGame(discoveryService.getLotteryGameAddr()).getLotteryId();
         else if (nft == 4)
-            pHasClaimed[_id] = lotteryGame.getLotteryId();
+            pHasClaimed[_id] = ILotteryGame(discoveryService.getLotteryGameAddr()).getLotteryId();
     }
 
     function getRatioSupplySuperGoldvsGold(uint256 _balanceOfGold) external view returns(uint ratioSGG) 
@@ -308,7 +295,7 @@ contract PrizepoolDispatcher is Whitelisted
             totalSupply = ITicketMinter(discoveryService.getGoldTicketAddr()).totalSupply();
             for (uint i = 0; i < balanceOfNft; i++) {
                 id = ITicketMinter(discoveryService.getGoldTicketAddr()).tokenOfOwnerByIndex(addrClaimer, i);
-                if(gHasClaimed[id] < lotteryGame.getLotteryId()) 
+                if(gHasClaimed[id] < ILotteryGame(discoveryService.getLotteryGameAddr()).getLotteryId()) 
                 {
                     disableClaim(id, 1);
                 }
@@ -327,7 +314,7 @@ contract PrizepoolDispatcher is Whitelisted
             totalSupply = ITicketMinter(discoveryService.getSuperGoldTicketAddr()).totalSupply();
             for (uint i = 0; i < balanceOfNft; i++) {
                 id = ITicketMinter(discoveryService.getSuperGoldTicketAddr()).tokenOfOwnerByIndex(addrClaimer, i);
-                if(sgHasClaimed[id] < lotteryGame.getLotteryId()) 
+                if(sgHasClaimed[id] < ILotteryGame(discoveryService.getLotteryGameAddr()).getLotteryId()) 
                 {
                     disableClaim(id, 2);
                 }
@@ -341,14 +328,17 @@ contract PrizepoolDispatcher is Whitelisted
         }
 
         balanceOfNft = user.balanceOfNft[2];
+
         if (balanceOfNft > 0 ) {
             coef = user.coefs[2];
             totalSupply = ITicketMinter(discoveryService.getMythicTicketAddr()).totalSupply();
             for (uint i = 0; i < balanceOfNft; i++) {
                 id = ITicketMinter(discoveryService.getMythicTicketAddr()).tokenOfOwnerByIndex(addrClaimer, i);
-                if(sgHasClaimed[id] < lotteryGame.getLotteryId()) 
+                if(mHasClaimed[id] < ILotteryGame(discoveryService.getLotteryGameAddr()).getLotteryId()) 
                 {
                     disableClaim(id, 3);
+                    console.log("mHasClaimed[id] = ", mHasClaimed[id]);
+
                 }
                 else
                 {
@@ -360,13 +350,13 @@ contract PrizepoolDispatcher is Whitelisted
         }
 
 
-        balanceOfNft = user.balanceOfNft[2];
+        balanceOfNft = user.balanceOfNft[3];
         if (balanceOfNft > 0 ) {
             coef = user.coefs[3];
             totalSupply = ITicketMinter(discoveryService.getPlatiniumTicketAddr()).totalSupply();
             for (uint i = 0; i < balanceOfNft; i++) {
                 id = ITicketMinter(discoveryService.getPlatiniumTicketAddr()).tokenOfOwnerByIndex(addrClaimer, i);
-                if(sgHasClaimed[id] < lotteryGame.getLotteryId()) 
+                if(pHasClaimed[id] < ILotteryGame(discoveryService.getLotteryGameAddr()).getLotteryId()) 
                 {
                     disableClaim(id, 4);
                 }
@@ -391,7 +381,8 @@ contract PrizepoolDispatcher is Whitelisted
     //Function computin the gain for the winner
     function computeGainForWinner(
         uint _idWinner, 
-        address _claimer
+        address _claimer,
+        uint256 _prizepool
     ) external view onlyWhitelisted returns(uint)
     {
         address payable _winner = payable(ITicketMinter(discoveryService.getNormalTicketAddr()).ownerOf(_idWinner));
@@ -400,6 +391,6 @@ contract PrizepoolDispatcher is Whitelisted
             "ERROR :: you don't have the winning ticket"
         ); 
 
-        return protocolSharePrizepool * discoveryService.getLotteryGameAddr().balance / 100;
+        return protocolSharePrizepool.mul(_prizepool).div(100);
     }
 } 

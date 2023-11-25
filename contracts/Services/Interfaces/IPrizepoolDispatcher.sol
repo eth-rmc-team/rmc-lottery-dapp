@@ -13,16 +13,17 @@ interface IPrizepoolDispatcher
 
     function computeGainForWinner(
         uint _idWinner, 
-        address _claimer
+        address _claimer,
+        uint256 _prizepool
     ) external view returns(uint);
 
 
     //Function getter returning the share of price pool for every part of the game
     function getShareOfPricePoolFor() 
     external view returns(
-        uint _shareProt, 
-        uint _shareWinner, 
-        uint _shareAdvantages
+        uint8 _shareProt, 
+        uint8 _shareWinner, 
+        uint8 _shareAdvantages
     );
 
     //Function from Marketplace.sol
