@@ -2,7 +2,6 @@
 pragma solidity ^0.8.11;
 
 import "./TicketMinter.sol";
-import "../Services/Interfaces/ITicketRegistry.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
 
 contract NormalTicketMinter is TicketMinter
@@ -65,9 +64,7 @@ contract NormalTicketMinter is TicketMinter
             address(this), 
             payable(_addrMinter), 
             LotteryDef.TicketState.NODEAL, 
-            0, 
-            false, 
-            false
+            0
         );
 
         validUris[uri] = 0;

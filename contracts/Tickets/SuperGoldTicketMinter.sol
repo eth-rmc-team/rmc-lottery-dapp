@@ -28,6 +28,16 @@ contract SuperGoldTicketMinter is TicketMinter
 
         _safeMint(_to, _tokenId);
         _setTokenURI(_tokenId, uri);
+
+        ITicketRegistry(discoveryService.getTicketRegistryAddr()).addNewTicket(
+            _tokenId,
+            LotteryDef.TicketType.NORMAL, 
+            address(this), 
+            payable(_to), 
+            LotteryDef.TicketState.NODEAL, 
+            0
+        );
+
         return _tokenId;
 
     }

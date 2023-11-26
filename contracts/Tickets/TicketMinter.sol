@@ -9,6 +9,8 @@ import "../Services/Whitelisted.sol";
 import "../Librairies/LotteryDef.sol";
 import "../Services/Interfaces/IDiscoveryService.sol";
 
+import "../Services/Interfaces/ITicketRegistry.sol";
+
 import "hardhat/console.sol";
 
 abstract contract TicketMinter is ERC721URIStorage, ERC721Enumerable, Whitelisted {
