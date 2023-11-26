@@ -10,11 +10,8 @@ library LotteryDef
     //Struct containing all the information about a NFT
     struct TicketInfo {
         TicketType ticketType;            
-        address contractAddress; 
         address payable ticketOwner;           
         TicketState dealState;       
-        uint256 dealPrice;              
-        bool isPrizepoolClaimed;   
-        bool isFeesClaimed;         
+        uint256 dealPrice;       
     }
 }
