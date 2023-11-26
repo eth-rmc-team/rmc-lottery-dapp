@@ -51,7 +51,7 @@ describe("Lottery test", function () {
     let platinTicketMinter
     let superGoldTicketMinter
     let normalTicketMinter
-    
+
     let users
     let tokenIds = []
     let owner
@@ -94,6 +94,10 @@ describe("Lottery test", function () {
         prizepoolDispatcher.setDiscoveryService(discoveryService.address);
         ticketFusion.setDiscoveryService(discoveryService.address);
         normalTicketMinter.setDiscoveryService(discoveryService.address);
+        goldTicketMinter.setDiscoveryService(discoveryService.address);
+        superGoldTicketMinter.setDiscoveryService(discoveryService.address);
+        mythicTicketMinter.setDiscoveryService(discoveryService.address);
+        platinTicketMinter.setDiscoveryService(discoveryService.address);
 
         // Configure whitelists
         normalTicketMinter.addToWhitelist(lotteryGame.address);
@@ -103,11 +107,16 @@ describe("Lottery test", function () {
         mythicTicketMinter.addToWhitelist(lotteryGame.address);
         prizepoolDispatcher.addToWhitelist(lotteryGame.address);
         ticketRegistry.addToWhitelist(normalTicketMinter.address);
+        ticketRegistry.addToWhitelist(goldTicketMinter.address);
+        ticketRegistry.addToWhitelist(superGoldTicketMinter.address);
+        ticketRegistry.addToWhitelist(mythicTicketMinter.address);
+        ticketRegistry.addToWhitelist(platinTicketMinter.address);
         ticketRegistry.addToWhitelist(marketPlace.address);
+        marketPlace.addToWhitelist(lotteryGame.address);
 
 
-        return { 
-            owner, 
+        return {
+            owner,
             lotteryGame,
             discoveryService,
             marketPlace,
@@ -124,9 +133,9 @@ describe("Lottery test", function () {
     })
 
     describe("Deployment", async function () {
-        it("Should initialize NFT URIs, featuresByDay and nbStep", async function () {            
+        it("Should initialize NFT URIs, featuresByDay and nbStep", async function () {
             await lotteryGame.initializeBoxOffice(
-                Object.keys(hashes), 
+                Object.keys(hashes),
                 Object.values(hashes),
                 featuresByDay
             );
@@ -135,7 +144,7 @@ describe("Lottery test", function () {
 
             const keyHashes = Object.keys(hashes)
 
-            for(let i = 0; i < keyHashes.length; i++) {
+            for (let i = 0; i < keyHashes.length; i++) {
                 //on vérifie que chaque hash est bien associé à la bonne combinaison
                 expect(await normalTicketMinter.getUriFeatures(keyHashes[i])).to.equal(hashes[keyHashes[i]])
                 //on vérifie que chaque hash est bien considéré comme valide
@@ -149,8 +158,8 @@ describe("Lottery test", function () {
             expect(await lotteryGame.getCurrentPeriod()).to.equal(1)
         })
 
-        it("Should buy tickets", async function () { 
-            for(let i = 0; i < users.length; i++) {
+        it("Should buy tickets", async function () {
+            for (let i = 0; i < users.length; i++) {
                 let boughtHashes;
 
                 const keyHashes = Object.keys(hashes)
@@ -158,30 +167,30 @@ describe("Lottery test", function () {
                 //il y a 19 users pour 27 hashes
                 //donc le dernier user va acheter 9 hashes au lieu de 1
                 //pour compléter
-                if(i === users.length - 1) {
+                if (i === users.length - 1) {
                     boughtHashes = keyHashes.slice(i, keyHashes.length)
                     tokenIds[i] = []
-                    for(let j = i; j < keyHashes.length; j++) {
+                    for (let j = i; j < keyHashes.length; j++) {
                         //on concatène la combinaison avec 01, le lottery ID
-                        tokenIds[i].push(parseInt(Object.values(hashes)[j]+"01"))
+                        tokenIds[i].push(parseInt(Object.values(hashes)[j] + "01"))
                     }
                 } else {
-                    boughtHashes = [keyHashes[i]] 
-                    tokenIds[i] = [parseInt(Object.values(hashes)[i]+"01")]
+                    boughtHashes = [keyHashes[i]]
+                    tokenIds[i] = [parseInt(Object.values(hashes)[i] + "01")]
                 }
 
                 const tx = await lotteryGame.connect(users[i]).buyTicket(
                     boughtHashes,
-                {value: ethers.utils.parseEther("250").mul(boughtHashes.length)})
-                
+                    { value: ethers.utils.parseEther("250").mul(boughtHashes.length) })
+
                 const receipt = await tx.wait()
                 const gasUsed = BigInt(receipt.cumulativeGasUsed) * BigInt(receipt.effectiveGasPrice);
 
                 //on vérifie la nouvelle balance de l'utilisateur
                 expect(await users[i].getBalance()).to.equal(
                     ethers.utils.parseEther("10000")
-                    .sub(ethers.utils.parseEther("250").mul(boughtHashes.length))
-                    .sub(gasUsed)
+                        .sub(ethers.utils.parseEther("250").mul(boughtHashes.length))
+                        .sub(gasUsed)
                 )
 
                 //on vérifie que l'utilisateur dispose bien du nombre
@@ -192,13 +201,62 @@ describe("Lottery test", function () {
         });
     })
 
-    describe("Game Period", function() {
-        it("We should be in GAME Period", async function() {
+    describe("Game Period", function () {
+        it("We should be in GAME Period", async function () {
             expect(await lotteryGame.getCurrentPeriod()).to.equal(2)
         })
-        
+
+        it("Should have no fees yet to claim by Marketplace", async function () {
+            let marketplaceBalance = Number(await marketPlace.connect(owner).getTotalFees())
+            expect(marketplaceBalance).to.equal(0)
+
+        })
+
+        it("User should be able to create a deal", async function () {
+            let balanceBeforPutOnTrade = Number(await normalTicketMinter.balanceOf(users[0].address))
+            await normalTicketMinter.connect(users[0]).setApprovalForAll(marketPlace.address, true)
+            await marketPlace.connect(users[0]).putNftOnSale(
+                normalTicketMinter.address,
+                tokenIds[0][0],
+                "4"
+            );
+            let balanceAfterPutOnTrade = Number(await normalTicketMinter.balanceOf(users[0].address))
+            expect(balanceAfterPutOnTrade).to.equal(balanceBeforPutOnTrade - 1)
+
+        })
+
+        it("should buy a ticket on sale", async function () {
+            let oldBbalanceOfBuyer = Number(await users[1].getBalance())
+            let balanceBeforeTrade = Number(await normalTicketMinter.balanceOf(users[1].address))
+            const price = 4000000000000000000 * 1.3
+            await marketPlace.connect(users[1]).purchaseNft(
+                normalTicketMinter.address,
+                tokenIds[0][0],
+                { value: ethers.utils.parseUnits(price.toString(), "wei") })
+            let balanceAfterTrade = Number(await normalTicketMinter.balanceOf(users[1].address))
+
+            let newBbalanceOfBuyer = Number(await users[1].getBalance())
+
+            expect(balanceAfterTrade).to.equal(balanceBeforeTrade + 1)
+            expect(newBbalanceOfBuyer).to.be.lessThan(oldBbalanceOfBuyer)
+
+        })
+
+        it("Should claim fees for user", async function () {
+            let oldBalanceOfSeller = Number(await users[0].getBalance())
+
+            await marketPlace.connect(users[0]).claimsFeesForSeller()
+
+            let balanceOfMarketplace = Number(await marketPlace.connect(owner).getTotalFees())
+            let newBalanceOfSeller = Number(await users[0].getBalance())
+
+            expect(balanceOfMarketplace).to.equal(1200000000000000000)
+            expect(newBalanceOfSeller).to.be.greaterThan(oldBalanceOfSeller)
+
+        })
+
         it("Go to nextDay n days should end game period and pick winning combinaison", async function () {
-            const [ user2 ] = await ethers.getSigners()
+            const [user2] = await ethers.getSigners()
             function sleep(time) {
                 return new Promise(resolve => {
                     setTimeout(() => {
@@ -207,7 +265,7 @@ describe("Lottery test", function () {
                 });
             }
 
-            for(let i = 0; i < featuresByDay.length; i++) {
+            for (let i = 0; i < featuresByDay.length; i++) {
                 await sleep(1500)
                 await lotteryGame.connect(user2).nextStep();
             }
@@ -215,27 +273,32 @@ describe("Lottery test", function () {
             expect(await lotteryGame.getCurrentPeriod()).to.equal(3);
             //on vérifie que la combinaison gagnante est bien un nombre
             //composés d'autant de chiffre que de jours + 2 chiffres pour le lotterie ID
-            expect(await lotteryGame.getWinningCombination() > 10**(featuresByDay.length+1) + 1)
-            .to.equal(true)
+            expect(await lotteryGame.getWinningCombination() > 10 ** (featuresByDay.length + 1) + 1)
+                .to.equal(true)
         });
     })
 
-    describe("Claim Period", function() {
+    describe("Claim Period", function () {
         let mythicHolder
 
-        it("Claim period should be started", async function() {
+        it("Claim period should be started", async function () {
             expect(await lotteryGame.getCurrentPeriod()).to.equal(3)
         })
 
-        it("Winner should be able to claim", async function() {
+        it("Should have transfer fees from Marketplace to LotteryGame", async function () {
+            let marketplaceBalance = Number(await marketPlace.connect(owner).getTotalFees())
+            expect(marketplaceBalance).to.equal(0)
+        })
+
+        it("Winner should be able to claim", async function () {
             const winningCombination = parseInt(
                 (await lotteryGame.getWinningCombination()).toString()
             )
-            
-            for(let i = 0; i < users.length; i++) {
-                for(let j = 0; j < tokenIds[i].length; j++) {
+
+            for (let i = 0; i < users.length; i++) {
+                for (let j = 0; j < tokenIds[i].length; j++) {
                     const tokenId = tokenIds[i][j];
-                    if(tokenId == winningCombination) {
+                    if (tokenId == winningCombination) {
                         mythicHolder = users[i]
 
                         await normalTicketMinter.connect(users[i]).setApprovalForAll(lotteryGame.address, true)
@@ -246,7 +309,7 @@ describe("Lottery test", function () {
                         const newBalanceNormal = await normalTicketMinter.balanceOf(users[i].address)
                         //on vérifie la nouvelle balance de l'utilisateur
                         expect(Number(newBalance))
-                        .to.be.greaterThan(Number(oldBalance))
+                            .to.be.greaterThan(Number(oldBalance))
                         expect(Number(await mythicTicketMinter.balanceOf(users[i].address))).to.equal(1)
                         expect(Number(newBalanceNormal)).to.equal(oldBalanceNormal - 1)
                     }
@@ -254,40 +317,48 @@ describe("Lottery test", function () {
             }
         })
 
-        it("should be able to claim advantages reward", async function() {
+        it("should be able to claim advantages reward", async function () {
             const oldBalanceOfMythicHolder = Number(await mythicHolder.getBalance())
             await lotteryGame.connect(mythicHolder).claimAdvantagesReward()
             const newBalanceOfMythicHolder = Number(await mythicHolder.getBalance())
 
             expect(newBalanceOfMythicHolder).to.be.greaterThan(oldBalanceOfMythicHolder)
-            
+
         })
 
-        it("Other or already claimed users shouldn't be able to claim any reward", async function() {
-            for(let i = 0; i < users.length; i++) {
+        it("Shoudl be able to clam protocol reward", async function () {
+            const oldBalanceOfProtocol = Number(await owner.getBalance())
+            await lotteryGame.connect(owner).claimProtocolReward()
+            const newBalanceOfProtocol = Number(await owner.getBalance())
+
+            expect(newBalanceOfProtocol).to.be.greaterThan(oldBalanceOfProtocol)
+        })
+
+        it("Other or already claimed users shouldn't be able to claim any reward", async function () {
+            for (let i = 0; i < users.length; i++) {
                 await expect(lotteryGame.connect(users[i]).claimAdvantagesReward())
-                .to.be.revertedWith("ERROR :: You don't have any rewards to claim");
+                    .to.be.revertedWith("ERROR :: You don't have any rewards to claim");
             }
         })
 
-        it("Should go to CHASE period", async function() {
+        it("Should go to CHASE period", async function () {
             await lotteryGame.connect(owner).endClaimPeriod()
             expect(await lotteryGame.getCurrentPeriod()).to.equal(4)
         })
     })
 
-    describe("Fusion", function() {
-        
+    describe("Fusion", function () {
+
         let tokenIdToBurn = []
 
-        it("User should fuse 4 normal tickets for 2 Gold", async function() {
+        it("User should fuse 4 normal tickets for 2 Gold", async function () {
 
             await ticketFusion.connect(owner).setDiscoveryService(discoveryService.address)
             await ticketFusion.connect(owner).setLotteryGame(lotteryGame.address)
             let balanceOfNormalTicketUser18 = Number(await normalTicketMinter.connect(users[18]).balanceOf(users[18].address))
 
             await ticketFusion.connect(owner).setNormalTicketFusionRequirement(2)
-            for(let i = 0; i < balanceOfNormalTicketUser18; i++) {
+            for (let i = 0; i < balanceOfNormalTicketUser18; i++) {
                 tokenIdToBurn[i] = Number(await normalTicketMinter.connect(users[18]).tokenOfOwnerByIndex(users[18].address, i))
 
             }
@@ -305,12 +376,12 @@ describe("Lottery test", function () {
 
         })
 
-        it("Should fuse 2 gold tickets for 1 super gold", async function() {
+        it("Should fuse 2 gold tickets for 1 super gold", async function () {
             await ticketFusion.connect(owner).setGoldTicketFusionRequirement(2)
             let balanceOfGoldTicketUser18 = Number(await goldTicketMinter.connect(users[18]).balanceOf(users[18].address))
 
             let tokenIdToBurn = []
-            for(let i = 0; i < balanceOfGoldTicketUser18; i++) {
+            for (let i = 0; i < balanceOfGoldTicketUser18; i++) {
                 tokenIdToBurn[i] = Number(await goldTicketMinter.connect(users[18]).tokenOfOwnerByIndex(users[18].address, i))
             }
 
@@ -325,9 +396,9 @@ describe("Lottery test", function () {
             expect(balanceOfSuperGoldTicketUser18).to.equal(1)
         })
 
-        it("Shouldn't be able to fuse anymore", async function() {
+        it("Shouldn't be able to fuse anymore", async function () {
             await lotteryGame.connect(owner).endCycle()
-            
+
             await expect(ticketFusion.connect(users[18]).fusionNormalTickets([tokenIdToBurn[4], tokenIdToBurn[5]]))
                 .to.be.revertedWith("ERROR :: Fusion is not allowed while a lottery is live or ended");
 
@@ -335,13 +406,4 @@ describe("Lottery test", function () {
         })
     })
 
-/*     describe("MarketPlace", function() {
-        it("User should be able to create a deal", async function() {
-            console.log(tokenIds[1])
-            await marketPlace.connect(users[0]).putNftOnSale(
-                ethers.utils.parseEther("4"),
-                tokenIds[0][0]
-            );
-        })
-    }) */
 })

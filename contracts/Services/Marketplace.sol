@@ -2,23 +2,54 @@
 pragma solidity ^0.8.11;
 
 import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
+import '@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol';
+import '@openzeppelin/contracts/utils/math/SafeMath.sol';
 
 import "./Interfaces/ITicketRegistry.sol";
 import "./Interfaces/IDiscoveryService.sol";
 import "./TicketRegistry.sol";
 import "./Whitelisted.sol";
 
+import "hardhat/console.sol";
+
 //Contract managing deals between players
 
 //TODO: faire hériter TicketInformationController au lieu de l'interface ?
-contract Marketplace is Whitelisted
+contract Marketplace is Whitelisted, IERC721Receiver
 {
     IDiscoveryService discoveryService;
 
-    uint public feeByTrade;
+    uint256 public totalFees;
+    uint8 public feeByTrade;
+
+    mapping(address => uint256) public feesByAddress;
+
+    using SafeMath for uint256;
+    using SafeMath for uint8;
     
+    event Received(address, uint);
+    event putOnSale(address, uint256, uint256, address);
+    event removeOnSale(address, uint256, address);
+    event purchase(address, uint256, uint256, address);
+
     constructor() payable  
     {
+        feeByTrade = 30;
+    }
+    // Fucntion from IERC721Receiver interface to allow this contract to receive NFTs
+    function onERC721Received(
+        address operator,
+        address from,
+        uint256 tokenId,
+        bytes calldata data
+    ) external override returns (bytes4) {
+        return this.onERC721Received.selector;
+    }
+
+    //Function to allow this contract to reveive value from other addresses
+    receive() external payable  
+    {
+        emit Received(msg.sender, msg.value);
     }
 
     function setDiscoveryService(address _address) external onlyAdmin 
@@ -26,7 +57,7 @@ contract Marketplace is Whitelisted
         discoveryService = IDiscoveryService(_address);
     }
     
-    function setFeeByTrade(uint _feeByTrade) external onlyAdmin 
+    function setFeeByTrade(uint8 _feeByTrade) external onlyAdmin 
     {
         feeByTrade = _feeByTrade;
     }
@@ -39,12 +70,15 @@ contract Marketplace is Whitelisted
     //Function used to put in sale a NFT for a desired price
     //The NFT is transfered to the Marketplace contract
     function putNftOnSale(
-        uint256 _price, 
-        uint256 _tokenId
-    ) external 
+        address ticketAddress,
+        uint256 tokenId,
+        uint256 price
+    ) external payable
     {
+
+        price = price.mul(10 ** 18);
         LotteryDef.TicketInfo memory ticketInfo = ITicketRegistry(discoveryService.getTicketRegistryAddr())
-        .getTicketState(_tokenId);
+        .getTicketState(ticketAddress, tokenId);
         
         //Check if the NFT is not already in sale, if the msg.sender is the owner of the NFT and if the price is not zero
         require(
@@ -52,30 +86,38 @@ contract Marketplace is Whitelisted
             'WARNING :: Deal already in progress'
         );
         require(
-            payable(msg.sender) == IERC721(ticketInfo.contractAddress).ownerOf(_tokenId), 
+            msg.sender == IERC721(ticketAddress).ownerOf(tokenId), 
             'WARNING :: Not owner of this token'
         );
         require(
-            _price > 0, 
+            price > 0, 
             'WARNING :: Price zero not accepted'
         );
+        
+
+        //Adding fees on the price
+        price = price.mul(feeByTrade.add(100)).div(100);
 
         //Change the state of the NFT to "Dealing", set the price and the owner of the NFT 
         ITicketRegistry(discoveryService.getTicketRegistryAddr())
-        .putTicketOnSale(_tokenId, _price);
+        .putTicketOnSale(ticketAddress, tokenId, price);
 
-        //and transfer the NFT to the Marketplace contract
-        IERC721(ticketInfo.contractAddress).approve(address(this), _tokenId);
-        //IERC721(ticketInfo.contractAddress).safeTransferFrom(msg.sender, address(this), _tokenId);
+        //Transfer the NFT to the Marketplace contract
+        IERC721(ticketAddress).safeTransferFrom(msg.sender, address(this), tokenId);
+
+        emit putOnSale(ticketAddress, tokenId, price, msg.sender);
     }
     
     //Function used to send out a NFT previously in sale
     //The NFT is transfered back to the owner
-    function removeSalesNft(uint _tokenId) external 
+    function removeSalesNft(
+        address _ticketAddress, 
+        uint _tokenId
+    ) external 
     {
         //Get the owner and state of the selected NFT
         LotteryDef.TicketInfo memory ticketInfo = ITicketRegistry(discoveryService.getTicketRegistryAddr())
-        .getTicketState(_tokenId);
+        .getTicketState(_ticketAddress, _tokenId);
 
         //Check if the NFT is in sale and if the msg.sender is the owner of the NFT
         require(
@@ -92,29 +134,31 @@ contract Marketplace is Whitelisted
         .removeSalesTicket( _tokenId);
 
         //and transfer the NFT to the owner
-        IERC721(ticketInfo.contractAddress).safeTransferFrom(address(this), ticketInfo.ticketOwner, _tokenId);
+        IERC721(_ticketAddress).safeTransferFrom(address(this), ticketInfo.ticketOwner, _tokenId);
+        
+        emit removeOnSale(_ticketAddress, _tokenId, msg.sender);
     }
 
     //Function used to purchase a NFT in sale
     //Funds are transfered to the seller (minus fees) and the NFT is transfered to the buyer
-    function purchaseNft(uint _tokenId) external payable 
+    function purchaseNft(
+        address _ticketAddress, 
+        uint _tokenId
+    ) external payable 
     {
         //Calculate the fees
-        uint256 _minusFeeByTrade = 100 - feeByTrade;
-
         //Get the owner, state and price of the selected NFT
         LotteryDef.TicketInfo memory ticketInfo = ITicketRegistry(discoveryService.getTicketRegistryAddr())
-        .getTicketState(_tokenId);
+        .getTicketState(_ticketAddress, _tokenId);
 
         address payable seller = ticketInfo.ticketOwner;
-
         //Check that the NFT is in sale, that the buyer pays the right price and that the buyer is not the owner of the NFT
         require(
             ticketInfo.dealState == LotteryDef.TicketState.DEALING,
             "WARNING :: Deal not in progress for this NFT"
         );
         require(
-            msg.value == ticketInfo.dealPrice, 
+            msg.value >= ticketInfo.dealPrice, 
             "WARNING :: you don't pay the right price"
         );
         require(
@@ -122,37 +166,54 @@ contract Marketplace is Whitelisted
             "WARNING :: you can't buy your own NFT"
         );
 
+        uint256 priceToSeller = ticketInfo.dealPrice.mul(100).div(feeByTrade.add(100));
+
         //Buyer pay the marketplace
-        (bool sent,) = payable(address(this)).call{value: msg.value}("");
-        require(sent, "Failed to transfer funds to the contract");
+        (bool sentToMarketplace,) = payable(address(this)).call{value: msg.value}("");
+        require(sentToMarketplace, "Failed to transfer funds to the Marketplace");
 
         //Change the state of the NFT to "NoDeal", reset the price and transfer ownership
         ITicketRegistry(discoveryService.getTicketRegistryAddr())
-        .transferTicketOwnership( _tokenId, payable(msg.sender));
+        .transferTicketOwnership(_ticketAddress, _tokenId, msg.sender);
 
         //Transfer the NFT to the buyer
-        IERC721(ticketInfo.contractAddress).safeTransferFrom(address(this), msg.sender, _tokenId);
+        IERC721(_ticketAddress).safeTransferFrom(address(this), msg.sender, _tokenId);
 
         //and the funds to the seller (minus fees)
-        seller.transfer(_minusFeeByTrade * msg.value / 100);
+        feesByAddress[seller] = feesByAddress[seller].add(priceToSeller);
+        totalFees = totalFees.add(ticketInfo.dealPrice.sub(priceToSeller));
+
+        emit purchase(_ticketAddress, _tokenId, ticketInfo.dealPrice, msg.sender);
     }
 
-    // //Function used by owner to approve FeeManger contract
-    // function approveFeeManager(address _addrFeeManager) public onlyOwner 
-    // {
-    //     addrContractFeeManager = _addrFeeManager;
-        
-    //     //To avoid a mix with old and new approved amount, we set the allowance to 0 before setting the new allowance
-    //     IERC20(0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7).approve(_addrFeeManager, 0);
-    //     IERC20(0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7).approve(_addrFeeManager, 1000);
+    function transferFeesToLottery(
 
-    // }
+    ) external onlyWhitelisted 
+    {
+        if(totalFees > 1)
+        {
+        (bool sent,) = payable(msg.sender).call{value: totalFees}("");
+        require(sent, "Failed to transfer fees from Marketplace to the Lottery Prizepool");
+        totalFees = 0;
+        }
+    }
 
-    // // //Function returning the allowance of the Marketplace contract for the FeeManager contract
-    // function getAllowance() public onlyOwner view returns(uint)  {
-    //     return IERC20(0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7).allowance(
-    //         address(this), 
-    //         addrContractFeeManager
-    //     );
-    // }
+    function claimsFeesForSeller(
+    ) external  
+    {
+        require(
+            feesByAddress[msg.sender] > 0, 
+            "WARNING :: You don't have any fees to claim"
+        );
+
+        (bool sent,) = payable(msg.sender).call{value: feesByAddress[msg.sender]}("");
+        require(sent, "Failed to transfer fees from Marketplace to the user");
+        feesByAddress[msg.sender] = 0;
+    }
+
+    function getTotalFees() public view returns(uint) 
+    {
+        return totalFees;
+    }
+
 }

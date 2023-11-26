@@ -27,7 +27,7 @@ interface IPrizepoolDispatcher
     );
 
     //Function from Marketplace.sol
-    function claimFees() external;
+    function transferFeesToLottery() external;
 
     function resetClaimStatus() external;
 }
