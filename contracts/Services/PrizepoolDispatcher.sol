@@ -135,12 +135,6 @@ contract PrizepoolDispatcher is Whitelisted
         tokenAllowedForTrade = _tokenAllowedForTrade;
     }
 
-    //Function called by LotteryGame contract to claim the rewards from "Marketplace" contract
-    function claimFees() external onlyWhitelisted
-    {
-
-    }
-
     //Function used to disable the claim ability of a NFT after the claim
     function disableClaim(uint _id, uint8 nft) private 
     {
@@ -337,7 +331,6 @@ contract PrizepoolDispatcher is Whitelisted
                 if(mHasClaimed[id] < ILotteryGame(discoveryService.getLotteryGameAddr()).getLotteryId()) 
                 {
                     disableClaim(id, 3);
-                    console.log("mHasClaimed[id] = ", mHasClaimed[id]);
 
                 }
                 else
@@ -373,6 +366,23 @@ contract PrizepoolDispatcher is Whitelisted
         
         _totalGain = (user.userShare[0] + user.userShare[1] + user.userShare[2] + user.userShare[3]);
         _totalGain = _totalGain.mul(advantagesSharePrizepool).div(100);
+
+/*      DEBUG :: check the good maths
+        if(_totalGain > 0)
+        {
+            console.log("prizepool = ", _prizepool);
+            console.log("totalGain = ", _totalGain);
+            console.log("user.userShare[0] = ", user.userShare[0]);
+            console.log("user.userShare[1] = ", user.userShare[1]);
+            console.log("user.userShare[2] = ", user.userShare[2]);
+            console.log("user.userShare[3] = ", user.userShare[3]);
+
+            console.log("user.coefs[0] = ", user.coefs[0]);
+            console.log("user.coefs[1] = ", user.coefs[1]);
+            console.log("user.coefs[2] = ", user.coefs[2]);
+            console.log("user.coefs[3] = ", user.coefs[3]);
+
+        } */
         
         return (_totalGain);
 

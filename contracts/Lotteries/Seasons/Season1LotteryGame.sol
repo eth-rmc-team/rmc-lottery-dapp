@@ -164,7 +164,7 @@ contract Season1LotteryGame is ALotteryGame, ReentrancyGuard
         currentPeriod = LotteryDef.Period.CLAIM;  
         prizepool = address(this).balance;
         
-        IPrizepoolDispatcher(discoveryService.getPrizepoolDispatcherAddr()).claimFees();
+        IPrizepoolDispatcher(discoveryService.getRmcMarketplaceAddr()).transferFeesToLottery();
     }
 
     function initializeBoxOffice(
@@ -276,8 +276,8 @@ contract Season1LotteryGame is ALotteryGame, ReentrancyGuard
             _totalGain > 0, 
             "ERROR :: You don't have any rewards to claim"
         );
-        payable(msg.sender).transfer(_totalGain * (10 ** 18));
-        
+        (bool sent,) = payable(msg.sender).call{value: _totalGain}("");
+        require(sent, "Failed to transfer funds to protocol");        
     }
 
     function endClaimPeriod() external onlyAdmin
