@@ -226,7 +226,6 @@ contract Season1LotteryGame is ALotteryGame, ReentrancyGuard {
         require(sent, "Failed to transfer funds");
 
         //Burn the NFT of the winner
-        //IRMCTicketInfo(addrNormalTicket).approve(address(this), winningCombination);
         INormalTicketMinter(discoveryService.getNormalTicketAddr()).burn(
             winningCombination
         );
@@ -306,10 +305,10 @@ contract Season1LotteryGame is ALotteryGame, ReentrancyGuard {
         ).computeGainForAdvantages(msg.sender, prizepool);
 
         //Check that the gain is more than before transfer
-        require(_totalGain > 0, "ERROR :: You don't have any rewards to claim");
-
-        (bool sent, ) = payable(msg.sender).call{value: _totalGain}("");
-        require(sent, "Failed to transfer funds");
+        if (_totalGain > 0) {
+            (bool sent, ) = payable(msg.sender).call{value: _totalGain}("");
+            require(sent, "Failed to transfer funds");
+        }
     }
 
     function claimProtocolReward() external onlyAdmin nonReentrant {
