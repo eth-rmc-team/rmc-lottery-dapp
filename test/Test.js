@@ -326,7 +326,7 @@ describe("Lottery test", function () {
                         //on vérifie la nouvelle balance de l'utilisateur
                         expect(Number(newBalance))
                             .to.be.greaterThan(Number(oldBalance))
-                        expect(Number(await mythicTicketMinter.balanceOf(users[i].address))).to.equal(1)
+                        expect(Number(await mythicTicketMinter.balanceOf(mythicHolder.address))).to.equal(1)
                         expect(Number(newBalanceNormal)).to.equal(oldBalanceNormal - 1)
                     }
                 }
@@ -367,7 +367,7 @@ describe("Lottery test", function () {
 
         let tokenIdToBurn = []
 
-        it("User should fuse 4 normal tickets for 2 Gold", async function () {
+        it("User should fuse 6 normal tickets for 3 Gold", async function () {
 
             await ticketFusion.connect(owner).setDiscoveryService(discoveryService.address)
             await ticketFusion.connect(owner).setLotteryGame(lotteryGame.address)
@@ -379,16 +379,17 @@ describe("Lottery test", function () {
 
             }
 
+            //console.log("totalSupplyNormalTicket avant", Number(await normalTicketMinter.totalSupply()))
             await ticketFusion.connect(users[18]).fusionNormalTickets([tokenIdToBurn[0], tokenIdToBurn[1]])
             await ticketFusion.connect(users[18]).fusionNormalTickets([tokenIdToBurn[2], tokenIdToBurn[3]])
+            await ticketFusion.connect(users[18]).fusionNormalTickets([tokenIdToBurn[4], tokenIdToBurn[5]])
+            //console.log("totalSupplyNormalTicket apres", Number(await normalTicketMinter.totalSupply()))
 
             let newBalanceOfNormalTicketUser18 = Number(await normalTicketMinter.connect(users[18]).balanceOf(users[18].address))
-
-            expect(newBalanceOfNormalTicketUser18).to.equal(balanceOfNormalTicketUser18 - 4)
+            expect(newBalanceOfNormalTicketUser18).to.equal(balanceOfNormalTicketUser18 - 6)
 
             let balanceOfGoldTicketUser18 = Number(await goldTicketMinter.connect(users[18]).balanceOf(users[18].address))
-
-            expect(balanceOfGoldTicketUser18).to.equal(2)
+            expect(balanceOfGoldTicketUser18).to.equal(3)
 
         })
 
