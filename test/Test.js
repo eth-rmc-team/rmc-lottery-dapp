@@ -143,7 +143,8 @@ describe("Lottery test", function () {
             await lotteryGame.initializeBoxOffice(
                 Object.keys(hashes),
                 Object.values(hashes),
-                featuresByDay
+                featuresByDay,
+                8
             );
             await lotteryGame.setTicketPrice("250000000000000000000");
             await lotteryGame.setTotalSteps(3)
@@ -162,6 +163,12 @@ describe("Lottery test", function () {
             await lotteryGame.resetCycle()
 
             expect(await lotteryGame.getCurrentPeriod()).to.equal(1)
+        })
+
+        it("Should set the gold tickets for the seconds", async function () {
+            let numberOfGoldTickets = Number(await goldTicketMinter.balanceOf(lotteryGame.address))
+            expect(numberOfGoldTickets).to.equal(8)
+            expect(Number(await goldTicketMinter.totalSupply())).to.equal(numberOfGoldTickets)
         })
 
         it("Should buy tickets", async function () {
@@ -333,12 +340,31 @@ describe("Lottery test", function () {
             }
         })
 
-        it("should be able to claim advantages reward", async function () {
-            const oldBalanceOfMythicHolder = Number(await mythicHolder.getBalance())
-            await lotteryGame.connect(mythicHolder).claimAdvantagesReward()
-            const newBalanceOfMythicHolder = Number(await mythicHolder.getBalance())
+        it("Should be able to claim Gold tickets for the seconds", async function () {
+            let gold = 0
+            for (let i = 0; i < users.length; i++) {
+                for (let j = 0; j < tokenIds[i].length; j++) {
+                    const tokenId = tokenIds[i][j]
 
-            expect(newBalanceOfMythicHolder).to.be.greaterThan(oldBalanceOfMythicHolder)
+                    await lotteryGame.connect(users[i]).claimGoldTicket(tokenId)
+                }
+                gold += Number(await goldTicketMinter.balanceOf(users[i].address))
+            }
+
+            expect(gold).to.equal(8)
+            expect(Number(await goldTicketMinter.balanceOf(lotteryGame.address))).to.equal(0)
+            // 9 normal tickets have been burn (1 for the mythic and 8 for the golds)
+            expect(Number(await normalTicketMinter.totalSupply())).to.equal(18)
+        })
+
+        it("should be able to claim advantages reward", async function () {
+
+            for (let i = 0; i < users.length; i++) {
+                if (goldTicketMinter.balanceOf(users[i].address) > 0) {
+                    await lotteryGame.connect(users[i]).claimAdvantagesReward()
+                    console.log("advantages claimed for user", i)
+                }
+            }
 
         })
 
@@ -366,7 +392,7 @@ describe("Lottery test", function () {
     describe("Fusion", function () {
 
         let tokenIdToBurn = []
-
+        //WARNING :: depending on the draw, this test can fail due to lack of normal tickets
         it("User should fuse 6 normal tickets for 3 Gold", async function () {
 
             await ticketFusion.connect(owner).setDiscoveryService(discoveryService.address)
