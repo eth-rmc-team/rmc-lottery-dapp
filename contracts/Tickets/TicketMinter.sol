@@ -46,6 +46,22 @@ abstract contract TicketMinter is ERC721URIStorage, ERC721Enumerable, Whiteliste
         return super.supportsInterface(interfaceId);
     }
 
+    function transferFrom(
+        address from, 
+        address to, 
+        uint256 tokenId
+    ) public override(ERC721) onlyWhitelisted {
+        super.transferFrom(from, to, tokenId);
+    }
+
+    function safeTransferFrom(
+        address from, 
+        address to, 
+        uint256 tokenId,
+        bytes memory _data
+    ) public override(ERC721) onlyWhitelisted {
+        super.safeTransferFrom(from, to, tokenId, _data);
+    }
 
     function setDiscoveryService(address _address) external onlyAdmin {
         discoveryService = IDiscoveryService(_address);

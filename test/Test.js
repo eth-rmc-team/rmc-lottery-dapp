@@ -102,10 +102,15 @@ describe("Lottery test", function () {
         // Configure whitelists
         normalTicketMinter.addToWhitelist(lotteryGame.address);
         normalTicketMinter.addToWhitelist(ticketFusion.address);
+        normalTicketMinter.addToWhitelist(marketPlace.address);
         goldTicketMinter.addToWhitelist(ticketFusion.address);
+        goldTicketMinter.addToWhitelist(lotteryGame.address);
         superGoldTicketMinter.addToWhitelist(ticketFusion.address);
+        superGoldTicketMinter.addToWhitelist(lotteryGame.address);
         mythicTicketMinter.addToWhitelist(lotteryGame.address);
+        mythicTicketMinter.addToWhitelist(ticketFusion.address);
         prizepoolDispatcher.addToWhitelist(lotteryGame.address);
+        prizepoolDispatcher.addToWhitelist(ticketFusion.address);
         ticketRegistry.addToWhitelist(normalTicketMinter.address);
         ticketRegistry.addToWhitelist(goldTicketMinter.address);
         ticketRegistry.addToWhitelist(superGoldTicketMinter.address);
@@ -113,6 +118,7 @@ describe("Lottery test", function () {
         ticketRegistry.addToWhitelist(platinTicketMinter.address);
         ticketRegistry.addToWhitelist(marketPlace.address);
         marketPlace.addToWhitelist(lotteryGame.address);
+
 
 
         return {
@@ -197,6 +203,16 @@ describe("Lottery test", function () {
                 //de hashes achetés
                 expect(await normalTicketMinter.balanceOf(users[i].address)).to.equal(boughtHashes.length)
 
+            }
+        });
+
+        it("Shouldn't be able to transfer tickets between non-RMC contracts", async function () {
+            for (let i = 0; i < users.length; i++) {
+                await expect(normalTicketMinter.connect(users[i]).transferFrom(users[i].address, users[0].address, tokenIds[i][0]))
+                    .to.be.revertedWith("Only whitelisted addresses allowed");
+                /* Todo: erreur du terminal: "is not a function" pourquoi ?
+                await expect(normalTicketMinter.connect(users[i]).safeTransferFrom(users[i].address, users[0].address, tokenIds[i][0]))
+                    .to.be.revertedWith("Only whitelisted addresses allowed"); */
             }
         });
     })
@@ -326,7 +342,7 @@ describe("Lottery test", function () {
 
         })
 
-        it("Shoudl be able to clam protocol reward", async function () {
+        it("Should be able to clam protocol reward", async function () {
             const oldBalanceOfProtocol = Number(await owner.getBalance())
             await lotteryGame.connect(owner).claimProtocolReward()
             const newBalanceOfProtocol = Number(await owner.getBalance())
