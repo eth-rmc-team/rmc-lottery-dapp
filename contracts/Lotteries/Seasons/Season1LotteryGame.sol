@@ -276,23 +276,6 @@ contract Season1LotteryGame is ALotteryGame, ReentrancyGuard {
         return _featuresForGold;
     }
 
-    function concatenate(
-        uint256[5] memory digits
-    ) private pure returns (uint256) {
-        // Concaténer les chiffres en utilisant des opérations arithmétiques
-        uint256 result = digits[0] *
-            10000 +
-            digits[1] *
-            1000 +
-            digits[2] *
-            100 +
-            digits[3] *
-            10 +
-            digits[4];
-
-        return result;
-    }
-
     function claimAdvantagesReward() external nonReentrant {
         require(
             currentPeriod == LotteryDef.Period.CLAIM,
