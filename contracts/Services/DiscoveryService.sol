@@ -7,8 +7,7 @@ import "./Whitelisted.sol";
     This service hold all contrats addresses 
     composing the lotterygame
  */
-contract DiscoveryService is Whitelisted
-{
+contract DiscoveryService is Whitelisted {
     address private normalTicketAddr;
     address private goldTicketAddr;
     address private superGoldTicketAddr;
@@ -18,106 +17,110 @@ contract DiscoveryService is Whitelisted
     address private ticketRegistryAddr;
     address private prizepoolDispatcherAddr;
     address private lotteryGameAddr;
+    address private goldenLotteryAddr;
     address private fusionHandlerAddr;
     address private rmcMarketplaceAddr;
 
     //external getter for normalTicketAddr
-    function getNormalTicketAddr() view external returns (address)
-    {
+    function getNormalTicketAddr() external view returns (address) {
         return normalTicketAddr;
     }
 
-    function getGoldTicketAddr() view external returns (address) 
-    {
+    function getGoldTicketAddr() external view returns (address) {
         return goldTicketAddr;
     }
 
-    function getSuperGoldTicketAddr() view external returns (address)
-    {
+    function getSuperGoldTicketAddr() external view returns (address) {
         return superGoldTicketAddr;
     }
 
-    function getMythicTicketAddr() view external returns (address)
-    {
+    function getMythicTicketAddr() external view returns (address) {
         return mythicTicketAddr;
     }
 
-    function getPlatiniumTicketAddr() view external returns (address)
-    {
+    function getPlatiniumTicketAddr() external view returns (address) {
         return platinumTicketAddr;
     }
 
-    function getPrizepoolDispatcherAddr() view external returns (address)
-    {
+    function getPrizepoolDispatcherAddr() external view returns (address) {
         return prizepoolDispatcherAddr;
     }
-    function getLotteryGameAddr() view external returns (address)
-    {
+
+    function getLotteryGameAddr() external view returns (address) {
         return lotteryGameAddr;
     }
 
-    function getFusionHandlerAddr() view external returns (address)
-    {
+    function getGoldenLotteryAddr() external view returns (address) {
+        return goldenLotteryAddr;
+    }
+
+    function getFusionHandlerAddr() external view returns (address) {
         return fusionHandlerAddr;
     }
-    
-    function getRmcMarketplaceAddr() view external returns (address)
-    {
+
+    function getRmcMarketplaceAddr() external view returns (address) {
         return rmcMarketplaceAddr;
     }
-    
-    function getTicketRegistryAddr() view external returns (address)
-    {
+
+    function getTicketRegistryAddr() external view returns (address) {
         return ticketRegistryAddr;
     }
 
-    function setNormalTicketAddr(address _normalTicketAddr) external onlyAdmin
-    {
+    function setNormalTicketAddr(address _normalTicketAddr) external onlyAdmin {
         normalTicketAddr = _normalTicketAddr;
     }
 
-    function setGoldTicketAddr(address _goldTicketAddr) external onlyAdmin
-    {
+    function setGoldTicketAddr(address _goldTicketAddr) external onlyAdmin {
         goldTicketAddr = _goldTicketAddr;
     }
 
-    function setSuperGoldTicketAddr(address _superGoldTicketAddr) external onlyAdmin
-    {
+    function setSuperGoldTicketAddr(
+        address _superGoldTicketAddr
+    ) external onlyAdmin {
         superGoldTicketAddr = _superGoldTicketAddr;
     }
 
-    function setMythicTicketAddr(address _mythicTicketAddr) external onlyAdmin
-    {
+    function setMythicTicketAddr(address _mythicTicketAddr) external onlyAdmin {
         mythicTicketAddr = _mythicTicketAddr;
     }
 
-    function setPlatiniumTicketAddr(address _platinumTicketAddr) external onlyAdmin
-    {
+    function setPlatiniumTicketAddr(
+        address _platinumTicketAddr
+    ) external onlyAdmin {
         platinumTicketAddr = _platinumTicketAddr;
     }
 
-    function setPrizepoolDispatcherAddr(address _prizepoolDispatcherAddr) external onlyAdmin
-    {
+    function setPrizepoolDispatcherAddr(
+        address _prizepoolDispatcherAddr
+    ) external onlyAdmin {
         prizepoolDispatcherAddr = _prizepoolDispatcherAddr;
     }
 
-    function setLotteryGameAddr(address _lotteryGameAddr) external onlyAdmin
-    {
+    function setLotteryGameAddr(address _lotteryGameAddr) external onlyAdmin {
         lotteryGameAddr = _lotteryGameAddr;
     }
 
-    function setFusionHandlerAddr(address _fusionHandlerAddr) external onlyAdmin
-    {
+    function setGoldenLotteryAddr(
+        address _goldenLotteryAddr
+    ) external onlyAdmin {
+        goldenLotteryAddr = _goldenLotteryAddr;
+    }
+
+    function setFusionHandlerAddr(
+        address _fusionHandlerAddr
+    ) external onlyAdmin {
         fusionHandlerAddr = _fusionHandlerAddr;
     }
-    
-    function setRmcMarketplaceAddr(address _rmcMarketplaceAddr) external onlyAdmin
-    {
+
+    function setRmcMarketplaceAddr(
+        address _rmcMarketplaceAddr
+    ) external onlyAdmin {
         rmcMarketplaceAddr = _rmcMarketplaceAddr;
     }
-    
-    function setTicketRegistryAddr(address _ticketRegistryAddr) external onlyAdmin
-    {
+
+    function setTicketRegistryAddr(
+        address _ticketRegistryAddr
+    ) external onlyAdmin {
         ticketRegistryAddr = _ticketRegistryAddr;
     }
 }

@@ -7,6 +7,8 @@ import "../../Services/Whitelisted.sol";
 import "../../Tickets/Interfaces/ISpecialTicketMinter.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
+import "hardhat/console.sol";
+
 contract Season1GoldenLottery is Whitelisted {
     IDiscoveryService discoveryService;
     mapping(address => uint16) public goldTicketsBurntByAddr;
@@ -52,9 +54,17 @@ contract Season1GoldenLottery is Whitelisted {
         threshold = _threshold;
     }
 
+    function getThresholdToActivateLottery() external view returns (uint16) {
+        return threshold;
+    }
+
+    function getBalance() external view returns (uint256) {
+        return address(this).balance;
+    }
+
     function burnGoldTickets(uint256[] memory tokenIds) external {
         require(
-            totalGoldTicketsBurnt.add(tokenIds.length) < threshold,
+            totalGoldTicketsBurnt.add(tokenIds.length) <= threshold,
             "Threshold reached, lottery is already running"
         );
 
@@ -70,7 +80,6 @@ contract Season1GoldenLottery is Whitelisted {
             );
 
             goldTicketsBurntByAddr[msg.sender]++;
-
             totalGoldTicketsBurnt++;
 
             if (totalGoldTicketsBurnt == threshold) {
@@ -118,7 +127,10 @@ contract Season1GoldenLottery is Whitelisted {
     }
 
     function endLottery() external onlyAdmin {
-        require(time + 5 days > block.timestamp, "Lottery is not finished yet");
+        require(
+            time + 5 seconds > block.timestamp,
+            "Lottery is not finished yet"
+        );
         isLotteryRunning = false;
         totalGoldTicketsBurnt = 0;
     }

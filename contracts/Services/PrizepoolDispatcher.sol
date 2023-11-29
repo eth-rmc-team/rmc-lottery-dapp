@@ -440,7 +440,7 @@ contract PrizepoolDispatcher is Whitelisted {
             )
         );
         require(
-            payable(_claimer) == _winner,
+            _claimer == _winner,
             "ERROR :: you don't have the winning ticket"
         );
 

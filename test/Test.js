@@ -40,6 +40,7 @@ const featuresByDay = [3, 3, 3]
 
 describe("Lottery test", function () {
     let lotteryGame
+    let goldenLotteryGame
     let discoveryService
     let marketPlace
     let prizepoolDispatcher
@@ -64,6 +65,7 @@ describe("Lottery test", function () {
         users = u.slice(1)
 
         lotteryGame = await (await ethers.getContractFactory("Season1LotteryGame")).deploy()
+        goldenLotteryGame = await (await ethers.getContractFactory("Season1GoldenLottery")).deploy()
         discoveryService = await (await ethers.getContractFactory("DiscoveryService")).deploy()
         marketPlace = await (await ethers.getContractFactory("Marketplace")).deploy()
         prizepoolDispatcher = await (await ethers.getContractFactory("PrizepoolDispatcher")).deploy()
@@ -85,11 +87,13 @@ describe("Lottery test", function () {
         discoveryService.setPlatiniumTicketAddr(platinTicketMinter.address);
         discoveryService.setPrizepoolDispatcherAddr(prizepoolDispatcher.address);
         discoveryService.setLotteryGameAddr(lotteryGame.address);
+        discoveryService.setGoldenLotteryAddr(goldenLotteryGame.address)
         discoveryService.setFusionHandlerAddr(ticketFusion.address);
         discoveryService.setRmcMarketplaceAddr(marketPlace.address);
         discoveryService.setTicketRegistryAddr(ticketRegistry.address);
 
         lotteryGame.setDiscoveryService(discoveryService.address);
+        goldenLotteryGame.setDiscoveryService(discoveryService.address);
         marketPlace.setDiscoveryService(discoveryService.address);
         prizepoolDispatcher.setDiscoveryService(discoveryService.address);
         ticketFusion.setDiscoveryService(discoveryService.address);
@@ -105,6 +109,7 @@ describe("Lottery test", function () {
         normalTicketMinter.addToWhitelist(marketPlace.address);
         goldTicketMinter.addToWhitelist(ticketFusion.address);
         goldTicketMinter.addToWhitelist(lotteryGame.address);
+        goldTicketMinter.addToWhitelist(goldenLotteryGame.address);
         superGoldTicketMinter.addToWhitelist(ticketFusion.address);
         superGoldTicketMinter.addToWhitelist(lotteryGame.address);
         mythicTicketMinter.addToWhitelist(lotteryGame.address);
@@ -118,8 +123,6 @@ describe("Lottery test", function () {
         ticketRegistry.addToWhitelist(platinTicketMinter.address);
         ticketRegistry.addToWhitelist(marketPlace.address);
         marketPlace.addToWhitelist(lotteryGame.address);
-
-
 
         return {
             owner,
@@ -145,8 +148,8 @@ describe("Lottery test", function () {
                 Object.values(hashes),
                 featuresByDay,
                 8
-            );
-            await lotteryGame.setTicketPrice("250000000000000000000");
+            )
+            await lotteryGame.setTicketPrice("250000000000000000000")
             await lotteryGame.setTotalSteps(3)
 
             const keyHashes = Object.keys(hashes)
@@ -448,6 +451,91 @@ describe("Lottery test", function () {
                 .to.be.revertedWith("ERROR :: Fusion is not allowed while a lottery is live or ended");
 
 
+        })
+    })
+
+    describe("Golden lottery", function () {
+        it("Should set threshold", async function () {
+            await goldenLotteryGame.connect(owner).setThresholdToActivateLottery(3)
+            expect(await goldenLotteryGame.connect(owner).getThresholdToActivateLottery()).to.equal(3)
+
+            const amountToSend = ethers.utils.parseEther("100"); // 100 ether
+            await owner.sendTransaction({
+                to: goldenLotteryGame.address,
+                value: amountToSend
+            });
+
+            const contractBalance = await ethers.provider.getBalance(goldenLotteryGame.address);
+            expect(contractBalance).to.equal(amountToSend);
+        })
+
+        it("Should be able to burn gold tickets to participate to the golden lottery", async function () {
+            let balanceOf
+            let nbGoldTicketBurnt = 0
+            let totalSupply = Number(await goldTicketMinter.totalSupply())
+
+            for (let i = 0; i < users.length; i++) {
+                balanceOf = Number(await goldTicketMinter.balanceOf(users[i].address))
+                if (balanceOf > 0) {
+                    for (let j = 0; j < balanceOf; j++) {
+                        let goldTicket = Number(await goldTicketMinter.connect(users[i]).tokenOfOwnerByIndex(users[i].address, j))
+                        if (nbGoldTicketBurnt === 3) {
+                            await expect(goldenLotteryGame.connect(users[i])
+                                .burnGoldTickets([goldTicket]))
+                                .to.be.revertedWith("Threshold reached, lottery is already running")
+                        }
+                        else {
+                            nbGoldTicketBurnt++
+                            await goldenLotteryGame.connect(users[i]).burnGoldTickets([goldTicket])
+                            expect(Number(await goldTicketMinter.balanceOf(users[i].address))).to.equal(balanceOf - 1)
+                        }
+
+                    }
+                }
+            }
+
+            expect(Number(await goldTicketMinter.totalSupply())).to.equal(totalSupply - nbGoldTicketBurnt)
+        })
+
+        it("Should be able to claim prizepool", async function () {
+            let balanceContract = BigInt(await ethers.provider.getBalance(goldenLotteryGame.address))
+            for (let i = 0; i < users.length; i++) {
+                await goldenLotteryGame.connect(users[i]).claimPrizePool()
+            }
+            //Expect the contract to have share of supergold only
+            let shareForSuperGold = balanceContract / BigInt(10)
+            expect(await goldenLotteryGame.getBalance()).to.equal(shareForSuperGold)
+        })
+
+        it("Should be able to claim supergold reward", async function () {
+
+            for (let i = 0; i < users.length; i++) {
+                if (Number(await superGoldTicketMinter.balanceOf(users[i].address)) > 0) {
+                    const oldBalance = Number(await users[i].getBalance())
+                    await goldenLotteryGame.connect(users[i]).claimShareForSuperGold()
+                    const newBalance = Number(await users[i].getBalance())
+                    expect(newBalance).to.be.greaterThan(oldBalance)
+                }
+                else
+                    await expect(goldenLotteryGame.connect(users[i]).claimShareForSuperGold()).to.be.revertedWith("You don't have any super gold tickets")
+            }
+            expect(await goldenLotteryGame.getBalance()).to.equal(0)
+
+        })
+
+        it("Should be able to reset the golden lottery", async function () {
+            //WARNING :: modify the time setting in endLottery() (day by default, second here for the test)
+            function sleep(time) {
+                return new Promise(resolve => {
+                    setTimeout(() => {
+                        resolve()
+                    }, time)
+                });
+            }
+
+            await sleep(5500)
+
+            await goldenLotteryGame.connect(owner).endLottery()
         })
     })
 
