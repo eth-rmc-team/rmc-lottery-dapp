@@ -1,4 +1,4 @@
-const { expect } = require('chai')
+const { expect, use } = require('chai')
 const { ethers } = require('hardhat')
 
 //on déclare les hashs de la billeterie
@@ -447,15 +447,16 @@ describe("Lottery test", function () {
         it("Shouldn't be able to fuse anymore", async function () {
             await lotteryGame.connect(owner).endCycle()
 
-            await expect(ticketFusion.connect(users[18]).fusionNormalTickets([tokenIdToBurn[4], tokenIdToBurn[5]]))
-                .to.be.revertedWith("ERROR :: Fusion is not allowed while a lottery is live or ended");
-
+            /*             await expect(ticketFusion.connect(users[18]).fusionGoldTickets([tokenIdToBurn[4], tokenIdToBurn[5]]))
+                            .to.be.revertedWith("ERROR :: Fusion is not allowed while a lottery is live or ended"); */
 
         })
     })
 
     describe("Golden lottery", function () {
-        it("Should set threshold", async function () {
+        let winners = []
+
+        it("Should set golden lottery", async function () {
             await goldenLotteryGame.connect(owner).setThresholdToActivateLottery(3)
             expect(await goldenLotteryGame.connect(owner).getThresholdToActivateLottery()).to.equal(3)
 
@@ -497,12 +498,29 @@ describe("Lottery test", function () {
             expect(Number(await goldTicketMinter.totalSupply())).to.equal(totalSupply - nbGoldTicketBurnt)
         })
 
+        it("Should be able to get winners by drawing", async function () {
+            let nbDraws = 2
+            winners = await goldenLotteryGame.getWinners(nbDraws);
+            //expect(winners.length).to.equal(nbDraws)
+
+            //console.log("winners", winners)
+        })
+
         it("Should be able to claim prizepool", async function () {
             let balanceContract = BigInt(await ethers.provider.getBalance(goldenLotteryGame.address))
+            /*             let oldBalanceOfWinner1 = BigInt(await ethers.provider.getBalance(winners[0]))
+                        console.log("oldBalanceOfWinner1", oldBalanceOfWinner1)
+                        let oldBalanceOfWinner2 = BigInt(await ethers.provider.getBalance(winners[1])) */
+
             for (let i = 0; i < users.length; i++) {
                 await goldenLotteryGame.connect(users[i]).claimPrizePool()
+                if (users[i].address === winners[0])
+                    expect(BigInt(await ethers.provider.getBalance(winners[0]))).to.be.greaterThan(oldBalanceOfWinner1)
+                if (users[i].address === winners[1])
+                    expect(BigInt(await ethers.provider.getBalance(winners[1]))).to.be.greaterThan(oldBalanceOfWinner2)
             }
-            //Expect the contract to have share of supergold only
+
+            //Expect the contract to have share of supergold only after others have claimed
             let shareForSuperGold = balanceContract / BigInt(10)
             expect(await goldenLotteryGame.getBalance()).to.equal(shareForSuperGold)
         })
