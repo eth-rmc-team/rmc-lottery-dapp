@@ -447,8 +447,8 @@ describe("Lottery test", function () {
         it("Shouldn't be able to fuse anymore", async function () {
             await lotteryGame.connect(owner).endCycle()
 
-            /*             await expect(ticketFusion.connect(users[18]).fusionGoldTickets([tokenIdToBurn[4], tokenIdToBurn[5]]))
-                            .to.be.revertedWith("ERROR :: Fusion is not allowed while a lottery is live or ended"); */
+            await expect(ticketFusion.connect(users[18]).fusionGoldTickets([tokenIdToBurn[4], tokenIdToBurn[5]]))
+                .to.be.revertedWith("ERROR :: Fusion is not allowed while a lottery is live or ended");
 
         })
     })
