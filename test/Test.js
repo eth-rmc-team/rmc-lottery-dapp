@@ -249,6 +249,13 @@ describe("Lottery test", function () {
             let balanceAfterPutOnTrade = Number(await normalTicketMinter.balanceOf(users[0].address))
             expect(balanceAfterPutOnTrade).to.equal(balanceBeforPutOnTrade - 1)
 
+            await normalTicketMinter.connect(users[1]).setApprovalForAll(marketPlace.address, true)
+            await marketPlace.connect(users[1]).putNftOnSale(
+                normalTicketMinter.address,
+                tokenIds[1][0],
+                "4"
+            );
+
         })
 
         it("should buy a ticket on sale", async function () {
@@ -268,6 +275,22 @@ describe("Lottery test", function () {
 
         })
 
+        it("Should be able to remove a deal", async function () {
+            let balanceBeforeRemoveOnTrade = Number(await normalTicketMinter.balanceOf(users[1].address))
+            await expect(marketPlace.connect(users[2]).removeSalesNft(
+                normalTicketMinter.address,
+                tokenIds[1][0]
+            )).to.be.revertedWith("ERROR :: Not owner of this token")
+
+            await marketPlace.connect(users[1]).removeSalesNft(
+                normalTicketMinter.address,
+                tokenIds[1][0]
+            );
+            let balanceAfterRemoveOnTrade = Number(await normalTicketMinter.balanceOf(users[1].address))
+            expect(balanceAfterRemoveOnTrade).to.equal(balanceBeforeRemoveOnTrade + 1)
+
+        })
+
         it("Should claim fees for user", async function () {
             let oldBalanceOfSeller = Number(await users[0].getBalance())
 
@@ -280,7 +303,6 @@ describe("Lottery test", function () {
             expect(newBalanceOfSeller).to.be.greaterThan(oldBalanceOfSeller)
 
         })
-
         it("Go to nextDay n days should end game period and pick winning combinaison", async function () {
             const [user2] = await ethers.getSigners()
             function sleep(time) {
