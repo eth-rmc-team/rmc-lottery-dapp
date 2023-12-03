@@ -1,0 +1,125 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.11;
+
+import "../Services/Interfaces/IDiscoveryService.sol";
+import "./Interfaces/ILotteryGame.sol";
+import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+
+import "../Services/Whitelisted.sol";
+
+abstract contract ASideLotteryGame is
+    Whitelisted,
+    IERC721Receiver,
+    ReentrancyGuard
+{
+    address[] public users;
+    address[] public winners;
+
+    IDiscoveryService discoveryService;
+    uint256 winningCombination;
+
+    uint8 lotteryId;
+    uint8 currentStep;
+
+    bool public isCycleRunning;
+    bool public isSideLotteryRunning;
+    bool public isWinnersDrawn;
+
+    event Received(address, uint);
+    event winnersDrawn(address[] winners);
+    event ClaimedPrizePool(address winner, uint256 prize);
+    event claimedShareForSuperGold(address winner, uint256 prize);
+
+    modifier onlyWhenLotteryRunning() {
+        require(
+            isSideLotteryRunning = true,
+            "Previous lottery is finished, please wait for the next one"
+        );
+        _;
+    }
+
+    modifier isWinnersBeenDrawn() {
+        require(
+            isWinnersDrawn = true,
+            "Winners are not drawn yet, please wait for the next one"
+        );
+        _;
+    }
+
+    //Function to allow this contract to reveive value from other contracts
+    receive() external payable {
+        emit Received(msg.sender, msg.value);
+    }
+
+    // Fucntion from IERC721Receiver interface to allow this contract to receive NFTs
+    function onERC721Received(
+        address operator,
+        address from,
+        uint256 tokenId,
+        bytes calldata data
+    ) external override returns (bytes4) {
+        return this.onERC721Received.selector;
+    }
+
+    function setDiscoveryService(address _address) external onlyAdmin {
+        discoveryService = IDiscoveryService(_address);
+    }
+
+    function getLotteryId() external view returns (uint8) {
+        return
+            ILotteryGame(discoveryService.getLotteryGameAddr()).getLotteryId();
+    }
+
+    function getCurrentStep() public view returns (uint256) {
+        return
+            ILotteryGame(discoveryService.getLotteryGameAddr())
+                .getCurrentStep();
+    }
+
+    function getWinningCombination() public view returns (uint256) {
+        return
+            ILotteryGame(discoveryService.getLotteryGameAddr())
+                .getWinningCombination();
+    }
+
+    function getIsCycleRunning() public view returns (bool) {
+        return
+            ILotteryGame(discoveryService.getLotteryGameAddr())
+                .getIsCycleRunning();
+    }
+
+    function getRandomIndex() internal view returns (uint16) {
+        bytes32 hash = keccak256(abi.encodePacked(block.timestamp, msg.sender));
+        uint16 randomNumber = (uint16(bytes2(hash[0])) % uint16(users.length));
+        return randomNumber;
+    }
+
+    function getWinnersAddr(uint8 nbDraws) internal returns (address[] memory) {
+        uint16 index;
+        for (uint i = 0; i < nbDraws; i++) {
+            index = getRandomIndex();
+            winners.push(users[index]);
+            users[index] = users[users.length - 1];
+            users.pop();
+        }
+
+        emit winnersDrawn(winners);
+
+        return winners;
+    }
+
+    /** 
+        ABSTRACT FUNCTIONS
+     */
+
+    function burnTicket(uint[] memory tokenIds) external virtual;
+
+    function claimReward() external virtual;
+
+    function getWinners(
+        uint8 nbDraws
+    ) external virtual returns (address[] memory _winners);
+
+    function endLottery() external virtual;
+}

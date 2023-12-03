@@ -114,6 +114,7 @@ describe("Lottery test", function () {
         superGoldTicketMinter.addToWhitelist(lotteryGame.address);
         mythicTicketMinter.addToWhitelist(lotteryGame.address);
         mythicTicketMinter.addToWhitelist(ticketFusion.address);
+        platinTicketMinter.addToWhitelist(lotteryGame.address);
         prizepoolDispatcher.addToWhitelist(lotteryGame.address);
         prizepoolDispatcher.addToWhitelist(ticketFusion.address);
         ticketRegistry.addToWhitelist(normalTicketMinter.address);
@@ -147,7 +148,8 @@ describe("Lottery test", function () {
                 Object.keys(hashes),
                 Object.values(hashes),
                 featuresByDay,
-                8
+                8,
+                2
             )
             await lotteryGame.setTicketPrice("250000000000000000000")
             await lotteryGame.setTotalSteps(3)
@@ -504,12 +506,12 @@ describe("Lottery test", function () {
                         let goldTicket = Number(await goldTicketMinter.connect(users[i]).tokenOfOwnerByIndex(users[i].address, j))
                         if (nbGoldTicketBurnt === 3) {
                             await expect(goldenLotteryGame.connect(users[i])
-                                .burnGoldTickets([goldTicket]))
+                                .burnTicket([goldTicket]))
                                 .to.be.revertedWith("Threshold reached, lottery is already running")
                         }
                         else {
                             nbGoldTicketBurnt++
-                            await goldenLotteryGame.connect(users[i]).burnGoldTickets([goldTicket])
+                            await goldenLotteryGame.connect(users[i]).burnTicket([goldTicket])
                             expect(Number(await goldTicketMinter.balanceOf(users[i].address))).to.equal(balanceOf - 1)
                         }
 
@@ -535,7 +537,7 @@ describe("Lottery test", function () {
                         let oldBalanceOfWinner2 = BigInt(await ethers.provider.getBalance(winners[1])) */
 
             for (let i = 0; i < users.length; i++) {
-                await goldenLotteryGame.connect(users[i]).claimPrizePool()
+                await goldenLotteryGame.connect(users[i]).claimReward()
                 if (users[i].address === winners[0])
                     expect(BigInt(await ethers.provider.getBalance(winners[0]))).to.be.greaterThan(oldBalanceOfWinner1)
                 if (users[i].address === winners[1])

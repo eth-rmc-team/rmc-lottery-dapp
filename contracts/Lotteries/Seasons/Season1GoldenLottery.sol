@@ -5,16 +5,12 @@ import "../../Services/Interfaces/IDiscoveryService.sol";
 
 import "../../Services/Whitelisted.sol";
 import "../../Tickets/Interfaces/ISpecialTicketMinter.sol";
+import "../ASideLotteryGame.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
-import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
 import "hardhat/console.sol";
 
-contract Season1GoldenLottery is Whitelisted, ReentrancyGuard {
-    IDiscoveryService discoveryService;
-    address[] public users;
-    address[] public winners;
-
+contract Season1GoldenLottery is ASideLotteryGame {
     uint256 public prizePool;
     uint256 public prize;
     uint256 public time;
@@ -22,48 +18,19 @@ contract Season1GoldenLottery is Whitelisted, ReentrancyGuard {
     uint16 public totalGoldTicketsBurnt;
     uint8 public shareForSuperGold;
 
-    bool public isLotteryRunning;
-    bool public isWinnersDrawn;
-
     using SafeMath for uint256;
     using SafeMath for uint16;
-
-    event winnersDrawn(address[] winners);
-    event ClaimedPrizePool(address winner, uint256 prize);
-    event claimedShareForSuperGold(address winner, uint256 prize);
 
     constructor() payable {
         threshold = 10;
         shareForSuperGold = 10;
-        isLotteryRunning = false;
+        isSideLotteryRunning = false;
         isWinnersDrawn = false;
     }
-
-    modifier onlyWhenLotteryRunning() {
-        require(
-            isLotteryRunning = true,
-            "Previous lottery is finished, please wait for the next one"
-        );
-        _;
-    }
-
-    modifier isWinnersBeenDrawn() {
-        require(
-            isWinnersDrawn = true,
-            "Winners are not drawn yet, please wait for the next one"
-        );
-        _;
-    }
-
-    receive() external payable {}
 
     function setShareForSuperGold(uint8 _share) external onlyAdmin {
         require(_share <= 50, "Share can't be more than 50%");
         shareForSuperGold = _share;
-    }
-
-    function setDiscoveryService(address _address) external onlyAdmin {
-        discoveryService = IDiscoveryService(_address);
     }
 
     function setThresholdToActivateLottery(
@@ -80,7 +47,9 @@ contract Season1GoldenLottery is Whitelisted, ReentrancyGuard {
         return address(this).balance;
     }
 
-    function burnGoldTickets(uint256[] memory tokenIds) external nonReentrant {
+    function burnTicket(
+        uint256[] memory tokenIds
+    ) external override nonReentrant {
         require(
             totalGoldTicketsBurnt.add(tokenIds.length) <= threshold,
             "Threshold reached, lottery is already running"
@@ -102,7 +71,7 @@ contract Season1GoldenLottery is Whitelisted, ReentrancyGuard {
 
             if (totalGoldTicketsBurnt == threshold) {
                 prizePool = address(this).balance;
-                isLotteryRunning = true;
+                isSideLotteryRunning = true;
             }
         }
     }
@@ -111,30 +80,22 @@ contract Season1GoldenLottery is Whitelisted, ReentrancyGuard {
         uint8 nbDraws
     )
         external
+        override
         onlyWhenLotteryRunning
         onlyAdmin
         returns (address[] memory _winners)
     {
-        uint16 index;
         prize = prizePool.sub(prizePool.mul(shareForSuperGold).div(100)).div(
             nbDraws
         );
 
-        for (uint i = 0; i < nbDraws; i++) {
-            index = getRandomIndex();
-            winners.push(users[index]);
-            users[index] = users[users.length - 1];
-            users.pop();
-        }
-
+        _winners = super.getWinnersAddr(nbDraws);
         isWinnersDrawn = true;
 
-        _winners = winners;
-        emit winnersDrawn(winners);
         return _winners;
     }
 
-    function claimPrizePool() external nonReentrant {
+    function claimReward() external override nonReentrant {
         address winner;
         for (uint i = 0; i < winners.length; i++) {
             if (winners[i] == msg.sender) {
@@ -147,12 +108,6 @@ contract Season1GoldenLottery is Whitelisted, ReentrancyGuard {
                 emit ClaimedPrizePool(winner, prize);
             }
         }
-    }
-
-    function getRandomIndex() internal view returns (uint16) {
-        bytes32 hash = keccak256(abi.encodePacked(block.timestamp, msg.sender));
-        uint16 randomNumber = (uint16(bytes2(hash[0])) % uint16(users.length));
-        return randomNumber;
     }
 
     function claimShareForSuperGold() external {
@@ -181,12 +136,13 @@ contract Season1GoldenLottery is Whitelisted, ReentrancyGuard {
 
     function endLottery()
         external
+        override
         onlyWhenLotteryRunning
         isWinnersBeenDrawn
         onlyAdmin
     {
         require(users.length > 0, "No tickets burnt, lottery can't be ended");
-        isLotteryRunning = false;
+        isSideLotteryRunning = false;
         isWinnersDrawn = false;
         totalGoldTicketsBurnt = 0;
         users = new address[](0);
