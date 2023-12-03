@@ -1,11 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.11;
 
-import './TicketMinter.sol';
+import "./SpecialTicketMinter.sol";
 
-contract PlatinTicketMinter is TicketMinter
-{
-    constructor() TicketMinter("PlatinTicket", "PTCK") 
-    {
-    }
+contract PlatinTicketMinter is SpecialTicketMinter {
+    constructor() SpecialTicketMinter("PlatinTicket", "PTCK") {}
 }
