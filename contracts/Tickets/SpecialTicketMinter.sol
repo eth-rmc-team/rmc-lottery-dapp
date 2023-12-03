@@ -20,8 +20,9 @@ abstract contract SpecialTicketMinter is TicketMinter {
     }
 
     function mintSpecial(
-        address _to
-    ) external onlyWhitelisted returns (uint256) {
+        address _to,
+        LotteryDef.TicketType _type
+    ) public onlyWhitelisted returns (uint256) {
         uint256 _tokenId;
         _tokenId = tokenId.current();
         tokenId.increment();
@@ -31,7 +32,7 @@ abstract contract SpecialTicketMinter is TicketMinter {
 
         ITicketRegistry(discoveryService.getTicketRegistryAddr()).addNewTicket(
             _tokenId,
-            LotteryDef.TicketType.NORMAL,
+            _type,
             address(this),
             payable(_to),
             LotteryDef.TicketState.NODEAL,

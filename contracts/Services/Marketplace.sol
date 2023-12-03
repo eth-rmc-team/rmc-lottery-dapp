@@ -8,6 +8,7 @@ import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "./Interfaces/ITicketRegistry.sol";
 import "./Interfaces/IDiscoveryService.sol";
 import "./TicketRegistry.sol";
+import "../Librairies/LotteryDef.sol";
 import "./Whitelisted.sol";
 
 import "hardhat/console.sol";
@@ -25,6 +26,8 @@ contract Marketplace is Whitelisted, IERC721Receiver {
 
     using SafeMath for uint256;
     using SafeMath for uint8;
+
+    using LotteryDef for LotteryDef.TicketType;
 
     event Received(address, uint);
     event putOnSale(address, uint256, uint256, address);

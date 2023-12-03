@@ -15,9 +15,7 @@ import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
 import "hardhat/console.sol";
 
-contract TicketFusion is Whitelisted, ReentrancyGuard
-{
-
+contract TicketFusion is Whitelisted, ReentrancyGuard {
     address private owner;
 
     address private addrFeeManager;
@@ -33,40 +31,37 @@ contract TicketFusion is Whitelisted, ReentrancyGuard
     using SafeMath for uint256;
     using LotteryDef for LotteryDef.Period;
 
-    constructor() 
-    {
+    constructor() {
         owner = msg.sender;
-        
     }
 
-    function setDiscoveryService(address _address) external onlyAdmin 
-    {
+    function setDiscoveryService(address _address) external onlyAdmin {
         discoveryService = IDiscoveryService(_address);
     }
 
-    function setPrizepoolDispatcher(address _address) external onlyAdmin 
-    {
+    function setPrizepoolDispatcher(address _address) external onlyAdmin {
         prizepoolDispatcher = IPrizepoolDispatcher(_address);
     }
 
-    function setLotteryGame(address _address) external onlyAdmin 
-    {
+    function setLotteryGame(address _address) external onlyAdmin {
         lotteryGame = ILotteryGame(_address);
     }
-    
+
     //Function setting the normal ticket fusion requirement
-    function setNormalTicketFusionRequirement(uint8 _normalTicketFusionRequirement) external onlyAdmin
-    {
+    function setNormalTicketFusionRequirement(
+        uint8 _normalTicketFusionRequirement
+    ) external onlyAdmin {
         normalTicketFusionRequirement = _normalTicketFusionRequirement;
     }
 
     //function setting the gold ticket fusion requirement
-    function setGoldTicketFusionRequirement(uint8 _goldTicketFusionRequirement) external onlyAdmin
-    {
+    function setGoldTicketFusionRequirement(
+        uint8 _goldTicketFusionRequirement
+    ) external onlyAdmin {
         goldTicketFusionRequirement = _goldTicketFusionRequirement;
     }
 
-// 
+    //
     // @dev This function allows the owner of normal tickets to fuse them into a gold ticket.
     // @param tokenIds An array of uint values representing the token IDs of the normal tickets to be fused.
     // @return None.
@@ -78,90 +73,98 @@ contract TicketFusion is Whitelisted, ReentrancyGuard
     //   The normal tickets with the specified token IDs are burned (destroyed).
     //   The calling user is awarded a new gold ticket.
     //
-    function fusionNormalTickets(uint[] memory tokenIds) external nonReentrant
-    {
-
+    function fusionNormalTickets(uint[] memory tokenIds) external nonReentrant {
         require(
-            lotteryGame.getCurrentPeriod() == LotteryDef.Period.CHASE, 
+            lotteryGame.getCurrentPeriod() == LotteryDef.Period.CHASE,
             "ERROR :: Fusion is not allowed while a lottery is live or ended"
         );
 
-        uint256 balance = ISpecialTicketMinter(discoveryService.getNormalTicketAddr()).balanceOf(msg.sender);
+        uint256 balance = ISpecialTicketMinter(
+            discoveryService.getNormalTicketAddr()
+        ).balanceOf(msg.sender);
 
         require(
-            balance >= normalTicketFusionRequirement, 
+            balance >= normalTicketFusionRequirement,
             "WARNING :: Not enough Normal Tickets."
         );
         balance = 0;
 
         require(
-            tokenIds.length == normalTicketFusionRequirement, 
+            tokenIds.length == normalTicketFusionRequirement,
             "WARNING :: Incorrect number of presented tickets (must be 7 normal tickets)."
         );
 
         // Check ownership of the normal tickets
-        for(uint i = 0; i < normalTicketFusionRequirement; i++) {
-            require(ISpecialTicketMinter(discoveryService.getNormalTicketAddr()).ownerOf(tokenIds[i]) == msg.sender, 
-            "WARNING :: Token does not belong to user.");
+        for (uint i = 0; i < normalTicketFusionRequirement; i++) {
+            require(
+                ISpecialTicketMinter(discoveryService.getNormalTicketAddr())
+                    .ownerOf(tokenIds[i]) == msg.sender,
+                "WARNING :: Token does not belong to user."
+            );
         }
 
-
         // Burn the normal tickets
-        for(uint i = 0; i < normalTicketFusionRequirement; i++) {
-
-            ISpecialTicketMinter(discoveryService.getNormalTicketAddr()).burn(tokenIds[i]);
-
-        }    
+        for (uint i = 0; i < normalTicketFusionRequirement; i++) {
+            ISpecialTicketMinter(discoveryService.getNormalTicketAddr()).burn(
+                tokenIds[i]
+            );
+        }
 
         // mint of gold ticket
-        ISpecialTicketMinter(discoveryService.getGoldTicketAddr()).mintSpecial(msg.sender);
-
+        ISpecialTicketMinter(discoveryService.getGoldTicketAddr()).mintSpecial(
+            msg.sender,
+            LotteryDef.TicketType.GOLD
+        );
     }
 
-    function fusionGoldTickets(uint[] memory tokenIds) external nonReentrant
-    {
+    function fusionGoldTickets(uint[] memory tokenIds) external nonReentrant {
         require(
-            ISpecialTicketMinter(discoveryService.getGoldTicketAddr()).totalSupply() > goldTicketFusionRequirement,
+            ISpecialTicketMinter(discoveryService.getGoldTicketAddr())
+                .totalSupply() > goldTicketFusionRequirement,
             "ERROR :: Enable to fuse when there is just one gold ticket left"
         );
 
         require(
-            lotteryGame.getCurrentPeriod() == LotteryDef.Period.CHASE, 
+            lotteryGame.getCurrentPeriod() == LotteryDef.Period.CHASE,
             "ERROR :: Fusion is not allowed while a lottery is live or ended"
         );
-        
-        uint256 balance = ISpecialTicketMinter(discoveryService.getGoldTicketAddr()).balanceOf(msg.sender);
+
+        uint256 balance = ISpecialTicketMinter(
+            discoveryService.getGoldTicketAddr()
+        ).balanceOf(msg.sender);
 
         require(
-            balance >= goldTicketFusionRequirement, 
+            balance >= goldTicketFusionRequirement,
             "WARNING :: Not enough Gold Tickets."
         );
         balance = 0;
 
         require(
-            tokenIds.length == goldTicketFusionRequirement, 
+            tokenIds.length == goldTicketFusionRequirement,
             "WARNING :: Incorrect number of presented tickets (must be 5 Gold tickets)."
         );
 
         // Check ownership of the normal tickets
-        for(uint i = 0; i < goldTicketFusionRequirement; i++) {
-            require(ISpecialTicketMinter(discoveryService.getGoldTicketAddr()).ownerOf(tokenIds[i]) == msg.sender, 
-            "WARNING :: Ticket does not belong to user.");
+        for (uint i = 0; i < goldTicketFusionRequirement; i++) {
+            require(
+                ISpecialTicketMinter(discoveryService.getGoldTicketAddr())
+                    .ownerOf(tokenIds[i]) == msg.sender,
+                "WARNING :: Ticket does not belong to user."
+            );
         }
 
-
         // Burn the normal tickets
-        for(uint i = 0; i < goldTicketFusionRequirement; i++) {
+        for (uint i = 0; i < goldTicketFusionRequirement; i++) {
             //IERC721(addrNormalNftContract).approve(address(0), tokenIds[i]);
-            ISpecialTicketMinter(discoveryService.getGoldTicketAddr()).burn(tokenIds[i]);
-
-        }        
+            ISpecialTicketMinter(discoveryService.getGoldTicketAddr()).burn(
+                tokenIds[i]
+            );
+        }
 
         //console.log("DEBUG :: nonce = %s", nonce);
-        
+
         // mint of gold ticket
-        ISpecialTicketMinter(discoveryService.getSuperGoldTicketAddr()).mintSpecial(msg.sender);
-
+        ISpecialTicketMinter(discoveryService.getSuperGoldTicketAddr())
+            .mintSpecial(msg.sender, LotteryDef.TicketType.SUPERGOLD);
     }
-
 }

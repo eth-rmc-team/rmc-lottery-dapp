@@ -115,6 +115,7 @@ describe("Lottery test", function () {
         mythicTicketMinter.addToWhitelist(lotteryGame.address);
         mythicTicketMinter.addToWhitelist(ticketFusion.address);
         platinTicketMinter.addToWhitelist(lotteryGame.address);
+        platinTicketMinter.addToWhitelist(owner.address);
         prizepoolDispatcher.addToWhitelist(lotteryGame.address);
         prizepoolDispatcher.addToWhitelist(ticketFusion.address);
         ticketRegistry.addToWhitelist(normalTicketMinter.address);
@@ -143,6 +144,16 @@ describe("Lottery test", function () {
     })
 
     describe("Deployment", async function () {
+        it("Should receive Platin tickets for Protocol", async function () {
+            let oldBalanceOfProtocol = Number(await platinTicketMinter.balanceOf(owner.address))
+            await platinTicketMinter.connect(owner).mintForProtocol()
+
+            let newBalanceOfProtocol = Number(await platinTicketMinter.balanceOf(owner.address))
+
+            expect(oldBalanceOfProtocol).to.equal(0)
+            expect(newBalanceOfProtocol).to.equal(6)
+
+        })
         it("Should initialize NFT URIs, featuresByDay and nbStep", async function () {
             await lotteryGame.initializeBoxOffice(
                 Object.keys(hashes),

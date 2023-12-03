@@ -81,15 +81,15 @@ abstract contract ALotteryGame is Whitelisted, IERC721Receiver {
         return ticketsSold;
     }
 
-    function getCurrentStep() public view returns (uint256) {
+    function getCurrentStep() external view returns (uint256) {
         return currentStep;
     }
 
-    function getWinningCombination() public view returns (uint256) {
+    function getWinningCombination() external view returns (uint256) {
         return winningCombination;
     }
 
-    function getIsCycleRunning() public view returns (bool) {
+    function getIsCycleRunning() external view returns (bool) {
         return isCycleRunning;
     }
 

@@ -5,25 +5,24 @@ import "../Librairies/LotteryDef.sol";
 
 import "./Whitelisted.sol";
 
-contract TicketRegistry is Whitelisted
-{
+contract TicketRegistry is Whitelisted {
     using LotteryDef for LotteryDef.TicketState;
     using LotteryDef for LotteryDef.TicketType;
     using LotteryDef for LotteryDef.TicketInfo;
-    
-    mapping(address => mapping(uint256 => LotteryDef.TicketInfo)) public ticketInfos;
+
+    mapping(address => mapping(uint256 => LotteryDef.TicketInfo))
+        public ticketInfos;
 
     constructor() {}
 
     function addNewTicket(
         uint256 _tokenId,
-        LotteryDef.TicketType _ticketType,           
+        LotteryDef.TicketType _ticketType,
         address _contractAddress,
-        address payable _ticketOwner,         
-        LotteryDef.TicketState _dealState,      
+        address payable _ticketOwner,
+        LotteryDef.TicketState _dealState,
         uint256 _dealPrice
-    ) external onlyWhitelisted
-    {
+    ) external onlyWhitelisted {
         ticketInfos[_contractAddress][_tokenId] = LotteryDef.TicketInfo(
             _ticketType,
             _ticketOwner,
@@ -32,30 +31,43 @@ contract TicketRegistry is Whitelisted
         );
     }
 
-    function putTicketOnSale(address _addressTicket, uint256 _tokenId, uint256 _dealPrice) external onlyWhitelisted
-    {
-        ticketInfos[_addressTicket][_tokenId].dealState = LotteryDef.TicketState.DEALING;
+    function putTicketOnSale(
+        address _addressTicket,
+        uint256 _tokenId,
+        uint256 _dealPrice
+    ) external onlyWhitelisted {
+        ticketInfos[_addressTicket][_tokenId].dealState = LotteryDef
+            .TicketState
+            .DEALING;
         ticketInfos[_addressTicket][_tokenId].dealPrice = _dealPrice;
     }
 
-    function removeSalesTicket(address _addressTicket, uint256 _tokenId) external onlyWhitelisted
-    {
-        ticketInfos[_addressTicket][_tokenId].dealState = LotteryDef.TicketState.NODEAL;
+    function removeSalesTicket(
+        address _addressTicket,
+        uint256 _tokenId
+    ) external onlyWhitelisted {
+        ticketInfos[_addressTicket][_tokenId].dealState = LotteryDef
+            .TicketState
+            .NODEAL;
         ticketInfos[_addressTicket][_tokenId].dealPrice = 0;
     }
 
-    function transferTicketOwnership(address _addressTicket, uint256 _tokenId, address payable _newOwner) external onlyWhitelisted
-    {
+    function transferTicketOwnership(
+        address _addressTicket,
+        uint256 _tokenId,
+        address payable _newOwner
+    ) external onlyWhitelisted {
         ticketInfos[_addressTicket][_tokenId].ticketOwner = _newOwner;
-        ticketInfos[_addressTicket][_tokenId].dealState = LotteryDef.TicketState.NODEAL;
+        ticketInfos[_addressTicket][_tokenId].dealState = LotteryDef
+            .TicketState
+            .NODEAL;
         ticketInfos[_addressTicket][_tokenId].dealPrice = 0;
     }
 
-    //End of functions
-
-    function getTicketState(address _addressTicket, uint _tokenId) external view returns (LotteryDef.TicketInfo memory) 
-    {
+    function getTicketState(
+        address _addressTicket,
+        uint _tokenId
+    ) external view returns (LotteryDef.TicketInfo memory) {
         return ticketInfos[_addressTicket][_tokenId];
     }
-
 }

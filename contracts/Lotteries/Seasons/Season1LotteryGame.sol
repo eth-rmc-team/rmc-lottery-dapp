@@ -165,7 +165,8 @@ contract Season1LotteryGame is ALotteryGame, ReentrancyGuard {
         string[] calldata uris,
         uint32[] calldata features,
         uint8[] calldata _featuresByDay,
-        uint256 nbGoldTickets
+        uint8 nbGoldTickets,
+        uint8 nbPlatinTickets
     ) external onlyAdmin onlyWhenCycleNotRunning {
         INormalTicketMinter(discoveryService.getNormalTicketAddr())
             .addABatchOfMintableTickets(uris, features);
@@ -175,9 +176,14 @@ contract Season1LotteryGame is ALotteryGame, ReentrancyGuard {
         }
         ticketCapacity = uint16(uris.length);
 
-        for (uint256 i = 0; i < nbGoldTickets; i++) {
+        for (uint8 i = 0; i < nbGoldTickets; i++) {
             ISpecialTicketMinter(discoveryService.getGoldTicketAddr())
-                .mintSpecial(address(this));
+                .mintSpecial(address(this), LotteryDef.TicketType.GOLD);
+        }
+
+        for (uint8 i = 0; i < nbPlatinTickets; i++) {
+            ISpecialTicketMinter(discoveryService.getPlatiniumTicketAddr())
+                .mintSpecial(address(this), LotteryDef.TicketType.PLATIN);
         }
     }
 
@@ -230,7 +236,7 @@ contract Season1LotteryGame is ALotteryGame, ReentrancyGuard {
             winningCombination
         );
         ISpecialTicketMinter(discoveryService.getMythicTicketAddr())
-            .mintSpecial(msg.sender);
+            .mintSpecial(msg.sender, LotteryDef.TicketType.MYTHIC);
 
         isWinnerClaimed = true;
     }
