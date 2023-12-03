@@ -17,10 +17,13 @@ abstract contract ASideLotteryGame is
     address[] public winners;
 
     IDiscoveryService discoveryService;
-    uint256 winningCombination;
+    uint256 prefix;
 
+    uint8 denominator;
     uint8 lotteryId;
     uint8 currentStep;
+
+    LotteryDef.TicketType ticketType;
 
     bool public isCycleRunning;
     bool public isSideLotteryRunning;
@@ -66,27 +69,9 @@ abstract contract ASideLotteryGame is
         discoveryService = IDiscoveryService(_address);
     }
 
-    function getLotteryId() external view returns (uint8) {
+    function getLotteryId() internal view returns (uint8) {
         return
             ILotteryGame(discoveryService.getLotteryGameAddr()).getLotteryId();
-    }
-
-    function getCurrentStep() public view returns (uint256) {
-        return
-            ILotteryGame(discoveryService.getLotteryGameAddr())
-                .getCurrentStep();
-    }
-
-    function getWinningCombination() public view returns (uint256) {
-        return
-            ILotteryGame(discoveryService.getLotteryGameAddr())
-                .getWinningCombination();
-    }
-
-    function getIsCycleRunning() public view returns (bool) {
-        return
-            ILotteryGame(discoveryService.getLotteryGameAddr())
-                .getIsCycleRunning();
     }
 
     function getRandomIndex() internal view returns (uint16) {

@@ -3,6 +3,7 @@ pragma solidity ^0.8.11;
 
 import "../Services/Interfaces/IDiscoveryService.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
+import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 
 import "../Services/Whitelisted.sol";
 
@@ -91,6 +92,14 @@ abstract contract ALotteryGame is Whitelisted, IERC721Receiver {
 
     function getIsCycleRunning() external view returns (bool) {
         return isCycleRunning;
+    }
+
+    function setApprovalForAllTickets(
+        address _addressTicket,
+        address _to,
+        bool _approval
+    ) external onlyAdmin {
+        IERC721(_addressTicket).setApprovalForAll(_to, _approval);
     }
 
     /** 
