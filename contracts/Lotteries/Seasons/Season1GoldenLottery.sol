@@ -47,9 +47,7 @@ contract Season1GoldenLottery is ASideLotteryGame {
         return address(this).balance;
     }
 
-    function burnTicket(
-        uint256[] memory tokenIds
-    ) external override nonReentrant {
+    function burnTicket(uint256[] memory tokenIds) external nonReentrant {
         require(
             totalGoldTicketsBurnt.add(tokenIds.length) <= threshold,
             "Threshold reached, lottery is already running"
@@ -80,7 +78,6 @@ contract Season1GoldenLottery is ASideLotteryGame {
         uint8 nbDraws
     )
         external
-        override
         onlyWhenLotteryRunning
         onlyAdmin
         returns (address[] memory _winners)
@@ -95,7 +92,7 @@ contract Season1GoldenLottery is ASideLotteryGame {
         return _winners;
     }
 
-    function claimReward() external override nonReentrant {
+    function claimReward() external nonReentrant {
         address winner;
         for (uint i = 0; i < winners.length; i++) {
             if (winners[i] == msg.sender) {
@@ -136,7 +133,6 @@ contract Season1GoldenLottery is ASideLotteryGame {
 
     function endLottery()
         external
-        override
         onlyWhenLotteryRunning
         isWinnersBeenDrawn
         onlyAdmin

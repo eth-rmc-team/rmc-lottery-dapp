@@ -10,10 +10,28 @@ import "../ASideLotteryGame.sol";
 import "hardhat/console.sol";
 
 contract Season1SilverLottery is ASideLotteryGame {
-    uint256[] public platinTokenIds;
-    uint256[] public goldTokenIds;
+    uint256 public sideLotteryId;
 
-    uint16 public totalNormalTicketsBurnt;
+    struct SideLotteryGame {
+        address[] users;
+        address[] winners;
+        uint32 totalTicketsBurnt;
+        bool isSideLotteryRunning;
+        bool isWinnersDrawn;
+    }
+    struct SideLotteryParameters {
+        LotteryDef.TicketType ticketType;
+        uint256 prefix;
+        uint32 nbTicketBurnable;
+        uint8 denominator;
+        uint8 lotteryId;
+        uint8 nbDraw;
+        bool isLotteryDependant;
+        bool isPrefixDependant;
+    }
+
+    mapping(uint256 => SideLotteryGame) sideLotteries;
+    mapping(uint256 => SideLotteryParameters) sideLotteriesParameters;
 
     using SafeMath for uint16;
     using SafeMath for uint256;
@@ -22,30 +40,46 @@ contract Season1SilverLottery is ASideLotteryGame {
     constructor() payable {
         isSideLotteryRunning = false;
         isWinnersDrawn = false;
+        sideLotteryId = 1;
     }
 
     function setSideLottery(
         LotteryDef.TicketType _type,
         uint256 _prefix,
+        uint32 _nbTicketBurnable,
         uint8 _denominator,
-        uint32 _nbTicketBurnable
+        uint8 _lotteryId,
+        uint8 nbDraw,
+        bool _isLotteryDependant,
+        bool _isPrefixDependant
     ) external onlyAdmin {
-        ticketType = _type;
-        prefix = _prefix;
-        denominator = _denominator;
-        nbTicketBurnable = _nbTicketBurnable;
-
-        lotteryId = super.getLotteryId();
+        sideLotteriesParameters[sideLotteryId].ticketType = _type;
+        sideLotteriesParameters[sideLotteryId].prefix = _prefix;
+        sideLotteriesParameters[sideLotteryId].denominator = _denominator;
+        sideLotteriesParameters[sideLotteryId]
+            .nbTicketBurnable = _nbTicketBurnable;
+        sideLotteriesParameters[sideLotteryId].lotteryId = _lotteryId;
+        if (_lotteryId == 0)
+            sideLotteriesParameters[sideLotteryId].lotteryId = super
+                .getLotteryId();
+        sideLotteriesParameters[sideLotteryId].nbDraw = nbDraw;
+        sideLotteriesParameters[sideLotteryId]
+            .isLotteryDependant = _isLotteryDependant;
+        sideLotteriesParameters[sideLotteryId]
+            .isPrefixDependant = _isPrefixDependant;
+        sideLotteryId.add(1);
     }
 
     function decreaseNbTicketBurnable(
+        uint8 _sideLotteryId,
         uint32 _nbTicketBurnable
     ) external onlyAdmin {
         require(
             _nbTicketBurnable <= nbTicketBurnable,
             "ERROR :: New nbTicketBurnable must be lower than the previous one"
         );
-        nbTicketBurnable = _nbTicketBurnable;
+        sideLotteriesParameters[_sideLotteryId]
+            .nbTicketBurnable = _nbTicketBurnable;
     }
 
     function getBalance() external view returns (uint256) {
@@ -53,18 +87,26 @@ contract Season1SilverLottery is ASideLotteryGame {
     }
 
     function burnTicket(
+        uint256 _sideLotteryId,
         uint256[] memory tokenIds
-    ) external override nonReentrant {
+    ) external nonReentrant {
         for (uint i = 0; i < tokenIds.length; i++) {
             uint256 prefixToken = tokenIds[i];
             prefixToken = prefixToken.div(denominator);
             uint8 lotteryIdToken = uint8(tokenIds[i].mod(100));
 
-            if (lotteryIdToken != lotteryId) {
+            if (
+                lotteryIdToken !=
+                sideLotteriesParameters[_sideLotteryId].lotteryId &&
+                sideLotteriesParameters[_sideLotteryId].isLotteryDependant
+            ) {
                 revert("ERROR :: Wrong lotteryId");
             }
 
-            if (prefixToken != prefix) {
+            if (
+                prefixToken != sideLotteriesParameters[_sideLotteryId].prefix &&
+                sideLotteriesParameters[_sideLotteryId].isPrefixDependant
+            ) {
                 revert("ERROR :: Wrong prefix");
             }
 
@@ -78,117 +120,82 @@ contract Season1SilverLottery is ASideLotteryGame {
                 tokenIds[i]
             );
 
-            totalNormalTicketsBurnt++;
-            users.push(msg.sender);
+            sideLotteries[_sideLotteryId].totalTicketsBurnt++;
+            sideLotteries[_sideLotteryId].users.push(msg.sender);
 
-            if (totalNormalTicketsBurnt == nbTicketBurnable) {
-                isSideLotteryRunning = true;
+            if (
+                sideLotteries[_sideLotteryId].totalTicketsBurnt ==
+                sideLotteriesParameters[_sideLotteryId].nbTicketBurnable
+            ) {
+                sideLotteries[_sideLotteryId].isSideLotteryRunning = true;
                 break;
             }
         }
     }
 
-    function getWinners(
-        uint8 nbDraws
-    )
-        external
-        override
-        onlyWhenLotteryRunning
-        onlyAdmin
-        returns (address[] memory _winners)
-    {
-        _winners = super.getWinnersAddr(nbDraws);
-        isWinnersDrawn = true;
+    function getWinners(uint256 _sideLotteryId) external {
+        require(
+            sideLotteries[_sideLotteryId].isSideLotteryRunning,
+            "ERROR :: Side lottery is not running"
+        );
 
-        return _winners;
+        sideLotteries[_sideLotteryId].winners = super.getWinnersAddr(
+            sideLotteriesParameters[_sideLotteryId].nbDraw
+        );
+        sideLotteries[_sideLotteryId].isWinnersDrawn = true;
     }
 
-    function claimReward() external override isWinnersBeenDrawn nonReentrant {
-        if (ticketType == LotteryDef.TicketType.PLATIN) {
-            claimPlatin();
-        } else if (ticketType == LotteryDef.TicketType.GOLD) {
-            claimGold();
+    function claimReward(uint256 _sideLotteryId) external nonReentrant {
+        require(
+            sideLotteries[sideLotteryId].isWinnersDrawn,
+            "ERROR :: Winners are not drawn yet, please wait for the next one"
+        );
+
+        if (
+            sideLotteriesParameters[_sideLotteryId].ticketType ==
+            LotteryDef.TicketType.PLATIN
+        ) {
+            claimPlatin(_sideLotteryId);
+        } else if (
+            sideLotteriesParameters[_sideLotteryId].ticketType ==
+            LotteryDef.TicketType.GOLD
+        ) {
+            claimGold(_sideLotteryId);
         } else {
             revert("ERROR :: No prizepool set");
         }
     }
 
-    function claimPlatin() internal {
+    function claimPlatin(uint256 _sideLotteryId) internal {
         address winner;
-
-        for (uint i = 0; i < winners.length; i++) {
-            if (winners[i] == msg.sender) {
-                winner = winners[i];
-                winners[i] = address(0);
-                ISpecialTicketMinter(discoveryService.getPlatiniumTicketAddr())
-                    .safeTransferFrom(
-                        discoveryService.getLotteryGameAddr(),
-                        winner,
-                        platinTokenIds[i]
-                    );
-                emit ClaimedPrizePool(winner, platinTokenIds[i]);
-            }
-        }
-    }
-
-    function claimGold() internal {
-        address winner;
-
-        for (uint i = 0; i < winners.length; i++) {
-            if (winners[i] == msg.sender) {
-                winner = winners[i];
-                winners[i] = address(0);
-                ISpecialTicketMinter(discoveryService.getGoldTicketAddr())
-                    .safeTransferFrom(
-                        discoveryService.getLotteryGameAddr(),
-                        winner,
-                        goldTokenIds[i]
-                    );
-                emit ClaimedPrizePool(winner, goldTokenIds[i]);
-            }
-        }
-    }
-
-    function getPlatinTokenIds() internal {
+        uint256 tokenId;
         for (
             uint i = 0;
-            i <
-            ISpecialTicketMinter(discoveryService.getPlatiniumTicketAddr())
-                .balanceOf(discoveryService.getLotteryGameAddr());
+            i < sideLotteries[_sideLotteryId].winners.length;
             i++
         ) {
-            platinTokenIds[i] = ISpecialTicketMinter(
+            winner = sideLotteries[_sideLotteryId].winners[i];
+            sideLotteries[_sideLotteryId].winners[i] = address(0);
+            tokenId = ISpecialTicketMinter(
                 discoveryService.getPlatiniumTicketAddr()
-            ).tokenOfOwnerByIndex(discoveryService.getLotteryGameAddr(), i);
+            ).mintSpecial(winner, LotteryDef.TicketType.PLATIN);
+            emit ClaimedPrizePool(winner, tokenId);
         }
     }
 
-    function getGoldTokenIds() internal {
+    function claimGold(uint256 _sideLotteryId) internal {
+        address winner;
+        uint256 tokenId;
         for (
             uint i = 0;
-            i <
-            ISpecialTicketMinter(discoveryService.getGoldTicketAddr())
-                .balanceOf(discoveryService.getLotteryGameAddr());
+            i < sideLotteries[_sideLotteryId].winners.length;
             i++
         ) {
-            goldTokenIds[i] = ISpecialTicketMinter(
-                discoveryService.getGoldTicketAddr()
-            ).tokenOfOwnerByIndex(discoveryService.getLotteryGameAddr(), i);
+            winner = sideLotteries[_sideLotteryId].winners[i];
+            sideLotteries[_sideLotteryId].winners[i] = address(0);
+            tokenId = ISpecialTicketMinter(discoveryService.getGoldTicketAddr())
+                .mintSpecial(winner, LotteryDef.TicketType.GOLD);
+            emit ClaimedPrizePool(winner, tokenId);
         }
-    }
-
-    function endLottery()
-        external
-        override
-        onlyWhenLotteryRunning
-        isWinnersBeenDrawn
-        onlyAdmin
-    {
-        isSideLotteryRunning = false;
-        isWinnersDrawn = false;
-        users = new address[](0);
-        winners = new address[](0);
-        platinTokenIds = new uint256[](0);
-        goldTokenIds = new uint256[](0);
     }
 }

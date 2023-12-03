@@ -93,18 +93,4 @@ abstract contract ASideLotteryGame is
 
         return winners;
     }
-
-    /** 
-        ABSTRACT FUNCTIONS
-     */
-
-    function burnTicket(uint[] memory tokenIds) external virtual;
-
-    function claimReward() external virtual;
-
-    function getWinners(
-        uint8 nbDraws
-    ) external virtual returns (address[] memory _winners);
-
-    function endLottery() external virtual;
 }
