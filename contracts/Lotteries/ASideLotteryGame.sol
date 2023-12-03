@@ -5,6 +5,7 @@ import "../Services/Interfaces/IDiscoveryService.sol";
 import "./Interfaces/ILotteryGame.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
 import "../Services/Whitelisted.sol";
 
@@ -18,14 +19,13 @@ abstract contract ASideLotteryGame is
 
     IDiscoveryService discoveryService;
     uint256 prefix;
-
+    uint32 nbTicketBurnable;
     uint8 denominator;
     uint8 lotteryId;
     uint8 currentStep;
 
     LotteryDef.TicketType ticketType;
 
-    bool public isCycleRunning;
     bool public isSideLotteryRunning;
     bool public isWinnersDrawn;
 

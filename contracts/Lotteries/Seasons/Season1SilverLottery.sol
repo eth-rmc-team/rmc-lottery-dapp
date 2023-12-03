@@ -6,7 +6,6 @@ import "../../Services/Interfaces/IDiscoveryService.sol";
 import "../../Services/Whitelisted.sol";
 import "../../Tickets/Interfaces/ISpecialTicketMinter.sol";
 import "../ASideLotteryGame.sol";
-import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
 import "hardhat/console.sol";
 
@@ -16,8 +15,9 @@ contract Season1SilverLottery is ASideLotteryGame {
 
     uint16 public totalNormalTicketsBurnt;
 
-    using SafeMath for uint256;
     using SafeMath for uint16;
+    using SafeMath for uint256;
+    using SafeMath for uint32;
 
     constructor() payable {
         isSideLotteryRunning = false;
@@ -27,13 +27,25 @@ contract Season1SilverLottery is ASideLotteryGame {
     function setSideLottery(
         LotteryDef.TicketType _type,
         uint256 _prefix,
-        uint8 _denominator
+        uint8 _denominator,
+        uint32 _nbTicketBurnable
     ) external onlyAdmin {
         ticketType = _type;
         prefix = _prefix;
         denominator = _denominator;
+        nbTicketBurnable = _nbTicketBurnable;
 
         lotteryId = super.getLotteryId();
+    }
+
+    function decreaseNbTicketBurnable(
+        uint32 _nbTicketBurnable
+    ) external onlyAdmin {
+        require(
+            _nbTicketBurnable <= nbTicketBurnable,
+            "ERROR :: New nbTicketBurnable must be lower than the previous one"
+        );
+        nbTicketBurnable = _nbTicketBurnable;
     }
 
     function getBalance() external view returns (uint256) {
@@ -46,7 +58,7 @@ contract Season1SilverLottery is ASideLotteryGame {
         for (uint i = 0; i < tokenIds.length; i++) {
             uint256 prefixToken = tokenIds[i];
             prefixToken = prefixToken.div(denominator);
-            uint8 lotteryIdToken = uint8(tokenIds[i] % 100);
+            uint8 lotteryIdToken = uint8(tokenIds[i].mod(100));
 
             if (lotteryIdToken != lotteryId) {
                 revert("ERROR :: Wrong lotteryId");
@@ -68,6 +80,11 @@ contract Season1SilverLottery is ASideLotteryGame {
 
             totalNormalTicketsBurnt++;
             users.push(msg.sender);
+
+            if (totalNormalTicketsBurnt == nbTicketBurnable) {
+                isSideLotteryRunning = true;
+                break;
+            }
         }
     }
 
