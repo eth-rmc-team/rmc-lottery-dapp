@@ -43,7 +43,7 @@ contract Season1SilverLottery is ASideLotteryGame {
         sideLotteryId = 1;
     }
 
-    function setSideLottery(
+    function setSideLotteryParameters(
         LotteryDef.TicketType _type,
         uint256 _prefix,
         uint32 _nbTicketBurnable,
@@ -68,6 +68,12 @@ contract Season1SilverLottery is ASideLotteryGame {
         sideLotteriesParameters[sideLotteryId]
             .isPrefixDependant = _isPrefixDependant;
         sideLotteryId.add(1);
+    }
+
+    function getSideLotteryParameters(
+        uint _sideLotteryId
+    ) external view returns (SideLotteryParameters memory) {
+        return sideLotteriesParameters[_sideLotteryId];
     }
 
     function decreaseNbTicketBurnable(
@@ -133,7 +139,7 @@ contract Season1SilverLottery is ASideLotteryGame {
         }
     }
 
-    function getWinners(uint256 _sideLotteryId) external {
+    function getWinners(uint256 _sideLotteryId) external nonReentrant {
         require(
             sideLotteries[_sideLotteryId].isSideLotteryRunning,
             "ERROR :: Side lottery is not running"

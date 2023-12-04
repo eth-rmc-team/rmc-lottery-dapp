@@ -18,6 +18,7 @@ contract DiscoveryService is Whitelisted {
     address private prizepoolDispatcherAddr;
     address private lotteryGameAddr;
     address private goldenLotteryAddr;
+    address private silverLotteryAddr;
     address private fusionHandlerAddr;
     address private rmcMarketplaceAddr;
 
@@ -52,6 +53,10 @@ contract DiscoveryService is Whitelisted {
 
     function getGoldenLotteryAddr() external view returns (address) {
         return goldenLotteryAddr;
+    }
+
+    function getSilverLotteryAddr() external view returns (address) {
+        return silverLotteryAddr;
     }
 
     function getFusionHandlerAddr() external view returns (address) {
@@ -104,6 +109,12 @@ contract DiscoveryService is Whitelisted {
         address _goldenLotteryAddr
     ) external onlyAdmin {
         goldenLotteryAddr = _goldenLotteryAddr;
+    }
+
+    function setSilverLotteryAddr(
+        address _silverLotteryAddr
+    ) external onlyAdmin {
+        silverLotteryAddr = _silverLotteryAddr;
     }
 
     function setFusionHandlerAddr(
