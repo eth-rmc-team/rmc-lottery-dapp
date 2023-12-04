@@ -9,50 +9,42 @@ import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
 import "../Services/Whitelisted.sol";
 
-abstract contract ASideLotteryGame is
+abstract contract AGoldenLotteryGame is
     Whitelisted,
     IERC721Receiver,
     ReentrancyGuard
 {
-    struct SideLotteryGame {
-        address[] users;
-        address[] winners;
-        uint32 totalTicketsBurnt;
-        bool isSideLotteryRunning;
-        bool isWinnersDrawn;
-    }
-    struct SideLotteryParameters {
-        LotteryDef.TicketType ticketType;
-        uint256 prefix;
-        uint32 nbTicketBurnable;
-        uint32 denominator;
-        uint8 lotteryId;
-        uint8 nbDraw;
-        bool isLotteryDependant;
-        bool isPrefixDependant;
-    }
-
-    mapping(uint256 => SideLotteryGame) sideLotteries;
-    mapping(uint256 => SideLotteryParameters) sideLotteriesParameters;
+    address[] public users;
+    address[] public winners;
 
     IDiscoveryService discoveryService;
+    uint256 prefix;
+    uint32 nbTicketBurnable;
+    uint8 denominator;
+    uint8 lotteryId;
+    uint8 currentStep;
+
+    LotteryDef.TicketType ticketType;
+
+    bool public isSideLotteryRunning;
+    bool public isWinnersDrawn;
 
     event Received(address, uint);
     event winnersDrawn(address[] winners);
     event ClaimedPrizePool(address winner, uint256 prize);
     event claimedShareForSuperGold(address winner, uint256 prize);
 
-    modifier onlyWhenLotteryRunning(uint256 _sideLotteryId) {
+    modifier onlyWhenLotteryRunning() {
         require(
-            sideLotteries[_sideLotteryId].isSideLotteryRunning = true,
+            isSideLotteryRunning = true,
             "Previous lottery is finished, please wait for the next one"
         );
         _;
     }
 
-    modifier isWinnersBeenDrawn(uint256 _sideLotteryId) {
+    modifier isWinnersBeenDrawn() {
         require(
-            sideLotteries[_sideLotteryId].isWinnersDrawn = true,
+            isWinnersDrawn = true,
             "Winners are not drawn yet, please wait for the next one"
         );
         _;
@@ -82,33 +74,23 @@ abstract contract ASideLotteryGame is
             ILotteryGame(discoveryService.getLotteryGameAddr()).getLotteryId();
     }
 
-    function getRandomIndex(
-        uint256 _sideLotteryId
-    ) internal view returns (uint16) {
+    function getRandomIndex() internal view returns (uint16) {
         bytes32 hash = keccak256(abi.encodePacked(block.timestamp, msg.sender));
-        uint16 randomNumber = (uint16(bytes2(hash[0])) %
-            uint16(sideLotteries[_sideLotteryId].users.length));
+        uint16 randomNumber = (uint16(bytes2(hash[0])) % uint16(users.length));
         return randomNumber;
     }
 
-    function getWinnersAddr(
-        uint8 nbDraws,
-        uint256 _sideLotteryId
-    ) internal returns (address[] memory) {
+    function getWinnersAddr(uint8 nbDraws) internal returns (address[] memory) {
         uint16 index;
         for (uint i = 0; i < nbDraws; i++) {
-            index = getRandomIndex(_sideLotteryId);
-            sideLotteries[_sideLotteryId].winners.push(
-                sideLotteries[_sideLotteryId].users[index]
-            );
-            sideLotteries[_sideLotteryId].users[index] = sideLotteries[
-                _sideLotteryId
-            ].users[sideLotteries[_sideLotteryId].users.length - 1];
-            sideLotteries[_sideLotteryId].users.pop();
+            index = getRandomIndex();
+            winners.push(users[index]);
+            users[index] = users[users.length - 1];
+            users.pop();
         }
 
-        emit winnersDrawn(sideLotteries[_sideLotteryId].winners);
+        emit winnersDrawn(winners);
 
-        return sideLotteries[_sideLotteryId].winners;
+        return winners;
     }
 }

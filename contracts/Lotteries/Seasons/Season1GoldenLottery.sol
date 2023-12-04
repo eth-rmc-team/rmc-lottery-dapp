@@ -5,12 +5,12 @@ import "../../Services/Interfaces/IDiscoveryService.sol";
 
 import "../../Services/Whitelisted.sol";
 import "../../Tickets/Interfaces/ISpecialTicketMinter.sol";
-import "../ASideLotteryGame.sol";
+import "../AGoldenLotteryGame.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
 import "hardhat/console.sol";
 
-contract Season1GoldenLottery is ASideLotteryGame {
+contract Season1GoldenLottery is AGoldenLotteryGame {
     uint256 public prizePool;
     uint256 public prize;
     uint256 public time;

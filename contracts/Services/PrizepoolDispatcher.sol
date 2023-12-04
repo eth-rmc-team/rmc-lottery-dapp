@@ -434,11 +434,8 @@ contract PrizepoolDispatcher is Whitelisted {
         address _claimer,
         uint256 _prizepool
     ) external view onlyWhitelisted returns (uint) {
-        address payable _winner = payable(
-            ITicketMinter(discoveryService.getNormalTicketAddr()).ownerOf(
-                _idWinner
-            )
-        );
+        address _winner = ITicketMinter(discoveryService.getNormalTicketAddr())
+            .ownerOf(_idWinner);
         require(
             _claimer == _winner,
             "ERROR :: you don't have the winning ticket"

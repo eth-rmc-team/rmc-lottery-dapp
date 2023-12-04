@@ -90,6 +90,7 @@ describe("Lottery test", function () {
         discoveryService.setPrizepoolDispatcherAddr(prizepoolDispatcher.address);
         discoveryService.setLotteryGameAddr(lotteryGame.address);
         discoveryService.setGoldenLotteryAddr(goldenLotteryGame.address)
+        discoveryService.setSilverLotteryAddr(silverLotteryGame.address);
         discoveryService.setFusionHandlerAddr(ticketFusion.address);
         discoveryService.setRmcMarketplaceAddr(marketPlace.address);
         discoveryService.setTicketRegistryAddr(ticketRegistry.address);
