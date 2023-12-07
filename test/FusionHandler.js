@@ -288,7 +288,7 @@ describe("Fusion handler test", function () {
         it("User should fuse 4 normal tickets for 2 Gold", async function () {
 
             await ticketFusion.connect(owner).setDiscoveryService(discoveryService.address)
-            await ticketFusion.connect(owner).setLotteryGame(lotteryGame.address)
+            await ticketFusion.connect(owner).setLotteryGame()
             let balanceOfNormalTicketUser18 = Number(await normalTicketMinter.connect(users[18]).balanceOf(users[18].address))
 
             await ticketFusion.connect(owner).setNormalTicketFusionRequirement(2)
@@ -313,7 +313,6 @@ describe("Fusion handler test", function () {
         it("Should fuse 2 gold tickets for 1 super gold", async function () {
             await ticketFusion.connect(owner).setGoldTicketFusionRequirement(2)
             let balanceOfGoldTicketUser18 = Number(await goldTicketMinter.connect(users[18]).balanceOf(users[18].address))
-
             let tokenIdToBurn = []
             for (let i = 0; i < balanceOfGoldTicketUser18; i++) {
                 tokenIdToBurn[i] = Number(await goldTicketMinter.connect(users[18]).tokenOfOwnerByIndex(users[18].address, i))

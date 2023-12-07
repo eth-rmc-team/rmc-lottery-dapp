@@ -25,7 +25,6 @@ contract TicketFusion is Whitelisted, ReentrancyGuard {
     uint8 public goldTicketFusionRequirement = 5;
 
     IDiscoveryService private discoveryService;
-    IPrizepoolDispatcher private prizepoolDispatcher;
     ILotteryGame private lotteryGame;
 
     using SafeMath for uint256;
@@ -39,12 +38,8 @@ contract TicketFusion is Whitelisted, ReentrancyGuard {
         discoveryService = IDiscoveryService(_address);
     }
 
-    function setPrizepoolDispatcher(address _address) external onlyAdmin {
-        prizepoolDispatcher = IPrizepoolDispatcher(_address);
-    }
-
-    function setLotteryGame(address _address) external onlyAdmin {
-        lotteryGame = ILotteryGame(_address);
+    function setLotteryGame() external onlyAdmin {
+        lotteryGame = ILotteryGame(discoveryService.getLotteryGameAddr());
     }
 
     //Function setting the normal ticket fusion requirement
@@ -87,7 +82,6 @@ contract TicketFusion is Whitelisted, ReentrancyGuard {
             balance >= normalTicketFusionRequirement,
             "WARNING :: Not enough Normal Tickets."
         );
-        balance = 0;
 
         require(
             tokenIds.length == normalTicketFusionRequirement,
@@ -105,16 +99,20 @@ contract TicketFusion is Whitelisted, ReentrancyGuard {
 
         // Burn the normal tickets
         for (uint i = 0; i < normalTicketFusionRequirement; i++) {
-            ISpecialTicketMinter(discoveryService.getNormalTicketAddr()).burn(
-                tokenIds[i]
-            );
+            if (tokenIds[i].mod(100) != 0)
+                ISpecialTicketMinter(discoveryService.getNormalTicketAddr())
+                    .burn(tokenIds[i]);
         }
 
         // mint of gold ticket
-        ISpecialTicketMinter(discoveryService.getGoldTicketAddr()).mintSpecial(
-            msg.sender,
-            LotteryDef.TicketType.GOLD
-        );
+        if (
+            ISpecialTicketMinter(discoveryService.getNormalTicketAddr())
+                .balanceOf(msg.sender) ==
+            balance.sub(normalTicketFusionRequirement)
+        )
+            ISpecialTicketMinter(discoveryService.getGoldTicketAddr())
+                .mintSpecial(msg.sender, LotteryDef.TicketType.GOLD);
+        else revert("TicketFusion :: Error while minting gold ticket");
     }
 
     function fusionGoldTickets(uint[] memory tokenIds) external nonReentrant {
@@ -137,7 +135,6 @@ contract TicketFusion is Whitelisted, ReentrancyGuard {
             balance >= goldTicketFusionRequirement,
             "WARNING :: Not enough Gold Tickets."
         );
-        balance = 0;
 
         require(
             tokenIds.length == goldTicketFusionRequirement,
@@ -155,7 +152,6 @@ contract TicketFusion is Whitelisted, ReentrancyGuard {
 
         // Burn the normal tickets
         for (uint i = 0; i < goldTicketFusionRequirement; i++) {
-            //IERC721(addrNormalNftContract).approve(address(0), tokenIds[i]);
             ISpecialTicketMinter(discoveryService.getGoldTicketAddr()).burn(
                 tokenIds[i]
             );
@@ -163,8 +159,14 @@ contract TicketFusion is Whitelisted, ReentrancyGuard {
 
         //console.log("DEBUG :: nonce = %s", nonce);
 
-        // mint of gold ticket
-        ISpecialTicketMinter(discoveryService.getSuperGoldTicketAddr())
-            .mintSpecial(msg.sender, LotteryDef.TicketType.SUPERGOLD);
+        // mint of supergold ticket
+        if (
+            ISpecialTicketMinter(discoveryService.getGoldTicketAddr())
+                .balanceOf(msg.sender) ==
+            balance.sub(goldTicketFusionRequirement)
+        )
+            ISpecialTicketMinter(discoveryService.getSuperGoldTicketAddr())
+                .mintSpecial(msg.sender, LotteryDef.TicketType.SUPERGOLD);
+        else revert("TicketFusion :: Error while minting supergold ticket");
     }
 }
