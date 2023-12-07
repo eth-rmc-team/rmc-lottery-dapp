@@ -160,7 +160,7 @@ describe("Lottery test", function () {
             expect(newBalanceOfProtocol).to.equal(6)
 
         })
-        it("Should initialize NFT URIs, featuresByDay and nbStep", async function () {
+        it("Should initialize NFT URIs, featuresByDay, minimumTimeStep and nbStep", async function () {
             await lotteryGame.initializeBoxOffice(
                 Object.keys(hashes),
                 Object.values(hashes),
@@ -169,6 +169,7 @@ describe("Lottery test", function () {
             )
             await lotteryGame.setTicketPrice("250000000000000000000")
             await lotteryGame.setTotalSteps(3)
+            await lotteryGame.setMinimumTimeStep(1)
 
             const keyHashes = Object.keys(hashes)
 
@@ -178,6 +179,8 @@ describe("Lottery test", function () {
                 //on vérifie que chaque hash est bien considéré comme valide
                 expect(await normalTicketMinter.isValidUri(keyHashes[i])).to.equal(true)
             }
+
+            expect(Number(await lotteryGame.getMinimumTimeStep())).to.equal(1)
         })
 
         it("Should reset Cycle", async function () {

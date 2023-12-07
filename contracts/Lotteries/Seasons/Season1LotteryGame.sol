@@ -126,7 +126,7 @@ contract Season1LotteryGame is ALotteryGame, ReentrancyGuard {
         );
 
         require(
-            block.timestamp >= lastStepAt + minimumTimeStep,
+            block.timestamp >= lastStepAt.add(minimumTimeStep * 1 seconds),
             "WARNING :: You can't go to the next step if it's not the right time"
         );
 
