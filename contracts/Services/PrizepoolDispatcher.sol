@@ -285,6 +285,7 @@ contract PrizepoolDispatcher is Whitelisted {
         uint256 balanceOfNft = 0;
         uint256 coef = 0;
         uint256 sumCoef = getSumCoefs();
+        uint256 ticketClaimable;
 
         //Get the amount of NFT owned by the address and loop through them
         //Disable the claim ability of the NFT
@@ -293,26 +294,27 @@ contract PrizepoolDispatcher is Whitelisted {
 
         balanceOfNft = user.balanceOfNft[0];
         if (balanceOfNft > 0) {
+            ticketClaimable = 0;
             coef = user.coefs[0];
             totalSupply = ITicketMinter(discoveryService.getGoldTicketAddr())
                 .totalSupply();
-            for (uint i = 0; i < balanceOfNft; i++) {
+            for (uint i = balanceOfNft; i > 0; i--) {
                 id = ITicketMinter(discoveryService.getGoldTicketAddr())
-                    .tokenOfOwnerByIndex(addrClaimer, i);
+                    .tokenOfOwnerByIndex(addrClaimer, i - 1);
                 if (
                     gHasClaimed[id] <
                     ILotteryGame(discoveryService.getLotteryGameAddr())
                         .getLotteryId()
                 ) {
                     disableClaim(id, 1);
-                } else {
-                    balanceOfNft = SafeMath.sub(balanceOfNft, 1);
+                    ticketClaimable = SafeMath.add(ticketClaimable, 1);
                 }
             }
+
             user.userShare[0] = calculateShare(
                 _prizepool,
                 totalSupply,
-                balanceOfNft,
+                ticketClaimable,
                 coef,
                 sumCoef
             );
@@ -320,27 +322,27 @@ contract PrizepoolDispatcher is Whitelisted {
 
         balanceOfNft = user.balanceOfNft[1];
         if (balanceOfNft > 0) {
+            ticketClaimable = 0;
             coef = user.coefs[1];
             totalSupply = ITicketMinter(
                 discoveryService.getSuperGoldTicketAddr()
             ).totalSupply();
-            for (uint i = 0; i < balanceOfNft; i++) {
+            for (uint i = balanceOfNft; i > 0; i--) {
                 id = ITicketMinter(discoveryService.getSuperGoldTicketAddr())
-                    .tokenOfOwnerByIndex(addrClaimer, i);
+                    .tokenOfOwnerByIndex(addrClaimer, i - 1);
                 if (
                     sgHasClaimed[id] <
                     ILotteryGame(discoveryService.getLotteryGameAddr())
                         .getLotteryId()
                 ) {
                     disableClaim(id, 2);
-                } else {
-                    balanceOfNft = SafeMath.sub(balanceOfNft, 1);
+                    ticketClaimable = SafeMath.add(ticketClaimable, 1);
                 }
             }
             user.userShare[1] = calculateShare(
                 _prizepool,
                 totalSupply,
-                balanceOfNft,
+                ticketClaimable,
                 coef,
                 sumCoef
             );
@@ -349,26 +351,26 @@ contract PrizepoolDispatcher is Whitelisted {
         balanceOfNft = user.balanceOfNft[2];
 
         if (balanceOfNft > 0) {
+            ticketClaimable = 0;
             coef = user.coefs[2];
             totalSupply = ITicketMinter(discoveryService.getMythicTicketAddr())
                 .totalSupply();
-            for (uint i = 0; i < balanceOfNft; i++) {
+            for (uint i = balanceOfNft; i > 0; i--) {
                 id = ITicketMinter(discoveryService.getMythicTicketAddr())
-                    .tokenOfOwnerByIndex(addrClaimer, i);
+                    .tokenOfOwnerByIndex(addrClaimer, i - 1);
                 if (
                     mHasClaimed[id] <
                     ILotteryGame(discoveryService.getLotteryGameAddr())
                         .getLotteryId()
                 ) {
                     disableClaim(id, 3);
-                } else {
-                    balanceOfNft = SafeMath.sub(balanceOfNft, 1);
+                    ticketClaimable = SafeMath.add(ticketClaimable, 1);
                 }
             }
             user.userShare[2] = calculateShare(
                 _prizepool,
                 totalSupply,
-                balanceOfNft,
+                ticketClaimable,
                 coef,
                 sumCoef
             );
@@ -376,27 +378,27 @@ contract PrizepoolDispatcher is Whitelisted {
 
         balanceOfNft = user.balanceOfNft[3];
         if (balanceOfNft > 0) {
+            ticketClaimable = 0;
             coef = user.coefs[3];
             totalSupply = ITicketMinter(
                 discoveryService.getPlatiniumTicketAddr()
             ).totalSupply();
-            for (uint i = 0; i < balanceOfNft; i++) {
+            for (uint i = balanceOfNft; i > 0; i--) {
                 id = ITicketMinter(discoveryService.getPlatiniumTicketAddr())
-                    .tokenOfOwnerByIndex(addrClaimer, i);
+                    .tokenOfOwnerByIndex(addrClaimer, i - 1);
                 if (
                     pHasClaimed[id] <
                     ILotteryGame(discoveryService.getLotteryGameAddr())
                         .getLotteryId()
                 ) {
                     disableClaim(id, 4);
-                } else {
-                    balanceOfNft = SafeMath.sub(balanceOfNft, 1);
+                    ticketClaimable = SafeMath.add(ticketClaimable, 1);
                 }
             }
             user.userShare[3] = calculateShare(
                 _prizepool,
                 totalSupply,
-                balanceOfNft,
+                ticketClaimable,
                 coef,
                 sumCoef
             );

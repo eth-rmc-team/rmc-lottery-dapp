@@ -166,8 +166,7 @@ describe("Golden Lottery test", function () {
                 Object.keys(hashes),
                 Object.values(hashes),
                 featuresByDay,
-                8,
-                2
+                8
             )
             await lotteryGame.setTicketPrice("250000000000000000000")
             await lotteryGame.setTotalSteps(3)
@@ -320,7 +319,9 @@ describe("Golden Lottery test", function () {
             for (let i = 0; i < users.length; i++) {
                 balanceOf = Number(await goldTicketMinter.balanceOf(users[i].address))
                 if (balanceOf > 0) {
-                    for (let j = 0; j < balanceOf; j++) {
+                    let ticketBurntPerUser = 0;
+
+                    for (let j = balanceOf - 1; j >= 0; j--) {
                         let goldTicket = Number(await goldTicketMinter.connect(users[i]).tokenOfOwnerByIndex(users[i].address, j))
                         if (nbGoldTicketBurnt === 3) {
                             await expect(goldenLotteryGame.connect(users[i])
@@ -328,16 +329,18 @@ describe("Golden Lottery test", function () {
                                 .to.be.revertedWith("Threshold reached, lottery is already running")
                         }
                         else {
+                            ticketBurntPerUser++
                             nbGoldTicketBurnt++
                             await goldenLotteryGame.connect(users[i]).burnTicket([goldTicket])
-                            expect(Number(await goldTicketMinter.balanceOf(users[i].address))).to.equal(balanceOf - 1)
+                            expect(Number(await goldTicketMinter.balanceOf(users[i].address))).to.equal(balanceOf - ticketBurntPerUser)
                         }
 
                     }
                 }
             }
-
             expect(Number(await goldTicketMinter.totalSupply())).to.equal(totalSupply - nbGoldTicketBurnt)
+
+
         })
 
         it("Should be able to get winners by drawing", async function () {

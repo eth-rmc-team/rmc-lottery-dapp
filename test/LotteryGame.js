@@ -165,8 +165,7 @@ describe("Lottery test", function () {
                 Object.keys(hashes),
                 Object.values(hashes),
                 featuresByDay,
-                8,
-                2
+                8
             )
             await lotteryGame.setTicketPrice("250000000000000000000")
             await lotteryGame.setTotalSteps(3)
@@ -328,7 +327,9 @@ describe("Lottery test", function () {
         it("should be able to claim advantages reward", async function () {
 
             for (let i = 0; i < users.length; i++) {
-                if (await goldTicketMinter.balanceOf(users[i].address) > 0 || await mythicTicketMinter.balanceOf(users[i].address) > 0) {
+                let balanceOfGold = Number(await goldTicketMinter.balanceOf(users[i].address))
+                let balanceOfMythic = Number(await mythicTicketMinter.balanceOf(users[i].address))
+                if (balanceOfGold > 0 || balanceOfMythic > 0) {
                     await lotteryGame.connect(users[i]).claimAdvantagesReward()
                     //console.log("balanceOfGoldTicket", Number(await goldTicketMinter.balanceOf(users[i].address)))
                     //console.log("balanceOfMythicTicket", Number(await mythicTicketMinter.balanceOf(users[i].address)))
@@ -348,6 +349,7 @@ describe("Lottery test", function () {
         it("Other or already claimed users shouldn't be able to claim any reward", async function () {
             for (let i = 0; i < users.length; i++) {
                 let oldBalance = Math.round(Number(await users[i].getBalance()))
+                //console.log("user", i, "balance", oldBalance)
                 await lotteryGame.connect(users[i]).claimAdvantagesReward()
                 let newBalance = Math.round(Number(await users[i].getBalance()))
                 expect(newBalance).to.be.lessThan(oldBalance)

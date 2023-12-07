@@ -166,8 +166,7 @@ describe("Side lottery test", function () {
                 Object.keys(hashes),
                 Object.values(hashes),
                 featuresByDay,
-                8,
-                2
+                8
             )
             await lotteryGame.setTicketPrice("250000000000000000000")
             await lotteryGame.setTotalSteps(3)
