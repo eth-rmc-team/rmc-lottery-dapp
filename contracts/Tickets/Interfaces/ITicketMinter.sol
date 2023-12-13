@@ -14,6 +14,8 @@ interface ITicketMinter is IERC721Enumerable, ILotteryDef {
 
     function tokenByIndex(uint256 index) external view returns (uint256);
 
+    function isValidUri(string memory uri) external view returns (bool);
+
     function tokenOfOwnerByIndex(
         address owner,
         uint256 index

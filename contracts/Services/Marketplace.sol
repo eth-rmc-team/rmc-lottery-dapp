@@ -32,10 +32,20 @@ contract Marketplace is Whitelisted, IERC721Receiver {
     event Received(address, uint);
     event putOnSale(address, uint256, uint256, address);
     event removeOnSale(address, uint256, address);
+    event changePriceOnSale(address, uint256, uint256, address);
     event purchase(address, uint256, uint256, address);
+    event feesClaimed(address, uint256);
 
     constructor() payable {
         feeByTrade = 30;
+    }
+
+    modifier onlyLotteryGame() {
+        require(
+            msg.sender == discoveryService.getLotteryGameAddr(),
+            "Marketplace :: Only the Lottery Game can call this function"
+        );
+        _;
     }
 
     // Fucntion from IERC721Receiver interface to allow this contract to receive NFTs
@@ -58,6 +68,7 @@ contract Marketplace is Whitelisted, IERC721Receiver {
     }
 
     function setFeeByTrade(uint8 _feeByTrade) external onlyAdmin {
+        require(_feeByTrade <= 50, "WARNING :: Fee must be between 0 and 50");
         feeByTrade = _feeByTrade;
     }
 
@@ -72,7 +83,6 @@ contract Marketplace is Whitelisted, IERC721Receiver {
         uint256 tokenId,
         uint256 price
     ) external payable {
-        price = price.mul(10 ** 18);
         LotteryDef.TicketInfo memory ticketInfo = ITicketRegistry(
             discoveryService.getTicketRegistryAddr()
         ).getTicketState(ticketAddress, tokenId);
@@ -136,6 +146,36 @@ contract Marketplace is Whitelisted, IERC721Receiver {
         emit removeOnSale(_ticketAddress, _tokenId, msg.sender);
     }
 
+    function changeNftPriceOnSale(
+        address _ticketAddress,
+        uint _tokenId,
+        uint _newPrice
+    ) external {
+        LotteryDef.TicketInfo memory ticketInfo = ITicketRegistry(
+            discoveryService.getTicketRegistryAddr()
+        ).getTicketState(_ticketAddress, _tokenId);
+
+        //Check if the NFT is in sale, if the msg.sender is the owner of the NFT and if the price is not zero
+        require(
+            ticketInfo.dealState == LotteryDef.TicketState.DEALING,
+            "WARNING :: Deal not in progress for this NFT"
+        );
+        require(
+            payable(msg.sender) == ticketInfo.ticketOwner,
+            "WARNING :: Not owner of this token"
+        );
+        require(_newPrice > 0, "WARNING :: Price zero not accepted");
+
+        //Adding fees on the price
+        _newPrice = _newPrice.mul(feeByTrade.add(100)).div(100);
+
+        //Change the state of the NFT to "Dealing", set the price and the owner of the NFT
+        ITicketRegistry(discoveryService.getTicketRegistryAddr())
+            .putTicketOnSale(_ticketAddress, _tokenId, _newPrice);
+
+        emit changePriceOnSale(_ticketAddress, _tokenId, _newPrice, msg.sender);
+    }
+
     //Function used to purchase a NFT in sale
     //Funds are transfered to the seller (minus fees) and the NFT is transfered to the buyer
     function purchaseNft(
@@ -155,7 +195,7 @@ contract Marketplace is Whitelisted, IERC721Receiver {
             "WARNING :: Deal not in progress for this NFT"
         );
         require(
-            msg.value >= ticketInfo.dealPrice,
+            msg.value == ticketInfo.dealPrice,
             "WARNING :: you don't pay the right price"
         );
         require(
@@ -199,7 +239,7 @@ contract Marketplace is Whitelisted, IERC721Receiver {
         );
     }
 
-    function transferFeesToLottery() external onlyWhitelisted {
+    function transferFeesToLottery() external onlyLotteryGame {
         if (totalFees > 1) {
             (bool sent, ) = payable(msg.sender).call{value: totalFees}("");
             require(
@@ -220,10 +260,15 @@ contract Marketplace is Whitelisted, IERC721Receiver {
             value: feesByAddress[msg.sender]
         }("");
         require(sent, "Failed to transfer fees from Marketplace to the user");
+        emit feesClaimed(msg.sender, feesByAddress[msg.sender]);
         feesByAddress[msg.sender] = 0;
     }
 
     function getTotalFees() public view returns (uint) {
         return totalFees;
+    }
+
+    function getFeesForAnAddress(address _address) public view returns (uint) {
+        return feesByAddress[_address];
     }
 }

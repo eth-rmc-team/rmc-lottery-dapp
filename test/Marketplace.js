@@ -256,24 +256,52 @@ describe("Marketplace test", function () {
 
         })
 
+        it("Ticket shouldn't be on sale", async function () {
+            let ticketInfoU0 = await ticketRegistry.getTicketState(normalTicketMinter.address, tokenIds[0][0])
+            expect(ticketInfoU0.ticketOwner).to.equal(users[0].address)
+            expect(ticketInfoU0.dealState).to.equal(0)
+            expect(ticketInfoU0.dealPrice).to.equal(0)
+
+        })
+
         it("User should be able to create a deal", async function () {
             let balanceBeforPutOnTrade = Number(await normalTicketMinter.balanceOf(users[0].address))
             await normalTicketMinter.connect(users[0]).setApprovalForAll(marketPlace.address, true)
             await marketPlace.connect(users[0]).putNftOnSale(
                 normalTicketMinter.address,
                 tokenIds[0][0],
-                "4"
+                "5000000000000000000"
             );
             let balanceAfterPutOnTrade = Number(await normalTicketMinter.balanceOf(users[0].address))
             expect(balanceAfterPutOnTrade).to.equal(balanceBeforPutOnTrade - 1)
+
+            let ticketInfoU0 = await ticketRegistry.getTicketState(normalTicketMinter.address, tokenIds[0][0])
+            expect(ticketInfoU0.ticketOwner).to.equal(users[0].address)
+            expect(ticketInfoU0.dealState).to.equal(1)
+            expect(ticketInfoU0.dealPrice).to.equal(BigInt(5000000000000000000 * 1.3))
 
             await normalTicketMinter.connect(users[1]).setApprovalForAll(marketPlace.address, true)
             await marketPlace.connect(users[1]).putNftOnSale(
                 normalTicketMinter.address,
                 tokenIds[1][0],
-                "4"
+                "4000000000000000000"
             );
 
+            let ticketInfoU1 = await ticketRegistry.getTicketState(normalTicketMinter.address, tokenIds[1][0])
+            expect(ticketInfoU1.ticketOwner).to.equal(users[1].address)
+            expect(ticketInfoU1.dealState).to.equal(1)
+            expect(ticketInfoU1.dealPrice).to.equal(BigInt(4000000000000000000 * 1.3))
+
+        })
+
+        it("Should change the price of a deal", async function () {
+            await marketPlace.connect(users[0]).changeNftPriceOnSale(normalTicketMinter.address, tokenIds[0][0], "4000000000000000000")
+            ticketInfo = await ticketRegistry.getTicketState(normalTicketMinter.address, tokenIds[0][0])
+            // price with 30% fees
+            let price = 4000000000000000000 * 1.3
+            expect(ticketInfo.ticketOwner).to.equal(users[0].address)
+            expect(ticketInfo.dealState).to.equal(1)
+            expect(ticketInfo.dealPrice).to.equal(BigInt(price))
         })
 
         it("should buy a ticket on sale", async function () {
@@ -291,6 +319,11 @@ describe("Marketplace test", function () {
             expect(balanceAfterTrade).to.equal(balanceBeforeTrade + 1)
             expect(newBbalanceOfBuyer).to.be.lessThan(oldBbalanceOfBuyer)
 
+            let ticketInfo = await ticketRegistry.getTicketState(normalTicketMinter.address, tokenIds[0][0])
+            expect(ticketInfo.ticketOwner).to.equal(users[1].address)
+            expect(ticketInfo.dealState).to.equal(0)
+            expect(ticketInfo.dealPrice).to.equal(0)
+
         })
 
         it("Should be able to remove a deal", async function () {
@@ -306,6 +339,11 @@ describe("Marketplace test", function () {
             );
             let balanceAfterRemoveOnTrade = Number(await normalTicketMinter.balanceOf(users[1].address))
             expect(balanceAfterRemoveOnTrade).to.equal(balanceBeforeRemoveOnTrade + 1)
+
+            let ticketInfo = await ticketRegistry.getTicketState(normalTicketMinter.address, tokenIds[1][0])
+            expect(ticketInfo.ticketOwner).to.equal(users[1].address)
+            expect(ticketInfo.dealState).to.equal(0)
+            expect(ticketInfo.dealPrice).to.equal(0)
 
         })
 

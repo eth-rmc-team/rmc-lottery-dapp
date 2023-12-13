@@ -4,8 +4,7 @@ pragma solidity ^0.8.11;
 import "./TicketMinter.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
 
-contract NormalTicketMinter is TicketMinter
-{
+contract NormalTicketMinter is TicketMinter {
     using Counters for Counters.Counter;
 
     mapping(string => uint32) public validUris;
@@ -13,41 +12,37 @@ contract NormalTicketMinter is TicketMinter
     constructor() TicketMinter("NormalTicket", "NTCK") {}
 
     function addABatchOfMintableTickets(
-        string[] calldata uris, 
+        string[] calldata uris,
         uint32[] calldata features
-    ) external onlyWhitelisted 
-    {
+    ) external onlyWhitelisted {
         require(
-            uris.length == features.length, 
+            uris.length == features.length,
             "ERROR :: uris and features must have the same length."
         );
         require(
-            uris.length > 0, 
+            uris.length > 0,
             "ERROR :: uris and features must not be empty."
         );
 
-        for(uint256 i = 0; i < uris.length; i++) {
+        for (uint256 i = 0; i < uris.length; i++) {
             validUris[uris[i]] = features[i];
         }
     }
 
     //Take an string in parameter, return true if the string is a valid uri
-    function isValidUri(string memory uri) external view returns(bool) 
-    {
+    function isValidUri(string memory uri) external view returns (bool) {
         return validUris[uri] > 0;
     }
 
-    function getUriFeatures(string memory uri) external view returns(uint32) 
-    {
+    function getUriFeatures(string memory uri) external view returns (uint32) {
         return validUris[uri];
     }
-    
+
     function mintTicket(
-        string memory uri, 
+        string memory uri,
         address _addrMinter,
         uint8 suffix
-    ) external onlyWhitelisted returns(uint256)
-    {
+    ) external onlyWhitelisted returns (uint256) {
         require(
             validUris[uri] > 0,
             "ERROR :: This metadata has already been used to mint an NFT."
@@ -60,16 +55,21 @@ contract NormalTicketMinter is TicketMinter
 
         ITicketRegistry(discoveryService.getTicketRegistryAddr()).addNewTicket(
             tokenId,
-            LotteryDef.TicketType.NORMAL, 
-            address(this), 
-            payable(_addrMinter), 
-            LotteryDef.TicketState.NODEAL, 
+            LotteryDef.TicketType.NORMAL,
+            address(this),
+            payable(_addrMinter),
+            LotteryDef.TicketState.NODEAL,
             0
         );
 
         validUris[uri] = 0;
-        
-        emit ItemMinted(tokenId, _addrMinter, uri, LotteryDef.TicketType.NORMAL);
+
+        emit ItemMinted(
+            tokenId,
+            _addrMinter,
+            uri,
+            LotteryDef.TicketType.NORMAL
+        );
 
         return tokenId;
     }

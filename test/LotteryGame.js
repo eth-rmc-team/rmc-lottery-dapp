@@ -363,6 +363,12 @@ describe("Lottery test", function () {
             await lotteryGame.connect(owner).endClaimPeriod()
             expect(await lotteryGame.getCurrentPeriod()).to.equal(4)
         })
+
+        it("Should end cycle", async function () {
+            await lotteryGame.connect(owner).endCycle()
+            expect(await lotteryGame.getCurrentPeriod()).to.equal(0)
+
+        })
     })
 
 })

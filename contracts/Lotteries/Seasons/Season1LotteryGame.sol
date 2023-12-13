@@ -92,15 +92,16 @@ contract Season1LotteryGame is ALotteryGame, ReentrancyGuard {
             "ERROR :: You must pay the right price for your order"
         );
 
-        ticketsSold += uint16(uris.length);
-        (bool sent, ) = payable(address(this)).call{value: msg.value}("");
-
-        require(sent, "Failed to transfer funds to the contract");
-
         for (uint i = 0; i < uris.length; i++) {
             INormalTicketMinter(discoveryService.getNormalTicketAddr())
                 .mintTicket(uris[i], msg.sender, lotteryId);
         }
+
+        ticketsSold += uint16(uris.length);
+
+        (bool sent, ) = payable(address(this)).call{value: msg.value}("");
+
+        require(sent, "Failed to transfer funds to the contract");
 
         if (ticketsSold == ticketCapacity) startLottery();
     }
