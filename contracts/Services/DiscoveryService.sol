@@ -21,6 +21,7 @@ contract DiscoveryService is Whitelisted {
     address private silverLotteryAddr;
     address private fusionHandlerAddr;
     address private rmcMarketplaceAddr;
+    address private randomizerAddr;
 
     //external getter for normalTicketAddr
     function getNormalTicketAddr() external view returns (address) {
@@ -69,6 +70,10 @@ contract DiscoveryService is Whitelisted {
 
     function getTicketRegistryAddr() external view returns (address) {
         return ticketRegistryAddr;
+    }
+
+    function getRandomizerAddr() external view returns (address) {
+        return randomizerAddr;
     }
 
     function setNormalTicketAddr(address _normalTicketAddr) external onlyAdmin {
@@ -133,5 +138,9 @@ contract DiscoveryService is Whitelisted {
         address _ticketRegistryAddr
     ) external onlyAdmin {
         ticketRegistryAddr = _ticketRegistryAddr;
+    }
+
+    function setRandomizerAddr(address _randomizerAddr) external onlyAdmin {
+        randomizerAddr = _randomizerAddr;
     }
 }
