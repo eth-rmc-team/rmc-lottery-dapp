@@ -13,4 +13,10 @@ interface ILotteryGame {
     function getWinningCombination() external view returns (uint256);
 
     function getIsCycleRunning() external view returns (bool);
+
+    function getIsWinnerClaimed() external view returns (bool);
+
+    function getPricepool() external view returns (uint256);
+
+    function setIsWinnerClaimed(bool _isWinnerClaimed) external;
 }

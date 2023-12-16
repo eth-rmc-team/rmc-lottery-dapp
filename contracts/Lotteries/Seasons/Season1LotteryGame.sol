@@ -5,6 +5,7 @@ import "hardhat/console.sol";
 
 import "../../Services/Interfaces/IPrizepoolDispatcher.sol";
 import "../../Services/TicketRegistry.sol";
+import "../../Services/Interfaces/IClaimizer.sol";
 import "../../Tickets/Interfaces/ITicketMinter.sol";
 import "../../Tickets/Interfaces/INormalTicketMinter.sol";
 import "../../Tickets/Interfaces/ISpecialTicketMinter.sol";
@@ -201,21 +202,16 @@ contract Season1LotteryGame is ALotteryGame, ReentrancyGuard {
         return uint8((randomNumber % max) + 1);
     }
 
-    function claimReward() external payable override nonReentrant {
+    function claimReward() external override nonReentrant {
         //Check that the game is in claim period, that the game is over, that the winner hasn't claimed the price pool yet
-        require(
-            currentPeriod == LotteryDef.Period.CLAIM,
-            "ERROR :: You can't claim the winner if the game is not over"
-        );
-        require(
-            isWinnerClaimed == false,
-            "ERROR :: You can't claim twice the price pool"
-        );
-
-        //"FeeManager" contract compute the gain of the winner and check his NFT
-        uint gainWinner = IPrizepoolDispatcher(
-            discoveryService.getPrizepoolDispatcherAddr()
-        ).computeGainForWinner(winningCombination, msg.sender, prizepool);
+        uint256 _totalGain = IClaimizer(discoveryService.getClaimizerAddr())
+            .checkWinner(
+                winningCombination,
+                prizepool,
+                isWinnerClaimed,
+                msg.sender,
+                currentPeriod
+            );
 
         //transfer gains to the owner of the winningCombination
 
@@ -223,7 +219,7 @@ contract Season1LotteryGame is ALotteryGame, ReentrancyGuard {
             INormalTicketMinter(discoveryService.getNormalTicketAddr()).ownerOf(
                 winningCombination
             )
-        ).call{value: gainWinner}("");
+        ).call{value: _totalGain}("");
         require(sent, "Failed to transfer funds");
 
         //Burn the NFT of the winner
@@ -237,56 +233,21 @@ contract Season1LotteryGame is ALotteryGame, ReentrancyGuard {
     }
 
     function claimGoldTicket(uint256 tokenId) external nonReentrant {
-        require(
-            currentPeriod == LotteryDef.Period.CLAIM,
-            "ERROR :: You can't claim the gold if the game is not over"
-        );
-        uint16 featuresAvailable = uint16(winningCombination.div(10000));
-        uint8 lotteryIdForGold = extractLotteryId(tokenId);
-        uint16 featuresForGold = extractFeatures(tokenId);
-        uint256 balanceOfGold = ISpecialTicketMinter(
-            discoveryService.getGoldTicketAddr()
-        ).balanceOf(address(this));
-
-        if (
-            lotteryIdForGold == lotteryId &&
-            featuresForGold == featuresAvailable &&
-            tokenId != winningCombination &&
-            balanceOfGold > 0
-        ) {
-            uint256 goldTokenId = ISpecialTicketMinter(
-                discoveryService.getGoldTicketAddr()
-            ).tokenOfOwnerByIndex(address(this), balanceOfGold - 1);
-            INormalTicketMinter(discoveryService.getNormalTicketAddr()).burn(
-                tokenId
-            );
+        IClaimizer(discoveryService.getClaimizerAddr()).checkGoldTicket(
+            winningCombination,
+            tokenId,
             ISpecialTicketMinter(discoveryService.getGoldTicketAddr())
-                .safeTransferFrom(address(this), msg.sender, goldTokenId);
-        }
-    }
-
-    function extractLotteryId(uint256 input) private pure returns (uint8) {
-        uint8 _lotteryIdForGold;
-        _lotteryIdForGold = uint8(input % 100);
-        return _lotteryIdForGold;
-    }
-
-    function extractFeatures(uint256 input) private pure returns (uint16) {
-        uint16 _featuresForGold;
-        _featuresForGold = uint16(input.div(10000));
-        return _featuresForGold;
+                .balanceOf(address(this)),
+            10000,
+            lotteryId,
+            msg.sender,
+            currentPeriod
+        );
     }
 
     function claimAdvantagesReward() external nonReentrant {
-        require(
-            currentPeriod == LotteryDef.Period.CLAIM,
-            "ERROR :: You can't claim the rewards if the game is not over"
-        );
-
-        uint _totalGain;
-        _totalGain = IPrizepoolDispatcher(
-            discoveryService.getPrizepoolDispatcherAddr()
-        ).computeGainForAdvantages(msg.sender, prizepool);
+        uint256 _totalGain = IClaimizer(discoveryService.getClaimizerAddr())
+            .checkAdvantages(prizepool, currentPeriod);
 
         //Check that the gain is more than before transfer
         if (_totalGain > 0) {
@@ -296,16 +257,8 @@ contract Season1LotteryGame is ALotteryGame, ReentrancyGuard {
     }
 
     function claimProtocolReward() external onlyAdmin nonReentrant {
-        require(
-            currentPeriod == LotteryDef.Period.CLAIM,
-            "ERROR :: You can't claim the rewards if the game is not over"
-        );
-
-        uint8 shareProt;
-        (shareProt, , ) = IPrizepoolDispatcher(
-            discoveryService.getPrizepoolDispatcherAddr()
-        ).getShareOfPricePoolFor();
-        uint256 _totalGain = (prizepool * shareProt) / 100;
+        uint256 _totalGain = IClaimizer(discoveryService.getClaimizerAddr())
+            .checkProtocol(prizepool, currentPeriod);
 
         //Check that the gain is more than before transfer
         require(_totalGain > 0, "ERROR :: You don't have any rewards to claim");

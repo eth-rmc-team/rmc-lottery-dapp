@@ -25,4 +25,6 @@ interface IDiscoveryService {
     function getTicketRegistryAddr() external view returns (address);
 
     function getRandomizerAddr() external view returns (address);
+
+    function getClaimizerAddr() external view returns (address);
 }

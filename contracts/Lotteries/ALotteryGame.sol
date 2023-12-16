@@ -111,7 +111,7 @@ abstract contract ALotteryGame is Whitelisted, IERC721Receiver {
 
     function nextStep() public virtual;
 
-    function claimReward() external payable virtual;
+    function claimReward() external virtual;
 
     function endCycle() external virtual;
 }

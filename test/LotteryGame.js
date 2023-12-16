@@ -53,6 +53,7 @@ describe("Lottery test", function () {
     let platinTicketMinter
     let superGoldTicketMinter
     let normalTicketMinter
+    let claimizer
 
     let users
     let tokenIds = []
@@ -79,6 +80,12 @@ describe("Lottery test", function () {
         platinTicketMinter = await (await ethers.getContractFactory("PlatinTicketMinter")).deploy()
         superGoldTicketMinter = await (await ethers.getContractFactory("SuperGoldTicketMinter")).deploy()
         normalTicketMinter = await (await ethers.getContractFactory("NormalTicketMinter")).deploy()
+        const calculate = await (await ethers.getContractFactory("Calculate")).deploy()
+        claimizer = await (await ethers.getContractFactory("Claimizer", {
+            libraries: {
+                Calculate: calculate.address,
+            },
+        })).deploy(discoveryService.address)
 
         //DiscoveryService initialization
         discoveryService.setFusionHandlerAddr(ticketFusion.address)
@@ -93,6 +100,7 @@ describe("Lottery test", function () {
         discoveryService.setFusionHandlerAddr(ticketFusion.address);
         discoveryService.setRmcMarketplaceAddr(marketPlace.address);
         discoveryService.setTicketRegistryAddr(ticketRegistry.address);
+        discoveryService.setClaimizerAddr(claimizer.address);
 
         lotteryGame.setDiscoveryService(discoveryService.address);
         goldenLotteryGame.setDiscoveryService(discoveryService.address);
@@ -105,16 +113,19 @@ describe("Lottery test", function () {
         superGoldTicketMinter.setDiscoveryService(discoveryService.address);
         mythicTicketMinter.setDiscoveryService(discoveryService.address);
         platinTicketMinter.setDiscoveryService(discoveryService.address);
+        claimizer.setDiscoveryService(discoveryService.address);
 
         // Configure whitelists
         normalTicketMinter.addToWhitelist(lotteryGame.address);
         normalTicketMinter.addToWhitelist(ticketFusion.address);
         normalTicketMinter.addToWhitelist(marketPlace.address);
         normalTicketMinter.addToWhitelist(silverLotteryGame.address);
+        normalTicketMinter.addToWhitelist(claimizer.address)
         goldTicketMinter.addToWhitelist(ticketFusion.address);
         goldTicketMinter.addToWhitelist(lotteryGame.address);
         goldTicketMinter.addToWhitelist(goldenLotteryGame.address);
         goldTicketMinter.addToWhitelist(silverLotteryGame.address);
+        goldTicketMinter.addToWhitelist(claimizer.address)
         superGoldTicketMinter.addToWhitelist(ticketFusion.address);
         superGoldTicketMinter.addToWhitelist(lotteryGame.address);
         mythicTicketMinter.addToWhitelist(lotteryGame.address);
@@ -122,8 +133,7 @@ describe("Lottery test", function () {
         platinTicketMinter.addToWhitelist(lotteryGame.address);
         platinTicketMinter.addToWhitelist(silverLotteryGame.address);
         platinTicketMinter.addToWhitelist(owner.address);
-        prizepoolDispatcher.addToWhitelist(lotteryGame.address);
-        prizepoolDispatcher.addToWhitelist(ticketFusion.address);
+        prizepoolDispatcher.addToWhitelist(claimizer.address);
         ticketRegistry.addToWhitelist(normalTicketMinter.address);
         ticketRegistry.addToWhitelist(goldTicketMinter.address);
         ticketRegistry.addToWhitelist(superGoldTicketMinter.address);
@@ -131,6 +141,7 @@ describe("Lottery test", function () {
         ticketRegistry.addToWhitelist(platinTicketMinter.address);
         ticketRegistry.addToWhitelist(marketPlace.address);
         marketPlace.addToWhitelist(lotteryGame.address);
+        claimizer.addToWhitelist(lotteryGame.address);
 
         return {
             owner,
@@ -145,7 +156,8 @@ describe("Lottery test", function () {
             mythicTicketMinter,
             platinTicketMinter,
             superGoldTicketMinter,
-            normalTicketMinter
+            normalTicketMinter,
+            claimizer
         }
     })
 
@@ -185,6 +197,8 @@ describe("Lottery test", function () {
 
         it("Should reset Cycle", async function () {
             await lotteryGame.resetCycle()
+            // Owner permit Claimizer.sol to transfer gold tickets from LotteryGame.sol
+            await lotteryGame.connect(owner).setApprovalForAllTickets(goldTicketMinter.address, claimizer.address, true)
 
             expect(await lotteryGame.getCurrentPeriod()).to.equal(1)
         })
