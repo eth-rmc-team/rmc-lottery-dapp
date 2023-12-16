@@ -8,7 +8,7 @@ interface IClaimizer {
         uint256 _winningCombination,
         uint256 _prizepool,
         bool _isWinnerClaimed,
-        address _caller,
+        address caller,
         LotteryDef.Period _currentPeriod
     ) external returns (uint256);
 
@@ -24,6 +24,7 @@ interface IClaimizer {
 
     function checkAdvantages(
         uint256 _prizepool,
+        address caller,
         LotteryDef.Period _currentPeriod
     ) external returns (uint256);
 

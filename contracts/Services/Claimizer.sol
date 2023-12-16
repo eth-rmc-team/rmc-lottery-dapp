@@ -8,7 +8,7 @@ import "./Interfaces/IPrizepoolDispatcher.sol";
 import "../Tickets/Interfaces/ISpecialTicketMinter.sol";
 import "../Tickets/Interfaces/INormalTicketMinter.sol";
 import "../Librairies/LotteryDef.sol";
-import "../Librairies/Calculate.sol";
+import "../Librairies/Calculation.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
@@ -18,7 +18,7 @@ contract Claimizer is Whitelisted, ReentrancyGuard {
     bool public isWinnerClaimed;
     IDiscoveryService discoveryService;
 
-    using Calculate for *;
+    using Calculation for *;
     using LotteryDef for LotteryDef.Period;
     using SafeMath for *;
 
@@ -45,7 +45,7 @@ contract Claimizer is Whitelisted, ReentrancyGuard {
         uint256 _winningCombination,
         uint256 _prizepool,
         bool _isWinnerClaimed,
-        address _caller,
+        address caller,
         LotteryDef.Period _currentPeriod
     ) external onlyWhitelisted nonReentrant returns (uint256) {
         // Check that the game is in claim period, that the winner hasn't claimed the price pool yet
@@ -61,7 +61,7 @@ contract Claimizer is Whitelisted, ReentrancyGuard {
         //"FeeManager" contract compute the gain of the winner and check his NFT
         uint gainWinner = IPrizepoolDispatcher(
             discoveryService.getPrizepoolDispatcherAddr()
-        ).computeGainForWinner(_winningCombination, _caller, _prizepool);
+        ).computeGainForWinner(_winningCombination, caller, _prizepool);
 
         return gainWinner;
     }
@@ -80,8 +80,8 @@ contract Claimizer is Whitelisted, ReentrancyGuard {
             "ERROR :: You can't claim the gold if the game is not over"
         );
         uint16 featuresAvailable = uint16(_winningCombination.div(10000));
-        uint8 lotteryIdForGold = Calculate.extractLotteryId(tokenId);
-        uint16 featuresForGold = Calculate.extractFeatures(tokenId, _mask);
+        uint8 lotteryIdForGold = Calculation.extractLotteryId(tokenId);
+        uint16 featuresForGold = Calculation.extractFeatures(tokenId, _mask);
 
         if (
             lotteryIdForGold == lotteryId &&
@@ -109,6 +109,7 @@ contract Claimizer is Whitelisted, ReentrancyGuard {
 
     function checkAdvantages(
         uint256 _prizepool,
+        address caller,
         LotteryDef.Period _currentPeriod
     ) external onlyWhitelisted nonReentrant returns (uint256) {
         require(
@@ -119,7 +120,7 @@ contract Claimizer is Whitelisted, ReentrancyGuard {
         uint _totalGain;
         _totalGain = IPrizepoolDispatcher(
             discoveryService.getPrizepoolDispatcherAddr()
-        ).computeGainForAdvantages(msg.sender, _prizepool);
+        ).computeGainForAdvantages(caller, _prizepool);
 
         return _totalGain;
     }

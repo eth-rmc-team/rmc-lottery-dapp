@@ -38,7 +38,7 @@ const hashes = {
 const featuresByDay = [3, 3, 3]
 
 
-describe("Fusion handler test", function () {
+describe("Fusion Handler test", function () {
     let lotteryGame
     let goldenLotteryGame
     let silverLotteryGame
@@ -53,6 +53,7 @@ describe("Fusion handler test", function () {
     let platinTicketMinter
     let superGoldTicketMinter
     let normalTicketMinter
+    let claimizer
 
     let users
     let tokenIds = []
@@ -65,12 +66,18 @@ describe("Fusion handler test", function () {
         //le reste comme des utilisateurs lambdas
         users = u.slice(1)
 
+        const calculation = await (await ethers.getContractFactory("Calculation")).deploy()
+
         lotteryGame = await (await ethers.getContractFactory("Season1LotteryGame")).deploy()
         goldenLotteryGame = await (await ethers.getContractFactory("Season1GoldenLottery")).deploy()
         silverLotteryGame = await (await ethers.getContractFactory("Season1SilverLottery")).deploy()
-        discoveryService = await (await ethers.getContractFactory("DiscoveryService")).deploy()
+        discoveryService = await (await ethers.getContractFactory("DiscoveryService")).deploy(lotteryGame.address)
         marketPlace = await (await ethers.getContractFactory("Marketplace")).deploy()
-        prizepoolDispatcher = await (await ethers.getContractFactory("PrizepoolDispatcher")).deploy()
+        prizepoolDispatcher = await (await ethers.getContractFactory("PrizepoolDispatcher", {
+            libraries: {
+                Calculation: calculation.address,
+            },
+        })).deploy()
         rmcToken = await (await ethers.getContractFactory("RmcToken")).deploy("1000000000000000000", 10000)
         ticketFusion = await (await ethers.getContractFactory("TicketFusion")).deploy()
         ticketRegistry = await (await ethers.getContractFactory("TicketRegistry")).deploy()
@@ -79,6 +86,11 @@ describe("Fusion handler test", function () {
         platinTicketMinter = await (await ethers.getContractFactory("PlatinTicketMinter")).deploy()
         superGoldTicketMinter = await (await ethers.getContractFactory("SuperGoldTicketMinter")).deploy()
         normalTicketMinter = await (await ethers.getContractFactory("NormalTicketMinter")).deploy()
+        claimizer = await (await ethers.getContractFactory("Claimizer", {
+            libraries: {
+                Calculation: calculation.address,
+            },
+        })).deploy(discoveryService.address)
 
         //DiscoveryService initialization
         discoveryService.setFusionHandlerAddr(ticketFusion.address)
@@ -93,6 +105,7 @@ describe("Fusion handler test", function () {
         discoveryService.setFusionHandlerAddr(ticketFusion.address);
         discoveryService.setRmcMarketplaceAddr(marketPlace.address);
         discoveryService.setTicketRegistryAddr(ticketRegistry.address);
+        discoveryService.setClaimizerAddr(claimizer.address);
 
         lotteryGame.setDiscoveryService(discoveryService.address);
         goldenLotteryGame.setDiscoveryService(discoveryService.address);
@@ -105,16 +118,19 @@ describe("Fusion handler test", function () {
         superGoldTicketMinter.setDiscoveryService(discoveryService.address);
         mythicTicketMinter.setDiscoveryService(discoveryService.address);
         platinTicketMinter.setDiscoveryService(discoveryService.address);
+        claimizer.setDiscoveryService(discoveryService.address);
 
         // Configure whitelists
         normalTicketMinter.addToWhitelist(lotteryGame.address);
         normalTicketMinter.addToWhitelist(ticketFusion.address);
         normalTicketMinter.addToWhitelist(marketPlace.address);
         normalTicketMinter.addToWhitelist(silverLotteryGame.address);
+        normalTicketMinter.addToWhitelist(claimizer.address)
         goldTicketMinter.addToWhitelist(ticketFusion.address);
         goldTicketMinter.addToWhitelist(lotteryGame.address);
         goldTicketMinter.addToWhitelist(goldenLotteryGame.address);
         goldTicketMinter.addToWhitelist(silverLotteryGame.address);
+        goldTicketMinter.addToWhitelist(claimizer.address)
         superGoldTicketMinter.addToWhitelist(ticketFusion.address);
         superGoldTicketMinter.addToWhitelist(lotteryGame.address);
         mythicTicketMinter.addToWhitelist(lotteryGame.address);
@@ -122,8 +138,7 @@ describe("Fusion handler test", function () {
         platinTicketMinter.addToWhitelist(lotteryGame.address);
         platinTicketMinter.addToWhitelist(silverLotteryGame.address);
         platinTicketMinter.addToWhitelist(owner.address);
-        prizepoolDispatcher.addToWhitelist(lotteryGame.address);
-        prizepoolDispatcher.addToWhitelist(ticketFusion.address);
+        prizepoolDispatcher.addToWhitelist(claimizer.address);
         ticketRegistry.addToWhitelist(normalTicketMinter.address);
         ticketRegistry.addToWhitelist(goldTicketMinter.address);
         ticketRegistry.addToWhitelist(superGoldTicketMinter.address);
@@ -131,6 +146,7 @@ describe("Fusion handler test", function () {
         ticketRegistry.addToWhitelist(platinTicketMinter.address);
         ticketRegistry.addToWhitelist(marketPlace.address);
         marketPlace.addToWhitelist(lotteryGame.address);
+        claimizer.addToWhitelist(lotteryGame.address);
 
         return {
             owner,
@@ -145,7 +161,8 @@ describe("Fusion handler test", function () {
             mythicTicketMinter,
             platinTicketMinter,
             superGoldTicketMinter,
-            normalTicketMinter
+            normalTicketMinter,
+            claimizer
         }
     })
 

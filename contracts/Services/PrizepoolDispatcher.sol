@@ -12,6 +12,8 @@ import "../Tickets/Interfaces/ITicketMinter.sol";
 import "./Interfaces/IDiscoveryService.sol";
 import "../Lotteries/Interfaces/ILotteryGame.sol";
 
+import "../Librairies/Calculation.sol";
+
 contract PrizepoolDispatcher is Whitelisted {
     address public tokenAllowedForTrade;
 
@@ -41,11 +43,12 @@ contract PrizepoolDispatcher is Whitelisted {
 
     using SafeMath for uint256;
     using SafeMath for uint8;
+    using Calculation for *;
 
     struct userInfo {
         address addrClaimer;
         uint256[4] balanceOfNft;
-        uint256[5] userShare;
+        uint256[4] userShare;
         uint256[4] coefs;
     }
 
@@ -69,6 +72,16 @@ contract PrizepoolDispatcher is Whitelisted {
 
     function setDiscoveryService(address _address) external onlyAdmin {
         discoveryService = IDiscoveryService(_address);
+    }
+
+    function setMul(
+        uint8 _mulSuperGold,
+        uint8 _mulMythic,
+        uint8 _mulPlatin
+    ) public onlyAdmin {
+        mulSuperGold = _mulSuperGold;
+        mulMythic = _mulMythic;
+        mulPlatin = _mulPlatin;
     }
 
     //Function setting the share of the winner
@@ -128,13 +141,6 @@ contract PrizepoolDispatcher is Whitelisted {
         );
     }
 
-    //function setting the address of the token used for trade
-    function setTokenAllowedForTrade(
-        address _tokenAllowedForTrade
-    ) external onlyAdmin {
-        tokenAllowedForTrade = _tokenAllowedForTrade;
-    }
-
     //Function used to disable the claim ability of a NFT after the claim
     function disableClaim(uint _id, uint8 nft) private {
         if (nft == 1)
@@ -155,72 +161,44 @@ contract PrizepoolDispatcher is Whitelisted {
             ).getLotteryId();
     }
 
-    function getRatioSupplySuperGoldvsGold(
-        uint256 _balanceOfGold
-    ) external view returns (uint ratioSGG) {
-        uint24 multiplicateur = 1000000;
-        ratioSGG = ITicketMinter(discoveryService.getSuperGoldTicketAddr())
-            .totalSupply()
-            .mul(multiplicateur)
-            .div(_balanceOfGold);
-        return (ratioSGG);
-    }
-
-    function getRatioSupplyMythicvsGold(
-        uint256 _balanceOfGold
-    ) external view returns (uint ratioMG) {
-        uint24 multiplicateur = 1000000;
-        ratioMG = ITicketMinter(discoveryService.getMythicTicketAddr())
-            .totalSupply()
-            .mul(multiplicateur)
-            .div(_balanceOfGold);
-        return (ratioMG);
-    }
-
-    function getRatioSupplyPlatinvsGold(
-        uint256 _balanceOfGold
-    ) external view returns (uint ratioPG) {
-        uint24 multiplicateur = 1000000;
-        ratioPG = ITicketMinter(discoveryService.getPlatiniumTicketAddr())
-            .totalSupply()
-            .mul(multiplicateur)
-            .div(_balanceOfGold);
-        return (ratioPG);
-    }
-
     function getAllCoefs() public view returns (uint256[4] memory _coefs) {
         uint24 multiplicateur = 1000000;
         uint256 balanceOfGold = ITicketMinter(
             discoveryService.getGoldTicketAddr()
         ).totalSupply();
+        uint256 balanceOfSupergold = ITicketMinter(
+            discoveryService.getSuperGoldTicketAddr()
+        ).totalSupply();
+        uint256 balanceOfMythic = ITicketMinter(
+            discoveryService.getMythicTicketAddr()
+        ).totalSupply();
+        uint256 balanceOfPlatin = ITicketMinter(
+            discoveryService.getPlatiniumTicketAddr()
+        ).totalSupply();
 
         _coefs[0] = uint256(mulGold.mul(multiplicateur));
         _coefs[1] = uint256(
-            mulSuperGold.mul(this.getRatioSupplySuperGoldvsGold(balanceOfGold))
+            mulSuperGold.mul(
+                Calculation.calculateRatio(balanceOfSupergold, balanceOfGold)
+            )
         );
         _coefs[2] = uint256(
-            mulMythic.mul(this.getRatioSupplyMythicvsGold(balanceOfGold))
+            mulMythic.mul(
+                Calculation.calculateRatio(balanceOfMythic, balanceOfGold)
+            )
         );
         _coefs[3] = uint256(
-            mulPlatin.mul(this.getRatioSupplyPlatinvsGold(balanceOfGold))
+            mulPlatin.mul(
+                Calculation.calculateRatio(balanceOfPlatin, balanceOfGold)
+            )
         );
 
         return (_coefs);
     }
 
-    function setMul(
-        uint8 _mulSuperGold,
-        uint8 _mulMythic,
-        uint8 _mulPlatin
-    ) public onlyAdmin {
-        mulSuperGold = _mulSuperGold;
-        mulMythic = _mulMythic;
-        mulPlatin = _mulPlatin;
-    }
-
     function getSumCoefs() public view returns (uint _sumCoefs) {
         uint[4] memory coefs = getAllCoefs();
-        _sumCoefs = coefs[0] + coefs[1] + coefs[2] + coefs[3];
+        _sumCoefs = Calculation.calculateSum4uint(coefs);
         return (_sumCoefs);
     }
 
@@ -242,34 +220,9 @@ contract PrizepoolDispatcher is Whitelisted {
                 _addrClaimer
             )
         ];
-        user.userShare = [
-            uint256(0),
-            uint256(0),
-            uint256(0),
-            uint256(0),
-            uint256(0)
-        ];
-
+        user.userShare = [uint256(0), uint256(0), uint256(0), uint256(0)];
         user.coefs = getAllCoefs();
-        //user.coefs[4] = getSumCoefs();
-
         return (user);
-    }
-
-    //Function calculating the share of the price pool for each NFT type owned by the user
-    function calculateShare(
-        uint256 _pricepool,
-        uint _totalSupply,
-        uint256 _balanceOfNft,
-        uint256 _coef,
-        uint256 _sumCoef
-    ) private view returns (uint256 _share) {
-        //note: we don't need to divide by 1000000 as sumCoef is already multiplied by 1000000
-        _share = _pricepool.mul(_balanceOfNft).div(_totalSupply).mul(_coef).div(
-                _sumCoef
-            );
-
-        return (_share);
     }
 
     //Function computing the gain for the owner of "Special NFT" and disabling the claim afterward
@@ -286,12 +239,14 @@ contract PrizepoolDispatcher is Whitelisted {
         uint256 coef = 0;
         uint256 sumCoef = getSumCoefs();
         uint256 ticketClaimable;
+        _prizepool = _prizepool.mul(advantagesSharePrizepool).div(100);
 
         //Get the amount of NFT owned by the address and loop through them
         //Disable the claim ability of the NFT
         //Increase the counter for the NFT type
         //Calculate the gain knowing the share of the price pool for each type of NFT and the number of NFT owned
 
+        // For Gold
         balanceOfNft = user.balanceOfNft[0];
         if (balanceOfNft > 0) {
             ticketClaimable = 0;
@@ -311,7 +266,7 @@ contract PrizepoolDispatcher is Whitelisted {
                 }
             }
 
-            user.userShare[0] = calculateShare(
+            user.userShare[0] = Calculation.calculateShare(
                 _prizepool,
                 totalSupply,
                 ticketClaimable,
@@ -320,6 +275,7 @@ contract PrizepoolDispatcher is Whitelisted {
             );
         }
 
+        //For Supergold
         balanceOfNft = user.balanceOfNft[1];
         if (balanceOfNft > 0) {
             ticketClaimable = 0;
@@ -339,7 +295,7 @@ contract PrizepoolDispatcher is Whitelisted {
                     ticketClaimable = SafeMath.add(ticketClaimable, 1);
                 }
             }
-            user.userShare[1] = calculateShare(
+            user.userShare[1] = Calculation.calculateShare(
                 _prizepool,
                 totalSupply,
                 ticketClaimable,
@@ -348,8 +304,8 @@ contract PrizepoolDispatcher is Whitelisted {
             );
         }
 
+        //For Mythic
         balanceOfNft = user.balanceOfNft[2];
-
         if (balanceOfNft > 0) {
             ticketClaimable = 0;
             coef = user.coefs[2];
@@ -367,7 +323,7 @@ contract PrizepoolDispatcher is Whitelisted {
                     ticketClaimable = SafeMath.add(ticketClaimable, 1);
                 }
             }
-            user.userShare[2] = calculateShare(
+            user.userShare[2] = Calculation.calculateShare(
                 _prizepool,
                 totalSupply,
                 ticketClaimable,
@@ -376,6 +332,7 @@ contract PrizepoolDispatcher is Whitelisted {
             );
         }
 
+        // For Platin
         balanceOfNft = user.balanceOfNft[3];
         if (balanceOfNft > 0) {
             ticketClaimable = 0;
@@ -395,7 +352,7 @@ contract PrizepoolDispatcher is Whitelisted {
                     ticketClaimable = SafeMath.add(ticketClaimable, 1);
                 }
             }
-            user.userShare[3] = calculateShare(
+            user.userShare[3] = Calculation.calculateShare(
                 _prizepool,
                 totalSupply,
                 ticketClaimable,
@@ -405,27 +362,23 @@ contract PrizepoolDispatcher is Whitelisted {
         }
 
         // Calculate the total gain for the user
+        _totalGain = Calculation.calculateSum4uint(user.userShare);
 
-        _totalGain = (user.userShare[0] +
-            user.userShare[1] +
-            user.userShare[2] +
-            user.userShare[3]);
-        _totalGain = _totalGain.mul(advantagesSharePrizepool).div(100);
+        //DEBUG :: check the good maths
+        /*if (_totalGain > 0) {
+        console.log("prizepool = ", _prizepool);
+        console.log("totalGain = ", _totalGain);
+        console.log("sumCoef = ", sumCoef);
+        console.log("user.userShare[0] = ", user.userShare[0]);
+        console.log("user.userShare[1] = ", user.userShare[1]);
+        console.log("user.userShare[2] = ", user.userShare[2]);
+        console.log("user.userShare[3] = ", user.userShare[3]);
 
-        /* //DEBUG :: check the good maths
-        if (_totalGain > 0) {
-            console.log("prizepool = ", _prizepool);
-            console.log("totalGain = ", _totalGain);
-            console.log("user.userShare[0] = ", user.userShare[0]);
-            console.log("user.userShare[1] = ", user.userShare[1]);
-            console.log("user.userShare[2] = ", user.userShare[2]);
-            console.log("user.userShare[3] = ", user.userShare[3]);
-
-            console.log("user.coefs[0] = ", user.coefs[0]);
-            console.log("user.coefs[1] = ", user.coefs[1]);
-            console.log("user.coefs[2] = ", user.coefs[2]);
-            console.log("user.coefs[3] = ", user.coefs[3]);
-        } */
+        console.log("user.coefs[0] = ", user.coefs[0]);
+        console.log("user.coefs[1] = ", user.coefs[1]);
+        console.log("user.coefs[2] = ", user.coefs[2]);
+        console.log("user.coefs[3] = ", user.coefs[3]);
+        }*/
 
         return (_totalGain);
     }

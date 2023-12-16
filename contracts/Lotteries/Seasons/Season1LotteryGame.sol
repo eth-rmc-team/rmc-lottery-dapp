@@ -247,7 +247,7 @@ contract Season1LotteryGame is ALotteryGame, ReentrancyGuard {
 
     function claimAdvantagesReward() external nonReentrant {
         uint256 _totalGain = IClaimizer(discoveryService.getClaimizerAddr())
-            .checkAdvantages(prizepool, currentPeriod);
+            .checkAdvantages(prizepool, msg.sender, currentPeriod);
 
         //Check that the gain is more than before transfer
         if (_totalGain > 0) {
@@ -280,5 +280,9 @@ contract Season1LotteryGame is ALotteryGame, ReentrancyGuard {
     function endCycle() external override onlyAdmin {
         currentPeriod = LotteryDef.Period.OFF;
         isCycleRunning = false;
+    }
+
+    function getBalance() external view returns (uint256) {
+        return address(this).balance;
     }
 }

@@ -66,12 +66,18 @@ describe("Lottery test", function () {
         //le reste comme des utilisateurs lambdas
         users = u.slice(1)
 
+        const calculation = await (await ethers.getContractFactory("Calculation")).deploy()
+
         lotteryGame = await (await ethers.getContractFactory("Season1LotteryGame")).deploy()
         goldenLotteryGame = await (await ethers.getContractFactory("Season1GoldenLottery")).deploy()
         silverLotteryGame = await (await ethers.getContractFactory("Season1SilverLottery")).deploy()
         discoveryService = await (await ethers.getContractFactory("DiscoveryService")).deploy(lotteryGame.address)
         marketPlace = await (await ethers.getContractFactory("Marketplace")).deploy()
-        prizepoolDispatcher = await (await ethers.getContractFactory("PrizepoolDispatcher")).deploy()
+        prizepoolDispatcher = await (await ethers.getContractFactory("PrizepoolDispatcher", {
+            libraries: {
+                Calculation: calculation.address,
+            },
+        })).deploy()
         rmcToken = await (await ethers.getContractFactory("RmcToken")).deploy("1000000000000000000", 10000)
         ticketFusion = await (await ethers.getContractFactory("TicketFusion")).deploy()
         ticketRegistry = await (await ethers.getContractFactory("TicketRegistry")).deploy()
@@ -80,10 +86,9 @@ describe("Lottery test", function () {
         platinTicketMinter = await (await ethers.getContractFactory("PlatinTicketMinter")).deploy()
         superGoldTicketMinter = await (await ethers.getContractFactory("SuperGoldTicketMinter")).deploy()
         normalTicketMinter = await (await ethers.getContractFactory("NormalTicketMinter")).deploy()
-        const calculate = await (await ethers.getContractFactory("Calculate")).deploy()
         claimizer = await (await ethers.getContractFactory("Claimizer", {
             libraries: {
-                Calculate: calculate.address,
+                Calculation: calculation.address,
             },
         })).deploy(discoveryService.address)
 
@@ -295,6 +300,7 @@ describe("Lottery test", function () {
 
         it("Claim period should be started", async function () {
             expect(await lotteryGame.getCurrentPeriod()).to.equal(3)
+
         })
 
         it("Winner should be able to claim", async function () {
@@ -329,8 +335,8 @@ describe("Lottery test", function () {
             for (let i = 0; i < users.length; i++) {
                 for (let j = 0; j < tokenIds[i].length; j++) {
                     const tokenId = tokenIds[i][j]
-
                     await lotteryGame.connect(users[i]).claimGoldTicket(tokenId)
+
                 }
                 gold += Number(await goldTicketMinter.balanceOf(users[i].address))
             }
@@ -353,6 +359,8 @@ describe("Lottery test", function () {
                 }
             }
 
+            await lotteryGame.connect(owner).claimAdvantagesReward()
+
         })
 
         it("Should be able to claim protocol reward", async function () {
@@ -361,6 +369,7 @@ describe("Lottery test", function () {
             const newBalanceOfProtocol = Number(await owner.getBalance())
 
             expect(newBalanceOfProtocol).to.be.greaterThan(oldBalanceOfProtocol)
+
         })
 
         it("Other or already claimed users shouldn't be able to claim any reward", async function () {
@@ -371,6 +380,11 @@ describe("Lottery test", function () {
                 let newBalance = Math.round(Number(await users[i].getBalance()))
                 expect(newBalance).to.be.lessThan(oldBalance)
             }
+        })
+
+        it("Should remains 1% of the initial balance", async function () {
+            // As 33% for the protocol, 33% for the advantages and 33% for the winners, it remains 1%% of the total balance
+            expect(BigInt(await lotteryGame.getBalance())).to.equal(BigInt("67500000000000000000"))
         })
 
         it("Should go to CHASE period", async function () {
