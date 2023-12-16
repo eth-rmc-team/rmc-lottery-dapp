@@ -5,6 +5,8 @@ import "./Whitelisted.sol";
 import "../Lotteries/Interfaces/ILotteryGame.sol";
 import "./Interfaces/IDiscoveryService.sol";
 import "./Interfaces/IPrizepoolDispatcher.sol";
+import "../Tickets/Interfaces/ISpecialTicketMinter.sol";
+import "../Tickets/Interfaces/INormalTicketMinter.sol";
 import "../Librairies/LotteryDef.sol";
 import "../Librairies/Calculate.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";

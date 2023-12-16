@@ -69,7 +69,7 @@ describe("Lottery test", function () {
         lotteryGame = await (await ethers.getContractFactory("Season1LotteryGame")).deploy()
         goldenLotteryGame = await (await ethers.getContractFactory("Season1GoldenLottery")).deploy()
         silverLotteryGame = await (await ethers.getContractFactory("Season1SilverLottery")).deploy()
-        discoveryService = await (await ethers.getContractFactory("DiscoveryService")).deploy()
+        discoveryService = await (await ethers.getContractFactory("DiscoveryService")).deploy(lotteryGame.address)
         marketPlace = await (await ethers.getContractFactory("Marketplace")).deploy()
         prizepoolDispatcher = await (await ethers.getContractFactory("PrizepoolDispatcher")).deploy()
         rmcToken = await (await ethers.getContractFactory("RmcToken")).deploy("1000000000000000000", 10000)

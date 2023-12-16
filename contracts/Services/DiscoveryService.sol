@@ -2,6 +2,7 @@
 pragma solidity ^0.8.11;
 
 import "./Whitelisted.sol";
+import "../Lotteries/Interfaces/ILotteryGame.sol";
 
 /** 
     This service hold all contrats addresses 
@@ -23,6 +24,18 @@ contract DiscoveryService is Whitelisted {
     address private rmcMarketplaceAddr;
     address private randomizerAddr;
     address private claimizerAddr;
+
+    constructor(address lotteryGameAddr_) {
+        lotteryGameAddr = lotteryGameAddr_;
+    }
+
+    modifier onlyWhenCycleNotRunning() {
+        require(
+            !ILotteryGame(lotteryGameAddr).getIsCycleRunning(),
+            "DiscoveryService :: The owner cannot perform this action when a game is in progress"
+        );
+        _;
+    }
 
     //external getter for normalTicketAddr
     function getNormalTicketAddr() external view returns (address) {
@@ -81,75 +94,87 @@ contract DiscoveryService is Whitelisted {
         return claimizerAddr;
     }
 
-    function setNormalTicketAddr(address _normalTicketAddr) external onlyAdmin {
+    function setNormalTicketAddr(
+        address _normalTicketAddr
+    ) external onlyAdmin onlyWhenCycleNotRunning {
         normalTicketAddr = _normalTicketAddr;
     }
 
-    function setGoldTicketAddr(address _goldTicketAddr) external onlyAdmin {
+    function setGoldTicketAddr(
+        address _goldTicketAddr
+    ) external onlyAdmin onlyWhenCycleNotRunning {
         goldTicketAddr = _goldTicketAddr;
     }
 
     function setSuperGoldTicketAddr(
         address _superGoldTicketAddr
-    ) external onlyAdmin {
+    ) external onlyAdmin onlyWhenCycleNotRunning {
         superGoldTicketAddr = _superGoldTicketAddr;
     }
 
-    function setMythicTicketAddr(address _mythicTicketAddr) external onlyAdmin {
+    function setMythicTicketAddr(
+        address _mythicTicketAddr
+    ) external onlyAdmin onlyWhenCycleNotRunning {
         mythicTicketAddr = _mythicTicketAddr;
     }
 
     function setPlatiniumTicketAddr(
         address _platinumTicketAddr
-    ) external onlyAdmin {
+    ) external onlyAdmin onlyWhenCycleNotRunning {
         platinumTicketAddr = _platinumTicketAddr;
     }
 
     function setPrizepoolDispatcherAddr(
         address _prizepoolDispatcherAddr
-    ) external onlyAdmin {
+    ) external onlyAdmin onlyWhenCycleNotRunning {
         prizepoolDispatcherAddr = _prizepoolDispatcherAddr;
     }
 
-    function setLotteryGameAddr(address _lotteryGameAddr) external onlyAdmin {
+    function setLotteryGameAddr(
+        address _lotteryGameAddr
+    ) external onlyAdmin onlyWhenCycleNotRunning {
         lotteryGameAddr = _lotteryGameAddr;
     }
 
     function setGoldenLotteryAddr(
         address _goldenLotteryAddr
-    ) external onlyAdmin {
+    ) external onlyAdmin onlyWhenCycleNotRunning {
         goldenLotteryAddr = _goldenLotteryAddr;
     }
 
     function setSilverLotteryAddr(
         address _silverLotteryAddr
-    ) external onlyAdmin {
+    ) external onlyAdmin onlyWhenCycleNotRunning {
         silverLotteryAddr = _silverLotteryAddr;
     }
 
     function setFusionHandlerAddr(
         address _fusionHandlerAddr
-    ) external onlyAdmin {
+    ) external onlyAdmin onlyWhenCycleNotRunning {
         fusionHandlerAddr = _fusionHandlerAddr;
     }
 
     function setRmcMarketplaceAddr(
         address _rmcMarketplaceAddr
-    ) external onlyAdmin {
+    ) external onlyAdmin onlyWhenCycleNotRunning {
         rmcMarketplaceAddr = _rmcMarketplaceAddr;
     }
 
     function setTicketRegistryAddr(
         address _ticketRegistryAddr
-    ) external onlyAdmin {
+    ) external onlyAdmin onlyWhenCycleNotRunning {
         ticketRegistryAddr = _ticketRegistryAddr;
     }
 
-    function setRandomizerAddr(address _randomizerAddr) external onlyAdmin {
+    function setRandomizerAddr(
+        address _randomizerAddr
+    ) external onlyAdmin onlyWhenCycleNotRunning {
         randomizerAddr = _randomizerAddr;
     }
 
-    function setClaimizerAddr(address _claimizerAddr) external onlyAdmin {
+    function setClaimizerAddr(
+        address _claimizerAddr
+    ) external onlyAdmin onlyWhenCycleNotRunning {
         claimizerAddr = _claimizerAddr;
     }
 }
