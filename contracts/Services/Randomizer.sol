@@ -1,62 +1,95 @@
 // SPDX-License-Identifier: MIT
+
 pragma solidity ^0.8.11;
 
-import "@chainlink/contracts/src/v0.8/VRFConsumerBase.sol";
+import "@chainlink/contracts/src/v0.8/VRFConsumerBaseV2.sol";
+import "@chainlink/contracts/src/v0.8/interfaces/VRFCoordinatorV2Interface.sol";
 import "./Whitelisted.sol";
 import "./Interfaces/IDiscoveryService.sol";
 import "./Interfaces/IRandomizer.sol";
 
-contract Randomizer is VRFConsumerBase, Whitelisted {
-    bytes32 internal keyHash;
-    uint256 internal fee;
-    uint256 public randomResult;
+contract Randomizer is VRFConsumerBaseV2, Whitelisted {
+    event RequestSent(uint256 requestId, uint32 numWords);
+    event RequestFulfilled(uint256 requestId, uint256[] randomWords);
 
-    IDiscoveryService private discoveryService;
-
-    mapping(bytes32 => uint256) public randomResults;
-    mapping(bytes32 => address) public requestIdToAddr;
-
-    constructor()
-        VRFConsumerBase(
-            0x2eD832Ba664535e5886b75D64C46EB9a228C2610, // VRF Coordinator for Avalanche Fuji Testnet
-            0x0b9d5D9136855f6FEc3c0993feE6E9CE8a297846 // LINK Token for Avalanche Fuji Testnet
-        )
-    {
-        keyHash = 0x354d2f95da55398f44b7cff77da56283d9c6c829a4bdf1bbcaf2ad6a4d081f61; // keyhash for Avalanche Fuji Testnet
-        fee = 0.005 * 10 ** 18; // 0.005 LINK (for Avalanche Fuji Testnet)
+    struct RequestStatus {
+        bool fulfilled; // whether the request has been successfully fulfilled
+        bool exists; // whether a requestId exists
+        uint256[] randomWords;
     }
+    mapping(uint256 => RequestStatus)
+        public s_requests; /* requestId --> requestStatus */
+    VRFCoordinatorV2Interface COORDINATOR;
 
-    function setDiscoveryService(address _address) external onlyAdmin {
-        discoveryService = IDiscoveryService(_address);
-    }
+    // Your subscription ID.
+    uint64 s_subscriptionId;
 
-    function getRandomNumber()
-        external
-        onlyWhitelisted
-        returns (bytes32 requestId)
-    {
-        requestId = _getRandomNumber();
-        requestIdToAddr[requestId] = msg.sender;
+    // past requests Id.
+    uint256[] public requestIds;
+    uint256 public lastRequestId;
 
-        return requestId;
-    }
+    bytes32 immutable keyHash;
+    address public immutable linkToken;
 
-    // Request randomness
-    function _getRandomNumber() internal returns (bytes32 requestId) {
-        require(
-            LINK.balanceOf(address(this)) >= fee,
-            "Not enough LINK - fill contract with faucet"
+    uint32 callbackGasLimit = 150000;
+
+    uint16 requestConfirmations = 3;
+    uint32 numWords = 1;
+    uint public randomWordsNum;
+
+    constructor(
+        uint64 subscriptionId,
+        address _linkToken
+    ) VRFConsumerBaseV2(0x2eD832Ba664535e5886b75D64C46EB9a228C2610) {
+        COORDINATOR = VRFCoordinatorV2Interface(
+            0x2Ca8E0C643bDe4C2E08ab1fA0da3401AdAD7734D
         );
-        return requestRandomness(keyHash, fee);
+        s_subscriptionId = subscriptionId;
+
+        keyHash = 0x354d2f95da55398f44b7cff77da56283d9c6c829a4bdf1bbcaf2ad6a4d081f61; // keyhash for Avalanche Fuji Testnet
+        linkToken = _linkToken;
     }
 
-    // Callback function used by VRF Coordinator
-    function fulfillRandomness(
-        bytes32 requestId,
-        uint256 randomness
+    function getRandomNum() external returns (uint256) {
+        uint256 requestId = requestRandomWords();
+        return s_requests[requestId].randomWords[0];
+    }
+
+    function requestRandomWords() internal returns (uint256 requestId) {
+        requestId = COORDINATOR.requestRandomWords(
+            keyHash,
+            s_subscriptionId,
+            requestConfirmations,
+            callbackGasLimit,
+            numWords
+        );
+        s_requests[requestId] = RequestStatus({
+            randomWords: new uint256[](0),
+            exists: true,
+            fulfilled: false
+        });
+        requestIds.push(requestId);
+        lastRequestId = requestId;
+        emit RequestSent(requestId, numWords);
+        return requestId; // requestID is a uint.
+    }
+
+    function fulfillRandomWords(
+        uint256 _requestId,
+        uint256[] memory _randomWords
     ) internal override {
-        randomResults[requestId] = randomness;
-        //Sending the random number to the contract that requested it
-        IRandomizer(requestIdToAddr[requestId]).setRandomDigit(randomness);
+        require(s_requests[_requestId].exists, "request not found");
+        s_requests[_requestId].fulfilled = true;
+        s_requests[_requestId].randomWords = _randomWords;
+        emit RequestFulfilled(_requestId, _randomWords);
+    }
+
+    // to check the request status of random number call.
+    function getRequestStatus(
+        uint256 _requestId
+    ) external view returns (bool fulfilled, uint256[] memory randomWords) {
+        require(s_requests[_requestId].exists, "request not found");
+        RequestStatus memory request = s_requests[_requestId];
+        return (request.fulfilled, request.randomWords);
     }
 }
